@@ -68,6 +68,14 @@ document.getElementById('btnSair').addEventListener('click', (e) => {
     document.getElementById('statusLogin').style.display = 'none';
 });
 
+// --- LÓGICA DO MENU RECOLHÍVEL ---
+const btnToggleMenu = document.getElementById('btnToggleMenu');
+const sidebar = document.querySelector('.sidebar');
+
+btnToggleMenu.addEventListener('click', () => {
+    sidebar.classList.toggle('recolhida');
+});
+
 // --- LÓGICA DE NAVEGAÇÃO DO MENU ---
 const menus = {
     dashboard: document.getElementById('menu-dashboard'),
@@ -101,12 +109,14 @@ document.getElementById('formVenda').addEventListener('submit', async (e) => {
     const msg = document.getElementById('mensagemVenda');
     btn.disabled = true; msg.style.color = "var(--texto-claro)"; msg.innerText = "Enviando venda...";
 
+    // Pegando os dados na nova ordem exata dos campos da tela e planilha
     const dados = [
         document.getElementById('data').value,
         document.getElementById('cliente').value,
-        document.getElementById('produto').value,
-        document.getElementById('valor').value,
-        document.getElementById('status').value
+        document.getElementById('categoriaProduto').value,
+        document.getElementById('formaPagamento').value,
+        document.getElementById('custo').value || "0", // Se deixar em branco, envia zero
+        document.getElementById('valor').value
     ];
 
     try {
@@ -123,6 +133,11 @@ document.getElementById('formVenda').addEventListener('submit', async (e) => {
     } finally {
         btn.disabled = false; setTimeout(() => msg.innerText = "", 4000);
     }
+});
+
+// Ação do Botão Cancelar (limpa o formulário)
+document.getElementById('btnCancelarVenda').addEventListener('click', () => {
+    document.getElementById('formVenda').reset();
 });
 
 // --- LÓGICA DE ENVIO DE DESPESAS ---
