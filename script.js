@@ -6,7 +6,7 @@ const usuariosPermitidos = [
     { login: "osvaldo",  senha: "456", nomeCompleto: "Osvaldo Pereira" }
 ];
 
-// --- LÓGICA DE LOGIN COM PLANILHA ---
+// --- LÓGICA DE LOGIN COM AVISOS CLAROS ---
 const telaLogin = document.getElementById('tela-login');
 const appContainer = document.getElementById('app-container');
 const nomeUsuarioLogado = document.getElementById('nomeUsuarioLogado');
@@ -15,18 +15,18 @@ const textoBoasVindas = document.getElementById('textoBoasVindas');
 document.getElementById('formLogin').addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const userDigitado = document.getElementById('loginUser').value;
+    const userDigitado = document.getElementById('loginUser').value.trim();
     const senhaDigitada = document.getElementById('loginSenha').value;
-    const msgErro = document.getElementById('msgLogin');
+    const statusLogin = document.getElementById('statusLogin');
     const btnEntrar = document.getElementById('btnEntrar');
 
-    // Mostra que está carregando
+    // Estado de Carregamento
     btnEntrar.disabled = true;
-    btnEntrar.innerText = "Autenticando...";
-    msgErro.style.display = 'none';
+    statusLogin.style.display = 'block';
+    statusLogin.style.color = "#FFD700"; // Amarelo para loading
+    statusLogin.innerText = "⏳ Conectando ao banco de dados...";
 
     try {
-        // Envia os dados para o Google Apps Script conferir
         const response = await fetch(URL_API, {
             method: 'POST',
             body: JSON.stringify({
@@ -37,28 +37,34 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
         });
 
         const resultado = await response.json();
+        console.log("Resposta do Servidor:", resultado); // Ajuda a investigar erros pelo F12 do navegador
 
         if (resultado.status === "sucesso") {
-            // Se a senha bater com a planilha, libera o acesso
-            telaLogin.style.display = 'none';
-            appContainer.style.display = 'flex';
-            nomeUsuarioLogado.innerText = resultado.nomeCompleto;
+            statusLogin.style.color = "#00C853";
+            statusLogin.innerText = "✅ Acesso Liberado!";
             
-            const primeiroNome = resultado.nomeCompleto.split(" ")[0];
-            textoBoasVindas.innerText = `Olá, ${primeiroNome}! Aqui está o resumo do mês.`;
-            document.getElementById('formLogin').reset();
+            // Pequeno atraso para o usuário ver a mensagem de sucesso antes de sumir a tela
+            setTimeout(() => {
+                telaLogin.style.display = 'none';
+                appContainer.style.display = 'flex';
+                nomeUsuarioLogado.innerText = resultado.nomeCompleto;
+                
+                const primeiroNome = resultado.nomeCompleto.split(" ")[0];
+                textoBoasVindas.innerText = `Olá, ${primeiroNome}! Aqui está o resumo do mês.`;
+                document.getElementById('formLogin').reset();
+                statusLogin.style.display = 'none';
+            }, 800);
+
         } else {
-            // Se errar a senha ou o usuário não existir
-            msgErro.innerText = resultado.mensagem;
-            msgErro.style.display = 'block';
+            // Mostra o erro exato que veio da planilha (ex: "Usuário incorreto")
+            statusLogin.style.color = "#FF3D00";
+            statusLogin.innerText = "❌ " + resultado.mensagem;
         }
     } catch (error) {
-        msgErro.innerText = "Erro ao conectar com o banco de dados.";
-        msgErro.style.display = 'block';
+        statusLogin.style.color = "#FF3D00";
+        statusLogin.innerText = "❌ Erro de conexão. Verifique se o Google Apps Script foi atualizado.";
     } finally {
-        // Devolve o botão ao estado normal
         btnEntrar.disabled = false;
-        btnEntrar.innerText = "Entrar no Sistema";
     }
 });
 
