@@ -1,6 +1,39 @@
 // 1. SUA URL DA API DO GOOGLE APPS SCRIPT
 const URL_API = "https://script.google.com/macros/s/AKfycbxo0HmHlzJklmZ8jM987fSb9ijS6XtaH-otVAZaaGfQbm22Tdgtx7moFdoYDRF5e9E4/exec";
+// Alternar entre Login, Cadastro e Senha
+const boxes = {
+    login: document.getElementById('box-login'),
+    cad: document.getElementById('box-cadastro'),
+    senha: document.getElementById('box-senha'),
+    voltar: document.getElementById('link-voltar'),
+    links: document.querySelector('.login-links')
+};
 
+document.getElementById('link-cadastrar').addEventListener('click', (e) => {
+    e.preventDefault();
+    exibirBox('cad');
+});
+
+document.getElementById('link-alterar').addEventListener('click', (e) => {
+    e.preventDefault();
+    exibirBox('senha');
+});
+
+document.getElementById('link-voltar').addEventListener('click', (e) => {
+    e.preventDefault();
+    exibirBox('login');
+});
+
+function exibirBox(alvo) {
+    boxes.login.style.display = alvo === 'login' ? 'block' : 'none';
+    boxes.cad.style.display = alvo === 'cad' ? 'block' : 'none';
+    boxes.senha.style.display = alvo === 'senha' ? 'block' : 'none';
+    boxes.voltar.style.display = alvo === 'login' ? 'none' : 'block';
+    
+    // Esconde os links de cadastro/alterar quando não estiver no login
+    document.getElementById('link-cadastrar').style.display = alvo === 'login' ? 'block' : 'none';
+    document.getElementById('link-alterar').style.display = alvo === 'login' ? 'block' : 'none';
+}
 // --- ELEMENTOS GERAIS ---
 const telaLogin = document.getElementById('tela-login');
 const appContainer = document.getElementById('app-container');
