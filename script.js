@@ -1,5 +1,43 @@
 // 1. SUA URL DA API DO GOOGLE APPS SCRIPT
 const URL_API = "https://script.google.com/macros/s/AKfycbxo0HmHlzJklmZ8jM987fSb9ijS6XtaH-otVAZaaGfQbm22Tdgtx7moFdoYDRF5e9E4/exec";
+
+// --- CONTROLE DE NAVEGAÇÃO DA TELA DE LOGIN ---
+const boxes = {
+    login: document.getElementById('box-login'),
+    cad: document.getElementById('box-cadastro'),
+    senha: document.getElementById('box-senha'),
+    voltar: document.getElementById('link-voltar'),
+    cadastrar: document.getElementById('link-cadastrar'),
+    alterar: document.getElementById('link-alterar'),
+    statusBox: document.getElementById('statusLogin') // Caixa de mensagens
+};
+
+function exibirBox(alvo) {
+    // Esconde todas as mensagens de erro antigas ao trocar de tela
+    boxes.statusBox.style.display = 'none';
+
+    // Controla as caixas principais
+    boxes.login.style.display = alvo === 'login' ? 'block' : 'none';
+    boxes.cad.style.display = alvo === 'cad' ? 'block' : 'none';
+    boxes.senha.style.display = alvo === 'senha' ? 'block' : 'none';
+    
+    // Controla os links do rodapé
+    boxes.voltar.style.display = alvo === 'login' ? 'none' : 'block';
+    boxes.cadastrar.style.display = alvo === 'login' ? 'block' : 'none';
+    boxes.alterar.style.display = alvo === 'login' ? 'block' : 'none';
+}
+
+// Ouve os cliques nos links
+document.getElementById('link-cadastrar').addEventListener('click', (e) => {
+    e.preventDefault(); exibirBox('cad');
+});
+document.getElementById('link-alterar').addEventListener('click', (e) => {
+    e.preventDefault(); exibirBox('senha');
+});
+document.getElementById('link-voltar').addEventListener('click', (e) => {
+    e.preventDefault(); exibirBox('login');
+});
+
 // Alternar entre Login, Cadastro e Senha
 const boxes = {
     login: document.getElementById('box-login'),
