@@ -202,3 +202,148 @@ document.getElementById('formDespesa').addEventListener('submit', async (e) => {
         btn.disabled = false; setTimeout(() => msg.innerText = "", 4000);
     }
 });
+
+// --- FUNÇÃO DO BOTÃO DE OLHO (MOSTRAR/OCULTAR SENHA) ---
+window.toggleSenha = function(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerText = '🙈'; // Muda o ícone
+    } else {
+        input.type = 'password';
+        btn.innerText = '👁️'; // Volta o ícone
+    }
+};
+
+// --- VALIDAÇÃO DE SENHAS IGUAIS ---
+const cadSenha = document.getElementById('cadSenha');
+const cadSenhaConfirma = document.getElementById('cadSenhaConfirma');
+const msgSenhaMatch = document.getElementById('msgSenhaMatch');
+const btnSalvarCad = document.getElementById('btnSalvarCad');
+
+function validarSenhas() {
+    const s1 = cadSenha.value;
+    const s2 = cadSenhaConfirma.value;
+
+    // Se estiverem vazios, não faz nada
+    if (s1 === '' || s2 === '') {
+        msgSenhaMatch.innerText = '';
+        cadSenha.classList.remove('senha-valida', 'senha-invalida');
+        cadSenhaConfirma.classList.remove('senha-valida', 'senha-invalida');
+        btnSalvarCad.disabled = true; // Trava o botão
+        return;
+    }
+
+    if (s1 === s2) {
+        msgSenhaMatch.innerText = '✅ Senhas iguais!';
+        msgSenhaMatch.style.color = 'var(--cor-sucesso)';
+        cadSenha.classList.add('senha-valida');
+        cadSenha.classList.remove('senha-invalida');
+        cadSenhaConfirma.classList.add('senha-valida');
+        cadSenhaConfirma.classList.remove('senha-invalida');
+        btnSalvarCad.disabled = false; // LIBERA O BOTÃO
+    } else {
+        msgSenhaMatch.innerText = '❌ As senhas não coincidem!';
+        msgSenhaMatch.style.color = 'var(--cor-alerta)';
+        cadSenha.classList.add('senha-invalida');
+        cadSenha.classList.remove('senha-valida');
+        cadSenhaConfirma.classList.add('senha-invalida');
+        cadSenhaConfirma.classList.remove('senha-valida');
+        btnSalvarCad.disabled = true; // TRAVA O BOTÃO
+    }
+}
+
+// Ouve cada letra que o usuário digita para validar na hora
+cadSenha.addEventListener('input', validarSenhas);
+cadSenhaConfirma.addEventListener('input', validarSenhas);
+
+
+// --- LÓGICA DE ENVIO: CADASTRAR NOVO USUÁRIO ---
+document.getElementById('formCadastro').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSalvarCad');
+    const statusBox = document.getElementById('statusCad');
+    
+    btn.disabled = true;
+    statusBox.style.display = 'block';
+    statusBox.style.color = "#FFD700";
+    statusBox.innerText = "⏳ Criando conta no banco de dados...";
+
+    try {
+        const response = await fetch(URL_API, {
+            method: 'POST',
+            body: JSON.stringify({
+                acao: "cadastrar",
+                nome: document.getElementById('cadNome').value,
+                usuario: document.getElementById('cadUser').value,
+                senha: cadSenha.value // Envia a senha validada
+            })
+        });
+
+        const resultado = await response.json();
+
+        if (resultado.status === "sucesso") {
+            statusBox.style.color = "var(--cor-sucesso)";
+            statusBox.innerText = "✅ Usuário criado com sucesso!";
+            
+            // Espera 2 segundos, limpa tudo e volta para a tela de login
+            setTimeout(() => {
+                document.getElementById('formCadastro').reset();
+                validarSenhas(); // Reseta as bordas
+                statusBox.style.display = 'none';
+                document.getElementById('link-voltar').click();
+            }, 2000);
+        } else {
+            statusBox.style.color = "var(--cor-alerta)";
+            statusBox.innerText = "❌ " + resultado.mensagem;
+            btn.disabled = false;
+        }
+    } catch (error) {
+        statusBox.style.color = "var(--cor-alerta)";
+        statusBox.innerText = "❌ Erro de conexão com o banco.";
+        btn.disabled = false;
+    }
+});
+
+// --- LÓGICA DE ENVIO: ALTERAR SENHA ---
+document.getElementById('formTrocaSenha').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSalvarSenha');
+    const statusBox = document.getElementById('statusSenha');
+    
+    btn.disabled = true;
+    statusBox.style.display = 'block';
+    statusBox.style.color = "#FFD700";
+    statusBox.innerText = "⏳ Atualizando senha...";
+
+    try {
+        const response = await fetch(URL_API, {
+            method: 'POST',
+            body: JSON.stringify({
+                acao: "alterar_senha",
+                usuario: document.getElementById('trocaUser').value,
+                novaSenha: document.getElementById('novaSenha').value
+            })
+        });
+
+        const resultado = await response.json();
+
+        if (resultado.status === "sucesso") {
+            statusBox.style.color = "var(--cor-sucesso)";
+            statusBox.innerText = "✅ Senha alterada com sucesso!";
+            setTimeout(() => {
+                document.getElementById('formTrocaSenha').reset();
+                statusBox.style.display = 'none';
+                document.getElementById('link-voltar').click();
+            }, 2000);
+        } else {
+            statusBox.style.color = "var(--cor-alerta)";
+            statusBox.innerText = "❌ " + resultado.mensagem;
+            btn.disabled = false;
+        }
+    } catch (error) {
+        statusBox.style.color = "var(--cor-alerta)";
+        statusBox.innerText = "❌ Erro de conexão com o banco.";
+        btn.disabled = false;
+    }
+});
