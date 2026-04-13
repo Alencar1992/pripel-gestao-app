@@ -79,9 +79,10 @@ button:disabled { background: #555; cursor: not-allowed; }
     background: var(--bg-painel); 
 }
 
-.login-box { width: 100%; max-width: 400px; padding: 40px; }
-.login-box h2 { text-align: center; color: var(--texto-claro); margin-bottom: 5px; font-size: 2rem; }
-.login-box > p { text-align: center; color: var(--texto-mutado); margin-bottom: 30px; font-size: 1rem; }
+.login-box { width: 100%; max-width: 420px; padding: 40px; background: var(--bg-fundo); border-radius: 12px; border: 1px solid var(--borda); box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+.login-box h2 { text-align: center; color: var(--texto-claro); margin-bottom: 5px; font-size: 1.8rem; }
+.login-box > p { text-align: center; color: var(--texto-mutado); margin-bottom: 30px; font-size: 0.95rem; }
+
 .login-links { display: flex; justify-content: space-between; margin-top: 25px; font-size: 0.9rem; border-top: 1px solid var(--borda); padding-top: 20px; }
 .login-links a { color: var(--texto-mutado); text-decoration: none; transition: 0.3s; }
 .login-links a:hover { color: var(--texto-claro); }
