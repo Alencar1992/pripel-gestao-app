@@ -100,3 +100,17 @@ button:disabled { background: #555; cursor: not-allowed; }
 .user-info p { font-size: 0.8rem; color: var(--texto-mutado); }
 .user-info strong { display: block; color: var(--texto-claro); margin: 5px 0 10px 0; }
 .user-info a { color: var(--cor-alerta); text-decoration: none; font-weight: bold; font-size: 0.9rem; }
+
+/* --- ESTILOS DO MENU RECOLHÍVEL E TOPO --- */
+.sidebar { transition: all 0.3s ease; overflow: hidden; white-space: nowrap; }
+.sidebar.recolhida { width: 0; padding: 0; border: none; opacity: 0; }
+
+.topbar { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; width: 100%; max-width: 900px; margin-left: auto; margin-right: auto; padding-bottom: 10px; }
+.menu-btn { background: transparent; color: var(--texto-claro); font-size: 1.8rem; border: none; cursor: pointer; padding: 0; margin: 0; width: auto; transition: 0.2s; }
+.menu-btn:hover { color: var(--cor-destaque); transform: scale(1.1); }
+
+/* --- BOTÕES LADO A LADO --- */
+.botoes-acao { display: flex; gap: 15px; flex-direction: row; }
+.botoes-acao button { flex: 1; margin-top: 10px; }
+.btn-secundario { background: transparent; border: 1px solid var(--texto-mutado); color: var(--texto-mutado); }
+.btn-secundario:hover { background: rgba(255,255,255,0.05); filter: none; color: var(--texto-claro); border-color: var(--texto-claro); }
