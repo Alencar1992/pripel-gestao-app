@@ -58,36 +58,58 @@
         </aside>
         
         <main class="content">
-            <h2 id="textoBoasVindas" style="margin-bottom: 20px; color: var(--texto-mutado);">Olá, seja bem-vindo(a)!</h2>
+            
+            <header class="topbar">
+                <button id="btnToggleMenu" class="menu-btn">☰</button>
+                <h2 id="textoBoasVindas" style="margin-bottom: 0; color: var(--texto-mutado);">Olá, seja bem-vindo(a)!</h2>
+            </header>
 
             <div class="card" id="tela-dashboard">
                 <h1>Visão Geral do Mês</h1>
                 <div class="dashboard-cards">
-                    <div class="info-card">
-                        <h3>Entradas (Vendas)</h3>
-                        <p class="valor receita">R$ 0,00</p>
-                    </div>
-                    <div class="info-card">
-                        <h3>Saídas (Despesas)</h3>
-                        <p class="valor despesa">R$ 0,00</p>
-                    </div>
-                    <div class="info-card">
-                        <h3>Saldo Líquido</h3>
-                        <p class="valor saldo">R$ 0,00</p>
-                    </div>
+                    <div class="info-card"><h3>Entradas</h3><p class="valor receita">R$ 0,00</p></div>
+                    <div class="info-card"><h3>Saídas</h3><p class="valor despesa">R$ 0,00</p></div>
+                    <div class="info-card"><h3>Saldo</h3><p class="valor saldo">R$ 0,00</p></div>
                 </div>
-                <p style="text-align: center; color: var(--texto-mutado);">*Os gráficos detalhados serão exibidos aqui.</p>
             </div>
 
             <div class="card" id="tela-venda" style="display: none;">
-                <h1>Registrar Nova Venda</h1>
+                <h1>Nova Venda</h1>
                 <form id="formVenda" class="form-grid">
-                    <div class="form-group"><label>Data:</label><input type="date" id="data" required></div>
-                    <div class="form-group"><label>Cliente:</label><input type="text" id="cliente" required></div>
-                    <div class="form-group"><label>Produto:</label><input type="text" id="produto" required></div>
-                    <div class="form-group"><label>Valor (R$):</label><input type="number" step="0.01" id="valor" required></div>
-                    <div class="form-group full-width"><label>Status:</label><select id="status"><option value="Pago">Pago</option><option value="Pendente">Pendente</option></select></div>
-                    <div class="form-group full-width"><button type="submit" id="btnEnviarVenda">Salvar Venda</button><p id="mensagemVenda"></p></div>
+                    <div class="form-group">
+                        <label>Data do Pedido:</label>
+                        <input type="date" id="data" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Cliente:</label>
+                        <input type="text" id="cliente" placeholder="Nome do cliente" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Categoria do Produto:</label>
+                        <input type="text" id="categoriaProduto" placeholder="Ex: Papelaria, Personalizados" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Forma de Pagamento:</label>
+                        <select id="formaPagamento">
+                            <option value="PIX">PIX</option>
+                            <option value="Cartão">Cartão</option>
+                            <option value="Dinheiro">Dinheiro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Custo (Opcional):</label>
+                        <input type="number" step="0.01" id="custo" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Valor da Venda:</label>
+                        <input type="number" step="0.01" id="valor" placeholder="0.00" required>
+                    </div>
+
+                    <div class="form-group full-width botoes-acao">
+                        <button type="button" id="btnCancelarVenda" class="btn-secundario">Cancelar</button>
+                        <button type="submit" id="btnEnviarVenda">Salvar Venda</button>
+                    </div>
+                    <p id="mensagemVenda" class="full-width"></p>
                 </form>
             </div>
 
