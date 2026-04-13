@@ -9,17 +9,15 @@
 <body>
 
     <div id="tela-login" class="login-wrapper">
-        <div class="login-image-side"><div class="login-form-side">
+        <div class="login-image-side">
+            <div class="login-form-side">
             <div class="login-box">
                 
-                <div id="box-login">
+                <div id="box-login" style="display: block;">
                     <h2>PriPel Gestão</h2>
                     <p>Acesse sua conta para continuar</p>
                     <form id="formLogin">
-                        <div class="form-group">
-                            <label>Usuário:</label>
-                            <input type="text" id="loginUser" required>
-                        </div>
+                        <div class="form-group"><label>Usuário:</label><input type="text" id="loginUser" required></div>
                         <div class="form-group">
                             <label>Senha:</label>
                             <div class="senha-container">
@@ -37,7 +35,6 @@
                     <form id="formCadastro">
                         <div class="form-group"><label>Nome Completo:</label><input type="text" id="cadNome" required></div>
                         <div class="form-group"><label>Usuário (Login):</label><input type="text" id="cadUser" required></div>
-                        
                         <div class="form-group">
                             <label>Senha:</label>
                             <div class="senha-container">
@@ -45,7 +42,6 @@
                                 <button type="button" class="btn-olho" onclick="toggleSenha('cadSenha', this)">👁️</button>
                             </div>
                         </div>
-
                         <div class="form-group">
                             <label>Confirmar Senha:</label>
                             <div class="senha-container">
@@ -63,7 +59,6 @@
                     <p>Confirme seu usuário e nova senha</p>
                     <form id="formTrocaSenha">
                         <div class="form-group"><label>Seu Usuário:</label><input type="text" id="trocaUser" required></div>
-                        
                         <div class="form-group">
                             <label>Nova Senha:</label>
                             <div class="senha-container">
@@ -71,7 +66,6 @@
                                 <button type="button" class="btn-olho" onclick="toggleSenha('novaSenha', this)">👁️</button>
                             </div>
                         </div>
-
                         <div class="form-group">
                             <label>Confirmar Nova Senha:</label>
                             <div class="senha-container">
