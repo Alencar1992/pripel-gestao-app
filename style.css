@@ -5,37 +5,55 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
 }
 
-body { background: #f0f2f5; color: #333; }
+/* TEMA ESCURO (Dark Mode) */
+:root {
+    --bg-fundo: #121212;
+    --bg-painel: #1E1E2F;
+    --texto-claro: #F5F5F5;
+    --texto-mutado: #A0A0B0;
+    --cor-destaque: #8A2BE2; /* Um roxo elegante, podemos mudar para a cor da PriPel */
+    --cor-sucesso: #00C853;
+    --cor-alerta: #FF3D00;
+    --borda: #2A2A3C;
+}
 
-/* Layout principal com Menu Lateral e Área de Conteúdo */
-.dashboard { display: flex; min-height: 100vh; }
+body { background: var(--bg-fundo); color: var(--texto-claro); display: flex; min-height: 100vh; }
 
-/* Menu Lateral */
-.sidebar { width: 250px; background: #2c3e50; color: white; padding: 20px; }
-.sidebar h2 { margin-bottom: 30px; font-size: 1.5rem; text-align: center; border-bottom: 1px solid #34495e; padding-bottom: 15px; }
+/* Menu Lateral Escuro */
+.sidebar { width: 260px; background: var(--bg-painel); border-right: 1px solid var(--borda); padding: 20px; display: flex; flex-direction: column; }
+.sidebar h2 { margin-bottom: 40px; font-size: 1.5rem; text-align: center; color: var(--cor-destaque); font-weight: bold; letter-spacing: 1px; }
 .sidebar nav ul { list-style: none; }
-.sidebar nav ul li { margin-bottom: 10px; }
-.sidebar nav ul li a { color: #bdc3c7; text-decoration: none; display: block; padding: 10px; border-radius: 5px; transition: 0.3s; }
-.sidebar nav ul li a:hover, .sidebar nav ul li.active a { background: #34495e; color: white; }
+.sidebar nav ul li { margin-bottom: 15px; }
+.sidebar nav ul li a { color: var(--texto-mutado); text-decoration: none; display: block; padding: 12px 15px; border-radius: 8px; transition: 0.3s; font-weight: 500; }
+.sidebar nav ul li a:hover, .sidebar nav ul li.active a { background: rgba(138, 43, 226, 0.1); color: var(--cor-destaque); }
 
-/* Área Principal */
-.content { flex: 1; padding: 40px; display: flex; flex-direction: column; align-items: center; }
+/* Área Central */
+.content { flex: 1; padding: 40px; overflow-y: auto; }
 
-/* Cartão do Formulário */
-.card { background: white; width: 100%; max-width: 800px; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-.card h1 { margin-bottom: 25px; color: #2c3e50; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; }
+/* Cartão do Formulário (Dashboard) */
+.card { background: var(--bg-painel); width: 100%; max-width: 900px; padding: 35px; border-radius: 12px; border: 1px solid var(--borda); margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.card h1 { margin-bottom: 30px; color: var(--texto-claro); border-bottom: 1px solid var(--borda); padding-bottom: 15px; font-size: 1.4rem; }
 
-/* Grade para organizar os inputs lado a lado no PC */
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+/* Dashboard Cards (Resumo Financeiro) */
+.dashboard-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+.info-card { background: var(--bg-fundo); padding: 20px; border-radius: 10px; border: 1px solid var(--borda); text-align: center; }
+.info-card h3 { color: var(--texto-mutado); font-size: 0.9rem; margin-bottom: 10px; text-transform: uppercase; }
+.info-card .valor { font-size: 1.8rem; font-weight: bold; }
+.valor.receita { color: var(--cor-sucesso); }
+.valor.despesa { color: var(--cor-alerta); }
+.valor.saldo { color: var(--cor-destaque); }
+
+/* Grid dos Formulários */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
 .form-group { display: flex; flex-direction: column; }
 .full-width { grid-column: span 2; }
 
-label { font-weight: 600; margin-bottom: 5px; color: #555; }
-input, select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem; outline: none; transition: border 0.3s; }
-input:focus, select:focus { border-color: #3498db; }
+label { font-weight: 600; margin-bottom: 8px; color: var(--texto-mutado); font-size: 0.9rem; }
+input, select { padding: 12px; background: var(--bg-fundo); color: var(--texto-claro); border: 1px solid var(--borda); border-radius: 8px; font-size: 1rem; outline: none; transition: border 0.3s; }
+input:focus, select:focus { border-color: var(--cor-destaque); }
 
-button { padding: 12px; background: #27ae60; color: white; border: none; border-radius: 5px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: background 0.3s; margin-top: 10px; }
-button:hover { background: #2ecc71; }
-button:disabled { background: #95a5a6; cursor: not-allowed; }
+button { padding: 14px; background: var(--cor-destaque); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: background 0.3s; margin-top: 15px; }
+button:hover { filter: brightness(1.2); }
+button:disabled { background: #555; cursor: not-allowed; }
 
-#mensagem { text-align: center; margin-top: 15px; font-weight: bold; }
+#mensagemVenda, #mensagemDespesa { text-align: center; margin-top: 15px; font-weight: bold; }
