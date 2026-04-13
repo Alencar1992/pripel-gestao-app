@@ -58,13 +58,14 @@ button:disabled { background: #555; cursor: not-allowed; }
 
 #mensagemVenda, #mensagemDespesa { text-align: center; margin-top: 15px; font-weight: bold; }
 
-/* --- ESTILOS DA TELA DE LOGIN SPLIT SCREEN --- */
+/* --- ESTILOS DA TELA DE LOGIN SPLIT SCREEN (CORRIGIDO) --- */
 .login-wrapper { width: 100vw; height: 100vh; display: flex; background: var(--bg-fundo); }
 
 .login-image-side { 
-    flex: 1; 
-    background-image: url('logo.jpg'); /* Puxa a imagem que você salvou */
-    background-size: cover; 
+    flex: 1.2; /* Dá um pouco mais de espaço para a arte */
+    background-color: var(--bg-fundo); 
+    background-image: url('logo.jpg'); 
+    background-size: 50%; /* Impede a imagem de esticar. Fica como um quadro no centro */
     background-position: center; 
     background-repeat: no-repeat;
     border-right: 1px solid var(--borda);
@@ -78,12 +79,17 @@ button:disabled { background: #555; cursor: not-allowed; }
     background: var(--bg-painel); 
 }
 
-.login-box { width: 100%; max-width: 400px; padding: 40px; }
-.login-box h2 { text-align: center; color: var(--texto-claro); margin-bottom: 5px; font-size: 2rem; }
-.login-box > p { text-align: center; color: var(--texto-mutado); margin-bottom: 30px; font-size: 1rem; }
+.login-box { width: 100%; max-width: 420px; padding: 40px; background: var(--bg-fundo); border-radius: 12px; border: 1px solid var(--borda); box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+.login-box h2 { text-align: center; color: var(--texto-claro); margin-bottom: 5px; font-size: 1.8rem; }
+.login-box > p { text-align: center; color: var(--texto-mutado); margin-bottom: 30px; font-size: 0.95rem; }
+
 .login-links { display: flex; justify-content: space-between; margin-top: 25px; font-size: 0.9rem; border-top: 1px solid var(--borda); padding-top: 20px; }
 .login-links a { color: var(--texto-mutado); text-decoration: none; transition: 0.3s; }
 .login-links a:hover { color: var(--texto-claro); }
+
+@media (max-width: 768px) {
+    .login-image-side { display: none; } /* Esconde a logo no celular para caber o login */
+}
 
 /* Para esconder a imagem em telas muito pequenas (celulares) */
 @media (max-width: 768px) {
