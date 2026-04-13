@@ -9,81 +9,92 @@
 <body>
 
     <div id="tela-login" class="login-wrapper">
-        <div class="login-image-side">
-            </div>
-        
-        <div class="login-form-side">
+        <div class="login-image-side"><div class="login-form-side">
             <div class="login-box">
-    <div id="box-login">
-        <h2>PriPel Gestão</h2>
-        <p>Acesse sua conta para continuar</p>
-        <form id="formLogin">
-            <div class="form-group"><label>Usuário:</label><input type="text" id="loginUser" required></div>
-            <div class="form-group"><label>Senha:</label><input type="password" id="loginSenha" required></div>
-            <button type="submit" id="btnEntrar">Entrar no Sistema</button>
-        </form>
-    </div>
-
-    <div id="box-cadastro" style="display: none;">
-        <h2>Novo Usuário</h2>
-        <p>Preencha os dados abaixo</p>
-        <form id="formCadastro">
-            <div class="form-group"><label>Nome Completo:</label><input type="text" id="cadNome" required></div>
-            <div class="form-group"><label>Usuário (Login):</label><input type="text" id="cadUser" required></div>
-            
-            <div class="form-group">
-                <label>Senha:</label>
-                <div class="senha-container">
-                    <input type="password" id="cadSenha" required>
-                    <button type="button" class="btn-olho" onclick="toggleSenha('cadSenha', this)">👁️</button>
+                
+                <div id="box-login">
+                    <h2>PriPel Gestão</h2>
+                    <p>Acesse sua conta para continuar</p>
+                    <form id="formLogin">
+                        <div class="form-group">
+                            <label>Usuário:</label>
+                            <input type="text" id="loginUser" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Senha:</label>
+                            <div class="senha-container">
+                                <input type="password" id="loginSenha" required>
+                                <button type="button" class="btn-olho" onclick="toggleSenha('loginSenha', this)">👁️</button>
+                            </div>
+                        </div>
+                        <button type="submit" id="btnEntrar">Entrar no Sistema</button>
+                    </form>
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label>Confirmar Senha:</label>
-                <div class="senha-container">
-                    <input type="password" id="cadSenhaConfirma" required>
-                    <button type="button" class="btn-olho" onclick="toggleSenha('cadSenhaConfirma', this)">👁️</button>
+                <div id="box-cadastro" style="display: none;">
+                    <h2>Novo Usuário</h2>
+                    <p>Preencha os dados abaixo</p>
+                    <form id="formCadastro">
+                        <div class="form-group"><label>Nome Completo:</label><input type="text" id="cadNome" required></div>
+                        <div class="form-group"><label>Usuário (Login):</label><input type="text" id="cadUser" required></div>
+                        
+                        <div class="form-group">
+                            <label>Senha:</label>
+                            <div class="senha-container">
+                                <input type="password" id="cadSenha" required>
+                                <button type="button" class="btn-olho" onclick="toggleSenha('cadSenha', this)">👁️</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Confirmar Senha:</label>
+                            <div class="senha-container">
+                                <input type="password" id="cadSenhaConfirma" required>
+                                <button type="button" class="btn-olho" onclick="toggleSenha('cadSenhaConfirma', this)">👁️</button>
+                            </div>
+                            <p id="msgSenhaMatch" style="font-size: 0.85rem; margin-top: 5px; font-weight: bold;"></p>
+                        </div>
+                        <button type="submit" id="btnSalvarCad" disabled>Criar Conta</button>
+                    </form>
                 </div>
-                <p id="msgSenhaMatch" style="font-size: 0.85rem; margin-top: 5px; font-weight: bold;"></p>
-            </div>
 
-            <button type="submit" id="btnSalvarCad" disabled>Criar Conta</button>
-            <p id="statusCad" style="margin-top: 15px; text-align: center; font-weight: bold; display: none;"></p>
-        </form>
-    </div>
+                <div id="box-senha" style="display: none;">
+                    <h2>Alterar Senha</h2>
+                    <p>Confirme seu usuário e nova senha</p>
+                    <form id="formTrocaSenha">
+                        <div class="form-group"><label>Seu Usuário:</label><input type="text" id="trocaUser" required></div>
+                        
+                        <div class="form-group">
+                            <label>Nova Senha:</label>
+                            <div class="senha-container">
+                                <input type="password" id="novaSenha" required>
+                                <button type="button" class="btn-olho" onclick="toggleSenha('novaSenha', this)">👁️</button>
+                            </div>
+                        </div>
 
-    <div id="box-senha" style="display: none;">
-        <h2>Alterar Senha</h2>
-        <p>Confirme seu usuário e nova senha</p>
-        <form id="formTrocaSenha">
-            <div class="form-group"><label>Seu Usuário:</label><input type="text" id="trocaUser" required></div>
-            
-            <div class="form-group">
-                <label>Nova Senha:</label>
-                <div class="senha-container">
-                    <input type="password" id="novaSenha" required>
-                    <button type="button" class="btn-olho" onclick="toggleSenha('novaSenha', this)">👁️</button>
+                        <div class="form-group">
+                            <label>Confirmar Nova Senha:</label>
+                            <div class="senha-container">
+                                <input type="password" id="novaSenhaConfirma" required>
+                                <button type="button" class="btn-olho" onclick="toggleSenha('novaSenhaConfirma', this)">👁️</button>
+                            </div>
+                            <p id="msgTrocaSenhaMatch" style="font-size: 0.85rem; margin-top: 5px; font-weight: bold;"></p>
+                        </div>
+                        <button type="submit" id="btnSalvarSenha" disabled>Atualizar Senha</button>
+                    </form>
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label>Confirmar Nova Senha:</label>
-                <div class="senha-container">
-                    <input type="password" id="novaSenhaConfirma" required>
-                    <button type="button" class="btn-olho" onclick="toggleSenha('novaSenhaConfirma', this)">👁️</button>
+                <div id="statusLogin" style="margin-top: 15px; text-align: center; font-weight: bold; display: none;"></div>
+                
+                <div class="login-links">
+                    <a href="#" id="link-voltar" style="display: none; color: var(--cor-alerta); font-weight: bold;">⬅ Voltar</a>
+                    <a href="#" id="link-cadastrar">Cadastrar Usuário</a>
+                    <a href="#" id="link-alterar">Alterar Senha</a>
                 </div>
-                <p id="msgTrocaSenhaMatch" style="font-size: 0.85rem; margin-top: 5px; font-weight: bold;"></p>
-            </div>
 
-            <button type="submit" id="btnSalvarSenha" disabled>Atualizar Senha</button>
-            <p id="statusSenha" style="margin-top: 15px; text-align: center; font-weight: bold; display: none;"></p>
-        </form>
-    </div>
-</div>
+            </div>
         </div>
-    </div>
-
+    
     <div id="app-container" class="dashboard" style="display: none;">
         <aside class="sidebar">
             <h2>PriPel Gestão</h2>
