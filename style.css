@@ -58,14 +58,38 @@ button:disabled { background: #555; cursor: not-allowed; }
 
 #mensagemVenda, #mensagemDespesa { text-align: center; margin-top: 15px; font-weight: bold; }
 
-/* --- ESTILOS DA TELA DE LOGIN --- */
-.login-wrapper { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #0f0f16; }
-.login-box { background: var(--bg-painel); padding: 40px; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.8); width: 100%; max-width: 400px; border: 1px solid var(--borda); }
-.login-box h2 { text-align: center; color: var(--cor-destaque); margin-bottom: 5px; font-size: 1.8rem; }
-.login-box > p { text-align: center; color: var(--texto-mutado); margin-bottom: 30px; font-size: 0.9rem; }
-.login-links { display: flex; justify-content: space-between; margin-top: 20px; font-size: 0.85rem; border-top: 1px solid var(--borda); padding-top: 15px; }
+/* --- ESTILOS DA TELA DE LOGIN SPLIT SCREEN --- */
+.login-wrapper { width: 100vw; height: 100vh; display: flex; background: var(--bg-fundo); }
+
+.login-image-side { 
+    flex: 1; 
+    background-image: url('logo.jpg'); /* Puxa a imagem que você salvou */
+    background-size: cover; 
+    background-position: center; 
+    background-repeat: no-repeat;
+    border-right: 1px solid var(--borda);
+}
+
+.login-form-side { 
+    flex: 1; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    background: var(--bg-painel); 
+}
+
+.login-box { width: 100%; max-width: 400px; padding: 40px; }
+.login-box h2 { text-align: center; color: var(--texto-claro); margin-bottom: 5px; font-size: 2rem; }
+.login-box > p { text-align: center; color: var(--texto-mutado); margin-bottom: 30px; font-size: 1rem; }
+.login-links { display: flex; justify-content: space-between; margin-top: 25px; font-size: 0.9rem; border-top: 1px solid var(--borda); padding-top: 20px; }
 .login-links a { color: var(--texto-mutado); text-decoration: none; transition: 0.3s; }
 .login-links a:hover { color: var(--texto-claro); }
+
+/* Para esconder a imagem em telas muito pequenas (celulares) */
+@media (max-width: 768px) {
+    .login-image-side { display: none; }
+}
+
 .user-info { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--borda); text-align: center; }
 .user-info p { font-size: 0.8rem; color: var(--texto-mutado); }
 .user-info strong { display: block; color: var(--texto-claro); margin: 5px 0 10px 0; }
