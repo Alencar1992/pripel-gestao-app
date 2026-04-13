@@ -1,15 +1,41 @@
-const URL_API = "https://script.google.com/macros/s/AKfycbxo0HmHlzJklmZ8jM987fSb9ijS6XtaH-otVAZaaGfQbm22Tdgtx7moFdoYDRF5e9E4/exec"; // Cole aqui a URL que você gerou no Apps Script
+// 1. SUA URL DO GOOGLE APPS SCRIPT
+const URL_API = "https://script.google.com/macros/s/AKfycbxo0HmHlzJklmZ8jM987fSb9ijS6XtaH-otVAZaaGfQbm22Tdgtx7moFdoYDRF5e9E4/exec";
 
+// 2. ELEMENTOS DE NAVEGAÇÃO
+const menuVenda = document.getElementById('menu-venda');
+const menuDespesa = document.getElementById('menu-despesa');
+const telaVenda = document.getElementById('tela-venda');
+const telaDespesa = document.getElementById('tela-despesa');
+
+// Troca para tela de Vendas
+menuVenda.addEventListener('click', (e) => {
+    e.preventDefault();
+    telaVenda.style.display = 'block';
+    telaDespesa.style.display = 'none';
+    menuVenda.parentElement.classList.add('active');
+    menuDespesa.parentElement.classList.remove('active');
+});
+
+// Troca para tela de Despesas
+menuDespesa.addEventListener('click', (e) => {
+    e.preventDefault();
+    telaVenda.style.display = 'none';
+    telaDespesa.style.display = 'block';
+    menuDespesa.parentElement.classList.add('active');
+    menuVenda.parentElement.classList.remove('active');
+});
+
+// 3. LÓGICA DE ENVIO DE VENDAS
 document.getElementById('formVenda').addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const btn = document.getElementById('btnEnviar');
-    const msg = document.getElementById('mensagem');
+    const btn = document.getElementById('btnEnviarVenda');
+    const msg = document.getElementById('mensagemVenda');
     
     btn.disabled = true;
-    msg.innerText = "Enviando...";
+    msg.innerText = "Enviando venda...";
+    msg.style.color = "black";
 
-    // Coleta os dados do formulário
     const dados = [
         document.getElementById('data').value,
         document.getElementById('cliente').value,
@@ -18,16 +44,13 @@ document.getElementById('formVenda').addEventListener('submit', async (e) => {
         document.getElementById('status').value
     ];
 
-    // Monta o objeto para a sua API (conforme o código .gs que criamos)
-    const payload = {
-        planilha: "vendas", // Nome exato da aba na sua planilha
-        dados: dados
-    };
-
     try {
         const response = await fetch(URL_API, {
             method: 'POST',
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                planilha: "vendas",
+                dados: dados
+            })
         });
 
         const resultado = await response.json();
@@ -44,35 +67,11 @@ document.getElementById('formVenda').addEventListener('submit', async (e) => {
         msg.innerText = "Erro ao salvar: " + error.message;
     } finally {
         btn.disabled = false;
+        setTimeout(() => msg.innerText = "", 4000);
     }
 });
-// --- LÓGICA DE NAVEGAÇÃO DO MENU ---
-const menuVenda = document.getElementById('menu-venda');
-const menuDespesa = document.getElementById('menu-despesa');
-const telaVenda = document.getElementById('tela-venda');
-const telaDespesa = document.getElementById('tela-despesa');
 
-menuVenda.addEventListener('click', (e) => {
-    e.preventDefault();
-    telaVenda.style.display = 'block';
-    telaDespesa.style.display = 'none';
-    
-    // Atualiza a cor de destaque no menu
-    menuVenda.parentElement.classList.add('active');
-    menuDespesa.parentElement.classList.remove('active');
-});
-
-menuDespesa.addEventListener('click', (e) => {
-    e.preventDefault();
-    telaVenda.style.display = 'none';
-    telaDespesa.style.display = 'block';
-    
-    // Atualiza a cor de destaque no menu
-    menuDespesa.parentElement.classList.add('active');
-    menuVenda.parentElement.classList.remove('active');
-});
-
-// --- LÓGICA DE ENVIO DO FORMULÁRIO DE DESPESAS ---
+// 4. LÓGICA DE ENVIO DE DESPESAS
 document.getElementById('formDespesa').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -80,7 +79,7 @@ document.getElementById('formDespesa').addEventListener('submit', async (e) => {
     const msg = document.getElementById('mensagemDespesa');
     
     btn.disabled = true;
-    msg.innerText = "Enviando...";
+    msg.innerText = "Enviando despesa...";
     msg.style.color = "black";
 
     const dados = [
@@ -90,15 +89,13 @@ document.getElementById('formDespesa').addEventListener('submit', async (e) => {
         document.getElementById('statusDespesa').value
     ];
 
-    const payload = {
-        planilha: "despesas", // Tem que ser o nome exato da aba na planilha
-        dados: dados
-    };
-
     try {
         const response = await fetch(URL_API, {
             method: 'POST',
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                planilha: "despesas",
+                dados: dados
+            })
         });
 
         const resultado = await response.json();
@@ -115,6 +112,6 @@ document.getElementById('formDespesa').addEventListener('submit', async (e) => {
         msg.innerText = "Erro ao salvar: " + error.message;
     } finally {
         btn.disabled = false;
-        setTimeout(() => msg.innerText = "", 3000); // Limpa a mensagem após 3 segundos
+        setTimeout(() => msg.innerText = "", 4000);
     }
 });
