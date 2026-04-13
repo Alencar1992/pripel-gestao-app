@@ -6,33 +6,59 @@ const usuariosPermitidos = [
     { login: "osvaldo",  senha: "456", nomeCompleto: "Osvaldo Pereira" }
 ];
 
-// --- LÓGICA DE LOGIN ---
+// --- LÓGICA DE LOGIN COM PLANILHA ---
 const telaLogin = document.getElementById('tela-login');
 const appContainer = document.getElementById('app-container');
 const nomeUsuarioLogado = document.getElementById('nomeUsuarioLogado');
 const textoBoasVindas = document.getElementById('textoBoasVindas');
 
-document.getElementById('formLogin').addEventListener('submit', (e) => {
+document.getElementById('formLogin').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const userDigitado = document.getElementById('loginUser').value.toLowerCase().trim();
+    
+    const userDigitado = document.getElementById('loginUser').value;
     const senhaDigitada = document.getElementById('loginSenha').value;
     const msgErro = document.getElementById('msgLogin');
+    const btnEntrar = document.getElementById('btnEntrar');
 
-    // Procura o usuário na lista
-    const usuarioEncontrado = usuariosPermitidos.find(u => u.login === userDigitado && u.senha === senhaDigitada);
+    // Mostra que está carregando
+    btnEntrar.disabled = true;
+    btnEntrar.innerText = "Autenticando...";
+    msgErro.style.display = 'none';
 
-    if (usuarioEncontrado) {
-        // Sucesso: Esconde login, mostra sistema e personaliza o nome
-        telaLogin.style.display = 'none';
-        appContainer.style.display = 'flex';
-        nomeUsuarioLogado.innerText = usuarioEncontrado.nomeCompleto;
-        
-        // Pega o primeiro nome para dar boas vindas
-        const primeiroNome = usuarioEncontrado.nomeCompleto.split(" ")[0];
-        textoBoasVindas.innerText = `Olá, ${primeiroNome}! Aqui está o resumo do mês.`;
-    } else {
-        // Erro: Mostra mensagem
+    try {
+        // Envia os dados para o Google Apps Script conferir
+        const response = await fetch(URL_API, {
+            method: 'POST',
+            body: JSON.stringify({
+                acao: "login",
+                usuario: userDigitado,
+                senha: senhaDigitada
+            })
+        });
+
+        const resultado = await response.json();
+
+        if (resultado.status === "sucesso") {
+            // Se a senha bater com a planilha, libera o acesso
+            telaLogin.style.display = 'none';
+            appContainer.style.display = 'flex';
+            nomeUsuarioLogado.innerText = resultado.nomeCompleto;
+            
+            const primeiroNome = resultado.nomeCompleto.split(" ")[0];
+            textoBoasVindas.innerText = `Olá, ${primeiroNome}! Aqui está o resumo do mês.`;
+            document.getElementById('formLogin').reset();
+        } else {
+            // Se errar a senha ou o usuário não existir
+            msgErro.innerText = resultado.mensagem;
+            msgErro.style.display = 'block';
+        }
+    } catch (error) {
+        msgErro.innerText = "Erro ao conectar com o banco de dados.";
         msgErro.style.display = 'block';
+    } finally {
+        // Devolve o botão ao estado normal
+        btnEntrar.disabled = false;
+        btnEntrar.innerText = "Entrar no Sistema";
     }
 });
 
@@ -41,10 +67,8 @@ document.getElementById('btnSair').addEventListener('click', (e) => {
     e.preventDefault();
     appContainer.style.display = 'none';
     telaLogin.style.display = 'flex';
-    document.getElementById('formLogin').reset();
     document.getElementById('msgLogin').style.display = 'none';
 });
-
 // --- LÓGICA DE NAVEGAÇÃO DO MENU ---
 const menus = {
     dashboard: document.getElementById('menu-dashboard'),
