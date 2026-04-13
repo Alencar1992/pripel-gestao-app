@@ -14,27 +14,45 @@
         
         <div class="login-form-side">
             <div class="login-box">
-                <h2>PriPel Gestão</h2>
-                <p>Acesse sua conta para continuar</p>
-                <form id="formLogin">
-                    <div class="form-group">
-                        <label>Usuário:</label>
-                        <input type="text" id="loginUser" placeholder="Ex: Pripel" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Senha:</label>
-                        <input type="password" id="loginSenha" placeholder="Sua senha secreta" required>
-                    </div>
-                    <button type="submit" id="btnEntrar">Entrar no Sistema</button>
-                    
-                    <div id="statusLogin" style="margin-top: 15px; text-align: center; font-weight: bold; font-size: 0.9rem; display: none;"></div>
-                </form>
-                
-                <div class="login-links">
-                    <a href="#" id="link-cadastrar">Cadastrar Usuário</a>
-                    <a href="#" id="link-alterar">Alterar Senha</a>
-                </div>
-            </div>
+    <div id="box-login">
+        <h2>PriPel Gestão</h2>
+        <p>Acesse sua conta para continuar</p>
+        <form id="formLogin">
+            <div class="form-group"><label>Usuário:</label><input type="text" id="loginUser" required></div>
+            <div class="form-group"><label>Senha:</label><input type="password" id="loginSenha" required></div>
+            <button type="submit" id="btnEntrar">Entrar no Sistema</button>
+        </form>
+    </div>
+
+    <div id="box-cadastro" style="display: none;">
+        <h2>Novo Usuário</h2>
+        <p>Preencha os dados abaixo</p>
+        <form id="formCadastro">
+            <div class="form-group"><label>Nome Completo:</label><input type="text" id="cadNome" required></div>
+            <div class="form-group"><label>Usuário:</label><input type="text" id="cadUser" required></div>
+            <div class="form-group"><label>Senha:</label><input type="password" id="cadSenha" required></div>
+            <button type="submit" id="btnSalvarCad">Criar Conta</button>
+        </form>
+    </div>
+
+    <div id="box-senha" style="display: none;">
+        <h2>Alterar Senha</h2>
+        <p>Confirme seu usuário e nova senha</p>
+        <form id="formTrocaSenha">
+            <div class="form-group"><label>Seu Usuário:</label><input type="text" id="trocaUser" required></div>
+            <div class="form-group"><label>Nova Senha:</label><input type="password" id="novaSenha" required></div>
+            <button type="submit" id="btnSalvarSenha">Atualizar Senha</button>
+        </form>
+    </div>
+
+    <div id="statusLogin" style="margin-top: 15px; text-align: center; font-weight: bold; display: none;"></div>
+    
+    <div class="login-links">
+        <a href="#" id="link-voltar" style="display: none;">⬅ Voltar ao Login</a>
+        <a href="#" id="link-cadastrar">Cadastrar Usuário</a>
+        <a href="#" id="link-alterar">Alterar Senha</a>
+    </div>
+</div>
         </div>
     </div>
 
