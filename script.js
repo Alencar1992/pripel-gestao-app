@@ -304,6 +304,45 @@ document.getElementById('formCadastro').addEventListener('submit', async (e) => 
         btn.disabled = false;
     }
 });
+// --- VALIDAÇÃO DE SENHAS IGUAIS (TROCA DE SENHA) ---
+const novaSenha = document.getElementById('novaSenha');
+const novaSenhaConfirma = document.getElementById('novaSenhaConfirma');
+const msgTrocaSenhaMatch = document.getElementById('msgTrocaSenhaMatch');
+const btnSalvarSenha = document.getElementById('btnSalvarSenha');
+
+function validarTrocaSenhas() {
+    const s1 = novaSenha.value;
+    const s2 = novaSenhaConfirma.value;
+
+    if (s1 === '' || s2 === '') {
+        msgTrocaSenhaMatch.innerText = '';
+        novaSenha.classList.remove('senha-valida', 'senha-invalida');
+        novaSenhaConfirma.classList.remove('senha-valida', 'senha-invalida');
+        btnSalvarSenha.disabled = true;
+        return;
+    }
+
+    if (s1 === s2) {
+        msgTrocaSenhaMatch.innerText = '✅ Senhas iguais!';
+        msgTrocaSenhaMatch.style.color = 'var(--cor-sucesso)';
+        novaSenha.classList.add('senha-valida');
+        novaSenha.classList.remove('senha-invalida');
+        novaSenhaConfirma.classList.add('senha-valida');
+        novaSenhaConfirma.classList.remove('senha-invalida');
+        btnSalvarSenha.disabled = false; // LIBERA O BOTÃO
+    } else {
+        msgTrocaSenhaMatch.innerText = '❌ As senhas não coincidem!';
+        msgTrocaSenhaMatch.style.color = 'var(--cor-alerta)';
+        novaSenha.classList.add('senha-invalida');
+        novaSenha.classList.remove('senha-valida');
+        novaSenhaConfirma.classList.add('senha-invalida');
+        novaSenhaConfirma.classList.remove('senha-valida');
+        btnSalvarSenha.disabled = true; // TRAVA O BOTÃO
+    }
+}
+
+novaSenha.addEventListener('input', validarTrocaSenhas);
+novaSenhaConfirma.addEventListener('input', validarTrocaSenhas);
 
 // --- LÓGICA DE ENVIO: ALTERAR SENHA ---
 document.getElementById('formTrocaSenha').addEventListener('submit', async (e) => {
@@ -328,11 +367,12 @@ document.getElementById('formTrocaSenha').addEventListener('submit', async (e) =
 
         const resultado = await response.json();
 
-        if (resultado.status === "sucesso") {
+       if (resultado.status === "sucesso") {
             statusBox.style.color = "var(--cor-sucesso)";
             statusBox.innerText = "✅ Senha alterada com sucesso!";
             setTimeout(() => {
                 document.getElementById('formTrocaSenha').reset();
+                validarTrocaSenhas(); // <- ADICIONE ESTA LINHA AQUI
                 statusBox.style.display = 'none';
                 document.getElementById('link-voltar').click();
             }, 2000);
