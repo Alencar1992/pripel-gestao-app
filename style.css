@@ -62,13 +62,13 @@ button:disabled { background: #555; cursor: not-allowed; }
 .login-wrapper { width: 100vw; height: 100vh; display: flex; background: var(--bg-fundo); }
 
 .login-image-side { 
-    flex: 1.2; /* Dá um pouco mais de espaço para a arte */
-    background-color: var(--bg-fundo); 
-    background-image: url('logo.jpg'); 
-    background-size: 50%; /* Impede a imagem de esticar. Fica como um quadro no centro */
+    flex: 1; 
+    background-image: url('logo.jpg'); /* Puxa a imagem que você salvou */
+    background-size: cover; 
     background-position: center; 
     background-repeat: no-repeat;
     border-right: 1px solid var(--borda);
+
 }
 
 .login-form-side { 
