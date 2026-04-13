@@ -29,9 +29,27 @@
         <p>Preencha os dados abaixo</p>
         <form id="formCadastro">
             <div class="form-group"><label>Nome Completo:</label><input type="text" id="cadNome" required></div>
-            <div class="form-group"><label>Usuário:</label><input type="text" id="cadUser" required></div>
-            <div class="form-group"><label>Senha:</label><input type="password" id="cadSenha" required></div>
-            <button type="submit" id="btnSalvarCad">Criar Conta</button>
+            <div class="form-group"><label>Usuário (Login):</label><input type="text" id="cadUser" required></div>
+            
+            <div class="form-group">
+                <label>Senha:</label>
+                <div class="senha-container">
+                    <input type="password" id="cadSenha" required>
+                    <button type="button" class="btn-olho" onclick="toggleSenha('cadSenha', this)">👁️</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Confirmar Senha:</label>
+                <div class="senha-container">
+                    <input type="password" id="cadSenhaConfirma" required>
+                    <button type="button" class="btn-olho" onclick="toggleSenha('cadSenhaConfirma', this)">👁️</button>
+                </div>
+                <p id="msgSenhaMatch" style="font-size: 0.85rem; margin-top: 5px; font-weight: bold;"></p>
+            </div>
+
+            <button type="submit" id="btnSalvarCad" disabled>Criar Conta</button>
+            <p id="statusCad" style="margin-top: 15px; text-align: center; font-weight: bold; display: none;"></p>
         </form>
     </div>
 
@@ -40,8 +58,15 @@
         <p>Confirme seu usuário e nova senha</p>
         <form id="formTrocaSenha">
             <div class="form-group"><label>Seu Usuário:</label><input type="text" id="trocaUser" required></div>
-            <div class="form-group"><label>Nova Senha:</label><input type="password" id="novaSenha" required></div>
+            <div class="form-group">
+                <label>Nova Senha:</label>
+                <div class="senha-container">
+                    <input type="password" id="novaSenha" required>
+                    <button type="button" class="btn-olho" onclick="toggleSenha('novaSenha', this)">👁️</button>
+                </div>
+            </div>
             <button type="submit" id="btnSalvarSenha">Atualizar Senha</button>
+            <p id="statusSenha" style="margin-top: 15px; text-align: center; font-weight: bold; display: none;"></p>
         </form>
     </div>
 
