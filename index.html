@@ -9,24 +9,31 @@
 <body>
 
     <div id="tela-login" class="login-wrapper">
-        <div class="login-box">
-            <h2>PriPel Gestão</h2>
-            <p>Acesse sua conta para continuar</p>
-            <form id="formLogin">
-                <div class="form-group">
-                    <label>Usuário:</label>
-                    <input type="text" id="loginUser" placeholder="Ex: priscila" required>
+        <div class="login-image-side">
+            </div>
+        
+        <div class="login-form-side">
+            <div class="login-box">
+                <h2>PriPel Gestão</h2>
+                <p>Acesse sua conta para continuar</p>
+                <form id="formLogin">
+                    <div class="form-group">
+                        <label>Usuário:</label>
+                        <input type="text" id="loginUser" placeholder="Ex: Pripel" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Senha:</label>
+                        <input type="password" id="loginSenha" placeholder="Sua senha secreta" required>
+                    </div>
+                    <button type="submit" id="btnEntrar">Entrar no Sistema</button>
+                    
+                    <div id="statusLogin" style="margin-top: 15px; text-align: center; font-weight: bold; font-size: 0.9rem; display: none;"></div>
+                </form>
+                
+                <div class="login-links">
+                    <a href="#" id="link-cadastrar">Cadastrar Usuário</a>
+                    <a href="#" id="link-alterar">Alterar Senha</a>
                 </div>
-                <div class="form-group">
-                    <label>Senha:</label>
-                    <input type="password" id="loginSenha" placeholder="Sua senha secreta" required>
-                </div>
-                <button type="submit" id="btnEntrar">Entrar no Sistema</button>
-                <p id="msgLogin" style="color: #FF3D00; margin-top: 10px; text-align: center; display: none;">Usuário ou senha incorretos!</p>
-            </form>
-            <div class="login-links">
-                <a href="#" id="link-cadastrar">Cadastrar Usuário</a>
-                <a href="#" id="link-alterar">Alterar Senha</a>
             </div>
         </div>
     </div>
