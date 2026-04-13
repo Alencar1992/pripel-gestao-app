@@ -1,4 +1,4 @@
-const URL_API = "SUA_URL_AQUI"; // Cole aqui a URL que você gerou no Apps Script
+const URL_API = "https://script.google.com/macros/s/AKfycbxo0HmHlzJklmZ8jM987fSb9ijS6XtaH-otVAZaaGfQbm22Tdgtx7moFdoYDRF5e9E4/exec"; // Cole aqui a URL que você gerou no Apps Script
 
 document.getElementById('formVenda').addEventListener('submit', async (e) => {
     e.preventDefault();
