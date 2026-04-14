@@ -1,172 +1,745 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>PriPel - Gestão</title>
+
     <link rel="stylesheet" href="style.css">
+
 </head>
+
 <body>
 
+
+
     <div id="tela-login" class="login-wrapper">
+
         <div class="login-image-side"></div>
+
         <div class="login-form-side">
+
             <div class="login-box">
+
                 <div id="box-login" style="display: block;">
+
                     <h2>PriPel Gestão</h2>
+
                     <p>Acesse sua conta para continuar</p>
+
                     <form id="formLogin">
+
                         <div class="form-group"><label>Usuário:</label><input type="text" id="loginUser" required></div>
+
                         <div class="form-group">
+
                             <label>Senha:</label>
+
                             <div class="senha-container">
+
                                 <input type="password" id="loginSenha" required>
+
                                 <button type="button" class="btn-olho" onclick="toggleSenha('loginSenha', this)">👁️</button>
+
                             </div>
+
                         </div>
+
                         <button type="submit" id="btnEntrar">Entrar no Sistema</button>
+
                     </form>
+
                 </div>
+
                 <div id="box-cadastro" style="display: none;">
+
                     <h2>Novo Usuário</h2>
+
+                    <p>Preencha os dados abaixo</p>
+
                     <form id="formCadastro">
+
                         <div class="form-group"><label>Nome Completo:</label><input type="text" id="cadNome" required></div>
-                        <div class="form-group"><label>Usuário:</label><input type="text" id="cadUser" required></div>
-                        <div class="form-group"><label>Senha:</label><input type="password" id="cadSenha" required></div>
-                        <div class="form-group"><label>Confirmar Senha:</label><input type="password" id="cadSenhaConfirma" required></div>
-                        <p id="msgSenhaMatch"></p>
+
+                        <div class="form-group"><label>Usuário (Login):</label><input type="text" id="cadUser" required></div>
+
+                        <div class="form-group">
+
+                            <label>Senha:</label>
+
+                            <div class="senha-container">
+
+                                <input type="password" id="cadSenha" required>
+
+                                <button type="button" class="btn-olho" onclick="toggleSenha('cadSenha', this)">👁️</button>
+
+                            </div>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>Confirmar Senha:</label>
+
+                            <div class="senha-container">
+
+                                <input type="password" id="cadSenhaConfirma" required>
+
+                                <button type="button" class="btn-olho" onclick="toggleSenha('cadSenhaConfirma', this)">👁️</button>
+
+                            </div>
+
+                            <p id="msgSenhaMatch" style="font-size: 0.85rem; margin-top: 5px; font-weight: bold;"></p>
+
+                        </div>
+
                         <button type="submit" id="btnSalvarCad" disabled>Criar Conta</button>
+
                     </form>
+
                 </div>
+
                 <div id="box-senha" style="display: none;">
+
                     <h2>Alterar Senha</h2>
+
+                    <p>Confirme seu usuário e nova senha</p>
+
                     <form id="formTrocaSenha">
-                        <div class="form-group"><label>Usuário:</label><input type="text" id="trocaUser" required></div>
-                        <div class="form-group"><label>Nova Senha:</label><input type="password" id="novaSenha" required></div>
-                        <div class="form-group"><label>Confirmar:</label><input type="password" id="novaSenhaConfirma" required></div>
-                        <p id="msgTrocaSenhaMatch"></p>
+
+                        <div class="form-group"><label>Seu Usuário:</label><input type="text" id="trocaUser" required></div>
+
+                        <div class="form-group">
+
+                            <label>Nova Senha:</label>
+
+                            <div class="senha-container">
+
+                                <input type="password" id="novaSenha" required>
+
+                                <button type="button" class="btn-olho" onclick="toggleSenha('novaSenha', this)">👁️</button>
+
+                            </div>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>Confirmar Nova Senha:</label>
+
+                            <div class="senha-container">
+
+                                <input type="password" id="novaSenhaConfirma" required>
+
+                                <button type="button" class="btn-olho" onclick="toggleSenha('novaSenhaConfirma', this)">👁️</button>
+
+                            </div>
+
+                            <p id="msgTrocaSenhaMatch" style="font-size: 0.85rem; margin-top: 5px; font-weight: bold;"></p>
+
+                        </div>
+
                         <button type="submit" id="btnSalvarSenha" disabled>Atualizar Senha</button>
+
                     </form>
+
                 </div>
-                <div id="statusLogin"></div>
+
+                <div id="statusLogin" style="margin-top: 15px; text-align: center; font-weight: bold; display: none;"></div>
+
                 <div class="login-links">
-                    <a href="#" id="link-voltar" style="display: none;">⬅ Voltar</a>
-                    <a href="#" id="link-cadastrar">Cadastrar</a>
+
+                    <a href="#" id="link-voltar" style="display: none; color: var(--cor-alerta); font-weight: bold;">⬅ Voltar</a>
+
+                    <a href="#" id="link-cadastrar">Cadastrar Usuário</a>
+
                     <a href="#" id="link-alterar">Alterar Senha</a>
+
                 </div>
+
             </div>
+
         </div>
+
     </div>
 
-    <div id="app-container" style="display: none;">
+    
+
+    <div id="app-container" class="dashboard" style="display: none;">
+
+        
+
         <aside class="sidebar">
+
             <h2>PriPel Gestão</h2>
+
             <nav>
+
                 <ul id="menu-principal">
+
                     <li class="active"><a href="#" id="menu-dashboard">Painel Principal</a></li>
+
+                    
+
                     <li class="has-submenu">
+
                         <a href="#" class="menu-toggle">Gestão Financeira <span class="seta">▼</span></a>
+
                         <ul class="submenu" style="display: none;">
+
                             <li><a href="#" id="menu-precificacao">Precificação</a></li>
+
                             <li><a href="#" id="menu-venda">Vendas</a></li>
+
                             <li><a href="#" id="menu-despesa">Despesas</a></li>
+
+                            <li><a href="#" id="menu-resumo">Resumo</a></li>
+
                             <li><a href="#" id="menu-fluxo">Fluxo de Caixa</a></li>
+
                         </ul>
+
                     </li>
+
+
+
+                    <li class="has-submenu">
+
+                        <a href="#" class="menu-toggle">Produção <span class="seta">▼</span></a>
+
+                        <ul class="submenu" style="display: none;">
+
+                            <li><a href="#" id="menu-cronograma">Cronograma</a></li>
+
+                        </ul>
+
+                    </li>
+
+
+
+                    <li class="has-submenu">
+
+                        <a href="#" class="menu-toggle">Configurações <span class="seta">▼</span></a>
+
+                        <ul class="submenu" style="display: none;">
+
+                            <li><a href="#" id="menu-parametros">Parâmetros</a></li>
+
+                            <li><a href="#" id="menu-custos">Custos Base</a></li>
+
+                        </ul>
+
+                    </li>
+
                 </ul>
+
             </nav>
+
             <div class="user-info">
+
                 <p>Logado como:</p>
+
                 <strong id="nomeUsuarioLogado">Usuário</strong>
+
                 <a href="#" id="btnSair">Sair</a>
+
             </div>
+
         </aside>
 
+        
+
         <main class="content">
+
             <header class="topbar">
+
                 <button id="btnToggleMenu" class="menu-btn">☰</button>
-                <h2 id="textoBoasVindas">Olá!</h2>
+
+                <h2 id="textoBoasVindas" style="margin-bottom: 0; color: var(--texto-mutado);">Olá!</h2>
+
             </header>
 
+
+
             <div class="card" id="tela-dashboard">
+
                 <h1>Visão Geral do Mês</h1>
+
                 <div class="dashboard-cards">
+
                     <div class="info-card"><h3>Entradas</h3><p class="valor receita">R$ 0,00</p></div>
+
                     <div class="info-card"><h3>Saídas</h3><p class="valor despesa">R$ 0,00</p></div>
+
                     <div class="info-card"><h3>Saldo</h3><p class="valor saldo">R$ 0,00</p></div>
+
                 </div>
+
             </div>
+
+
 
             <div class="card" id="tela-venda" style="display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                    <h1 style="margin: 0; border: none;">Vendas - Abril 2026</h1>
-                    <div style="display: flex; gap: 10px;">
-                        <button id="btnAbrirModalVenda" style="background: var(--cor-sucesso); padding: 10px 20px; width: auto; margin:0;">➕ Nova Venda</button>
-                        <button id="btnFiltrarVendas" style="background: #6c5ce7; padding: 10px 20px; width: auto; margin:0;">🔍 Filtrar</button>
-                    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+
+        <h1 style="margin: 0; border: none;">Vendas - Abril 2026</h1>
+
+        <div style="display: flex; gap: 10px;">
+
+            <button id="btnAbrirModalVenda" style="background: var(--cor-sucesso); padding: 10px 20px; font-size: 0.9rem;">➕ Adicionar Nova Venda</button>
+
+            <button id="btnFiltrarVendas" style="background: #6c5ce7; padding: 10px 20px; font-size: 0.9rem;">🔍 Filtrar</button>
+
+        </div>
+
+    </div>
+
+
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+
+        <div style="background: var(--bg-fundo); padding: 20px; border-left: 4px solid var(--cor-sucesso); border-radius: 8px;">
+
+            <small style="color: var(--texto-mutado);">Vendas Efetivadas</small>
+
+            <p id="vendasEfetivadasTxt" style="font-size: 1.5rem; font-weight: bold; color: var(--cor-sucesso); margin-top: 5px;">R$ 0,00</p>
+
+        </div>
+
+        <div style="background: var(--bg-fundo); padding: 20px; border-left: 4px solid #6c5ce7; border-radius: 8px;">
+
+            <small style="color: var(--texto-mutado);">Previsão de Recebimento</small>
+
+            <p id="previsaoRecebimentoTxt" style="font-size: 1.5rem; font-weight: bold; color: #a29bfe; margin-top: 5px;">R$ 0,00</p>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="table-responsive">
+
+        <table class="tabela-extrato">
+
+            <thead>
+
+                <tr>
+
+                    <th>Nº Pedido</th>
+
+                    <th>Data da Venda</th>
+
+                    <th>Cliente</th>
+
+                    <th>Produtos</th>
+
+                    <th>Status da Venda</th>
+
+                    <th style="text-align: right;">Valor</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody id="corpoTabelaVendas">
+
+                <tr><td colspan="6" style="text-align: center; padding: 50px; color: var(--texto-mutado);">Não foram encontrados registros</td></tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+
+<div id="modalVenda" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); overflow-y: auto;">
+
+    <div class="card" style="margin: 30px auto; max-width: 1100px;">
+
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px;">
+
+            <button id="btnFecharModalVenda" style="background: transparent; font-size: 1.5rem; width: auto; margin: 0;">⬅</button>
+
+            <h1 style="margin: 0; border: none;">Cadastro de Nova Venda</h1>
+
+        </div>
+
+
+
+        <div style="display: flex; justify-content: space-around; margin-bottom: 40px; position: relative;">
+
+            <div style="text-align: center; z-index: 2;">
+
+                <div id="step1-circle" style="width: 35px; height: 35px; background: var(--cor-destaque); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;">1</div>
+
+                <small>Produtos</small>
+
+            </div>
+
+            <div style="text-align: center; z-index: 2;">
+
+                <div id="step2-circle" style="width: 35px; height: 35px; background: var(--borda); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;">2</div>
+
+                <small>Pagamentos e Taxas</small>
+
+            </div>
+
+            <div style="text-align: center; z-index: 2;">
+
+                <div id="step3-circle" style="width: 35px; height: 35px; background: var(--borda); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;">3</div>
+
+                <small>Revisão</small>
+
+            </div>
+
+            <div style="position: absolute; top: 17px; left: 15%; right: 15%; height: 2px; background: var(--borda); z-index: 1;"></div>
+
+        </div>
+
+
+
+        <div id="venda-passo-1">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label>Cliente:</label>
+
+                    <select id="venda-cliente"><option value="">Digite o nome do cliente...</option></select>
+
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-                    <div class="info-card" style="border-left: 4px solid var(--cor-sucesso);">
-                        <small>Vendas Efetivadas</small>
-                        <p id="vendasEfetivadasTxt" style="font-size: 1.5rem; font-weight: bold; color: var(--cor-sucesso);">R$ 0,00</p>
-                    </div>
-                    <div class="info-card" style="border-left: 4px solid #6c5ce7;">
-                        <small>Previsão de Recebimento</small>
-                        <p id="previsaoRecebimentoTxt" style="font-size: 1.5rem; font-weight: bold; color: #a29bfe;">R$ 0,00</p>
-                    </div>
+                <div class="form-group">
+
+                    <label>Forma de Pagamento:</label>
+
+                    <select id="venda-pagamento">
+
+                        <option value="Elo7">Elo7</option>
+
+                        <option value="Shopee">Shopee</option>
+
+                        <option value="Dinheiro">Dinheiro</option>
+
+                        <option value="PIX">PIX</option>
+
+                        <option value="Operadoras">Operadoras de Pagamento</option>
+
+                    </select>
+
                 </div>
+
+                <div class="form-group"><label>Data da Venda:</label><input type="date" id="venda-data"></div>
+
+                <div class="form-group"><label>Data da Entrega:</label><input type="date" id="venda-entrega"></div>
+
+            </div>
+
+
+
+            <div style="display: flex; gap: 20px; margin-top: 30px;">
+
+                <div style="flex: 1; background: var(--bg-fundo); padding: 20px; border-radius: 8px;">
+
+                    <div class="form-grid" style="grid-template-columns: 1fr;">
+
+                        <div class="form-group"><label>Produto:</label><input type="text" id="add-prod-nome" placeholder="Digite o produto..."></div>
+
+                        <div class="form-group"><label>Tema:</label><input type="text" id="add-prod-tema" placeholder="Digite o tema..."></div>
+
+                        <div style="display: flex; gap: 15px;">
+
+                            <div class="form-group" style="flex: 1;"><label>Valor Unitário:</label><input type="text" id="add-prod-valor" class="moeda-input"></div>
+
+                            <div class="form-group" style="flex: 1;"><label>Quantidade:</label><input type="number" id="add-prod-qtd" value="1"></div>
+
+                        </div>
+
+                        <button type="button" id="btnAddProdutoLista" style="width: 100%;">➕ Adicionar</button>
+
+                    </div>
+
+                </div>
+
+
+
+                <div style="flex: 1; background: #2d3436; padding: 20px; border-radius: 8px;">
+
+                    <h4 style="margin-bottom: 15px;">Resumo do Pedido</h4>
+
+                    <div id="lista-produtos-resumo" style="min-height: 150px;">
+
+                        <p style="text-align: center; color: var(--texto-mutado); margin-top: 40px;">⚠️ Nenhum produto adicionado</p>
+
+                    </div>
+
+                    <div style="border-top: 1px solid var(--borda); padding-top: 15px; margin-top: 15px;">
+
+                        <strong>Total: <span id="venda-total-acumulado">R$ 0,00</span></strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 30px;">
+
+                <button id="btnIrPasso2" style="width: 150px;">Próximo ➡</button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+                <form id="formVenda" class="form-grid">
+
+                    <div class="form-group"><label>Data do Pedido:</label><input type="date" id="data" required></div>
+
+                    <div class="form-group"><label>Cliente:</label><input type="text" id="cliente" required></div>
+
+                    <div class="form-group"><label>Categoria do Produto:</label><input type="text" id="categoriaProduto" required></div>
+
+                    <div class="form-group">
+
+                        <label>Forma de Pagamento:</label>
+
+                        <select id="formaPagamento"><option value="PIX">PIX</option><option value="Cartão">Cartão</option><option value="Dinheiro">Dinheiro</option></select>
+
+                    </div>
+
+                    <div class="form-group"><label>Custo (Opcional):</label><input type="text" inputmode="numeric" placeholder="0,00" id="custo"></div>
+
+                    <div class="form-group"><label>Valor da Venda:</label><input type="text" inputmode="numeric" placeholder="0,00" id="valor" required></div>
+
+                    <div class="form-group full-width botoes-acao">
+
+                        <button type="button" id="btnCancelarVenda" class="btn-secundario">Cancelar</button>
+
+                        <button type="submit" id="btnEnviarVenda">Salvar Venda</button>
+
+                    </div>
+
+                    <p id="mensagemVenda" class="full-width"></p>
+
+                </form>
+
+            </div>
+
+
+
+            <div class="card" id="tela-despesa" style="display: none;">
+
+                <h1>Registrar Nova Despesa</h1>
+
+                <form id="formDespesa" class="form-grid">
+
+                    <div class="form-group"><label>Vencimento:</label><input type="date" id="dataDespesa" required></div>
+
+                    <div class="form-group"><label>Categoria:</label><input type="text" id="categoriaDespesa" required></div>
+
+                    <div class="form-group"><label>Valor (R$):</label><input type="text" inputmode="numeric" placeholder="0,00" id="valorDespesa" required></div>
+
+                    <div class="form-group"><label>Status:</label><select id="statusDespesa"><option value="Pendente">Pendente</option><option value="Pago">Pago</option></select></div>
+
+                    <div class="form-group full-width"><button type="submit" id="btnEnviarDespesa">Salvar Despesa</button><p id="mensagemDespesa"></p></div>
+
+                </form>
+
+            </div>
+
+
+
+           <div class="card" id="tela-fluxo" style="display: none;">
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--borda); margin-bottom: 20px; padding-bottom: 15px;">
+
+                    <h1 style="margin-bottom: 0; border: none; padding-bottom: 0;">Fluxo de Caixa</h1>
+
+                    <button id="btnAtualizarFluxo" style="width: auto; margin-top: 0; padding: 10px 15px; display: flex; gap: 8px; align-items: center;">🔄 Atualizar Extrato</button>
+
+                </div>
+
+                
 
                 <div class="table-responsive">
+
                     <table class="tabela-extrato">
+
                         <thead>
-                            <tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>Produtos</th><th>Status</th><th>Valor</th></tr>
+
+                            <tr>
+
+                                <th>Data</th>
+
+                                <th>Descrição (Detalhes)</th>
+
+                                <th>Tipo</th>
+
+                                <th style="text-align: right;">Valor (R$)</th>
+
+                            </tr>
+
                         </thead>
-                        <tbody id="corpoTabelaVendas">
-                            <tr><td colspan="6" style="text-align: center; padding: 30px;">Nenhum registro encontrado.</td></tr>
+
+                        <tbody id="corpoTabelaFluxo">
+
+                            <tr><td colspan="4" style="text-align: center; padding: 30px;">⏳ Buscando últimos lançamentos no servidor...</td></tr>
+
                         </tbody>
+
                     </table>
+
                 </div>
+
             </div>
 
-            <div id="modalVenda" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); overflow-y: auto;">
-                <div class="card" style="margin: 50px auto; max-width: 900px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                        <h1>Cadastro de Nova Venda</h1>
-                        <button id="btnFecharModalVenda" style="background: var(--cor-alerta); width: auto; margin:0;">Fechar</button>
-                    </div>
+           <div class="card" id="tela-precificacao" style="display: none;">
+
+                <h1>Calculadora de Precificação</h1>
+
+                <form id="formPrecificacao" class="form-grid">
+
                     
-                    <div class="form-grid">
-                        <div class="form-group"><label>Cliente:</label><input type="text" id="venda-cliente" placeholder="Nome do cliente"></div>
-                        <div class="form-group"><label>Data:</label><input type="date" id="venda-data"></div>
-                        <div class="form-group">
-                            <label>Produto:</label>
-                            <input type="text" id="add-prod-nome" placeholder="Nome do produto">
-                        </div>
-                        <div class="form-group">
-                            <label>Valor Unitário:</label>
-                            <input type="text" id="add-prod-valor" class="moeda-input" placeholder="0,00">
-                        </div>
-                        <div class="form-group full-width">
-                            <button type="button" id="btnAddProdutoLista">➕ Adicionar Produto ao Pedido</button>
-                        </div>
+
+                    <div class="form-group">
+
+                        <label>Custo dos Materiais (R$):</label>
+
+                        <input type="text" inputmode="numeric" id="calcCustoMaterial" placeholder="0,00">
+
                     </div>
 
-                    <div style="margin-top: 30px; background: var(--bg-fundo); padding: 20px; border-radius: 10px;">
-                        <h3>Produtos no Pedido:</h3>
-                        <div id="lista-produtos-resumo" style="margin-top: 15px;"></div>
-                        <h2 style="text-align: right; margin-top: 15px;">Total: <span id="venda-total-acumulado">R$ 0,00</span></h2>
+                    <div class="form-group">
+
+                        <label>Custos Extras (Frete/Embalagem) (R$):</label>
+
+                        <input type="text" inputmode="numeric" id="calcCustoExtra" placeholder="0,00">
+
                     </div>
-                </div>
+
+                    <div class="form-group">
+
+                        <label>Margem de Lucro Desejada (%):</label>
+
+                        <input type="number" id="calcMargem" placeholder="Ex: 50" min="0" step="1">
+
+                    </div>
+
+                    
+
+                    <div class="form-group">
+
+                        <label>Onde você vai vender?</label>
+
+                        <select id="calcCanal">
+
+                            <option value="shopee">Shopee (Regra Escalonada)</option>
+
+                            <option value="link">Link de Pagamento / Maquininha</option>
+
+                        </select>
+
+                    </div>
+
+
+
+                    <div class="form-group full-width" id="boxShopee" style="background: rgba(255, 87, 34, 0.05); padding: 20px; border-radius: 8px; border: 1px solid #FF5722;">
+
+                        <label style="color: #FF5722; font-weight: bold;">Tabela de Comissão Shopee:</label>
+
+                        <select id="calcShopeeTipo" style="margin-top: 10px; border-color: #FF5722;">
+
+                            <option value="cpf">Loja CPF (+ R$ 3,00 de taxa por pedido)</option>
+
+                            <option value="cnpj">Loja CNPJ (Sem taxa extra de R$ 3,00)</option>
+
+                        </select>
+
+                        <p style="font-size: 0.85rem; margin-top: 10px; color: var(--texto-mutado);">
+
+                            💡 O sistema vai cruzar o seu custo com a tabela oficial (20% ou 14% + R$4, R$16, R$20 ou R$26) automaticamente para garantir o seu lucro.
+
+                        </p>
+
+                    </div>
+
+
+
+                    <div class="form-group full-width" id="boxLink" style="display: none; background: rgba(138, 43, 226, 0.05); padding: 20px; border-radius: 8px; border: 1px solid var(--cor-destaque);">
+
+                        <label style="color: var(--cor-destaque); font-weight: bold;">Taxa da Maquininha / Link (%):</label>
+
+                        <input type="number" id="calcTaxaLink" placeholder="Ex: 4.99" min="0" step="0.01" value="4.99" style="margin-top: 10px; border-color: var(--cor-destaque);">
+
+                    </div>
+
+                    
+
+                    <div class="full-width" style="margin-top: 20px; padding: 25px; background: var(--bg-fundo); border-radius: 12px; border: 1px dashed var(--cor-destaque); text-align: center;">
+
+                        <h3 style="color: var(--texto-mutado); font-size: 1.1rem; margin-bottom: 10px;">Preço de Venda Sugerido</h3>
+
+                        <p id="calcPrecoFinal" style="font-size: 3.5rem; font-weight: bold; color: var(--cor-sucesso);">R$ 0,00</p>
+
+                        
+
+                        <div style="display: flex; justify-content: center; gap: 30px; margin-top: 25px; font-size: 1rem; color: var(--texto-mutado); flex-wrap: wrap;">
+
+                            <p>Custo Fixo: <strong id="calcCustoTotalOut">R$ 0,00</strong></p>
+
+                            <p>Taxa Plataforma: <strong id="calcTaxaOut" style="color: var(--cor-alerta);">R$ 0,00</strong></p>
+
+                            <p>Seu Lucro Líquido: <strong id="calcLucroOut" style="color: var(--cor-destaque);">R$ 0,00</strong></p>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="form-group full-width botoes-acao">
+
+                        <button type="button" id="btnLimparCalc" class="btn-secundario">Limpar Valores</button>
+
+                    </div>
+
+                </form>
+
             </div>
 
-            <div class="card" id="tela-despesa" style="display: none;"><h1>Nova Despesa</h1></div>
-            <div class="card" id="tela-fluxo" style="display: none;"><h1>Fluxo de Caixa</h1></div>
-            <div class="card" id="tela-precificacao" style="display: none;"><h1>Precificação</h1></div>
+            <div class="card" id="tela-resumo" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Resumo Financeiro em Construção 🚧</h1></div>
+
+            <div class="card" id="tela-cronograma" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Cronograma de Produção em Construção 🚧</h1></div>
+
+            <div class="card" id="tela-parametros" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Parâmetros em Construção 🚧</h1></div>
+
+            <div class="card" id="tela-custos" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Custos Base em Construção 🚧</h1></div>
+
+
 
         </main>
+
     </div>
 
     <script src="script.js"></script>
+
 </body>
+
 </html>
