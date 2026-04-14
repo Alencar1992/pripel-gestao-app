@@ -172,7 +172,28 @@
                 </form>
             </div>
 
-            <div class="card" id="tela-fluxo" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Fluxo de Caixa em Construção 🚧</h1></div>
+            <div class="card" id="tela-fluxo" style="display: none; max-width: 1000px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--borda); margin-bottom: 20px; padding-bottom: 15px;">
+                    <h1 style="margin-bottom: 0; border: none; padding-bottom: 0;">Fluxo de Caixa</h1>
+                    <button id="btnAtualizarFluxo" style="width: auto; margin-top: 0; padding: 10px 15px; display: flex; gap: 8px; align-items: center;">🔄 Atualizar Extrato</button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="tabela-extrato">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Descrição (Detalhes)</th>
+                                <th>Tipo</th>
+                                <th style="text-align: right;">Valor (R$)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoTabelaFluxo">
+                            <tr><td colspan="4" style="text-align: center; padding: 30px;">⏳ Buscando últimos lançamentos no servidor...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             <div class="card" id="tela-precificacao" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Precificação em Construção 🚧</h1></div>
             <div class="card" id="tela-resumo" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Resumo Financeiro em Construção 🚧</h1></div>
             <div class="card" id="tela-cronograma" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Cronograma de Produção em Construção 🚧</h1></div>
