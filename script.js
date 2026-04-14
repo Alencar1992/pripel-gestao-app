@@ -340,3 +340,41 @@ document.getElementById('btnLimparCalc').addEventListener('click', () => {
     document.getElementById('formPrecificacao').reset();
     calcularPrecificacao(); // Zera os números
 });
+// Controle do Modal de Vendas
+const modalVenda = document.getElementById('modalVenda');
+document.getElementById('btnAbrirModalVenda').addEventListener('click', () => { modalVenda.style.display = 'block'; });
+document.getElementById('btnFecharModalVenda').addEventListener('click', () => { modalVenda.style.display = 'none'; });
+
+// Lógica de adicionar produtos à lista temporária (Step 1)
+let listaProdutosVenda = [];
+
+document.getElementById('btnAddProdutoLista').addEventListener('click', () => {
+    const nome = document.getElementById('add-prod-nome').value;
+    const valor = parseFloat(limparMoedaParaEnvio(document.getElementById('add-prod-valor').value)) || 0;
+    const qtd = parseInt(document.getElementById('add-prod-qtd').value) || 1;
+
+    if(nome && valor > 0) {
+        listaProdutosVenda.push({ nome, valor, qtd, subtotal: valor * qtd });
+        renderizarListaResumo();
+        // Limpa campos
+        document.getElementById('add-prod-nome').value = '';
+        document.getElementById('add-prod-valor').value = '';
+        document.getElementById('add-prod-qtd').value = '1';
+    }
+});
+
+function renderizarListaResumo() {
+    const container = document.getElementById('lista-produtos-resumo');
+    const totalTxt = document.getElementById('venda-total-acumulado');
+    container.innerHTML = '';
+    let total = 0;
+
+    listaProdutosVenda.forEach((p, index) => {
+        total += p.subtotal;
+        const div = document.createElement('div');
+        div.innerHTML = `<span>${p.qtd}x ${p.nome}</span> <span>${formatarMoeda(p.subtotal)}</span>`;
+        container.appendChild(div);
+    });
+
+    totalTxt.innerText = formatarMoeda(total);
+}
