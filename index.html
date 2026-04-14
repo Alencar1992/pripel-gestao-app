@@ -194,7 +194,41 @@
                     </table>
                 </div>
             </div>
-            <div class="card" id="tela-precificacao" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Precificação em Construção 🚧</h1></div>
+           <div class="card" id="tela-precificacao" style="display: none;">
+                <h1>Calculadora de Precificação</h1>
+                <form id="formPrecificacao" class="form-grid">
+                    <div class="form-group">
+                        <label>Custo dos Materiais (R$):</label>
+                        <input type="text" inputmode="numeric" id="calcCustoMaterial" placeholder="0,00">
+                    </div>
+                    <div class="form-group">
+                        <label>Custos Extras / Frete (R$):</label>
+                        <input type="text" inputmode="numeric" id="calcCustoExtra" placeholder="0,00">
+                    </div>
+                    <div class="form-group">
+                        <label>Margem de Lucro Desejada (%):</label>
+                        <input type="number" id="calcMargem" placeholder="Ex: 50" min="0" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Taxa da Maquininha / Cartão (%):</label>
+                        <input type="number" id="calcTaxa" placeholder="Ex: 5" min="0" step="1">
+                    </div>
+                    
+                    <div class="full-width" style="margin-top: 20px; padding: 25px; background: var(--bg-fundo); border-radius: 12px; border: 1px dashed var(--cor-destaque); text-align: center;">
+                        <h3 style="color: var(--texto-mutado); font-size: 1.1rem; margin-bottom: 10px;">Preço de Venda Sugerido</h3>
+                        <p id="calcPrecoFinal" style="font-size: 3rem; font-weight: bold; color: var(--cor-sucesso);">R$ 0,00</p>
+                        
+                        <div style="display: flex; justify-content: center; gap: 30px; margin-top: 20px; font-size: 1rem; color: var(--texto-mutado);">
+                            <p>Custo Total: <strong id="calcCustoTotalOut">R$ 0,00</strong></p>
+                            <p>Lucro Líquido Real: <strong id="calcLucroOut" style="color: var(--cor-destaque);">R$ 0,00</strong></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width botoes-acao">
+                        <button type="button" id="btnLimparCalc" class="btn-secundario">Limpar Valores</button>
+                    </div>
+                </form>
+            </div>
             <div class="card" id="tela-resumo" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Resumo Financeiro em Construção 🚧</h1></div>
             <div class="card" id="tela-cronograma" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Cronograma de Produção em Construção 🚧</h1></div>
             <div class="card" id="tela-parametros" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Parâmetros em Construção 🚧</h1></div>
