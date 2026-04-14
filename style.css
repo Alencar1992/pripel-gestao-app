@@ -17,7 +17,7 @@
     --borda: #2A2A3C;
 }
 
-body { background: var(--bg-fundo); color: var(--texto-claro); display: flex; min-height: 100vh; }
+body { background: var(--bg-fundo); color: var(--texto-claro); display: flex; min-height: 100vh; overflow-x: hidden; }
 
 /* Menu Lateral Escuro */
 .sidebar { width: 260px; background: var(--bg-painel); border-right: 1px solid var(--borda); padding: 20px; display: flex; flex-direction: column; transition: all 0.3s ease; overflow: hidden; white-space: nowrap; }
@@ -31,13 +31,13 @@ body { background: var(--bg-fundo); color: var(--texto-claro); display: flex; mi
 /* Área Central */
 .content { flex: 1; padding: 40px; overflow-y: auto; }
 
-.topbar { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; width: 100%; max-width: 100%; margin: 0; padding-bottom: 10px; }
+.topbar { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; width: 100%; padding-bottom: 10px; }
 .menu-btn { background: transparent; color: var(--texto-claro); font-size: 1.8rem; border: none; cursor: pointer; padding: 0; margin: 0; width: auto; transition: 0.2s; }
 .menu-btn:hover { color: var(--cor-destaque); transform: scale(1.1); }
 
 /* Cartão do Formulário (Dashboard) - TELA CHEIA FORÇADA */
-.card { background: var(--bg-painel); width: 100%; max-width: 100% !important; padding: 35px; border-radius: 12px; border: 1px solid var(--borda); margin: 0; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-
+.card { background: var(--bg-painel); width: 100%; padding: 35px; border-radius: 12px; border: 1px solid var(--borda); margin: 0; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.card h1 { margin-bottom: 30px; color: var(--texto-claro); border-bottom: 1px solid var(--borda); padding-bottom: 15px; font-size: 1.4rem; }
 
 /* Dashboard Cards (Resumo Financeiro) */
 .dashboard-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
