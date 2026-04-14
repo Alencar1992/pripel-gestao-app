@@ -137,3 +137,13 @@ button:disabled { background: #555; cursor: not-allowed; }
 /* Bordas dinâmicas de erro e sucesso */
 .senha-valida { border-color: var(--cor-sucesso) !important; box-shadow: 0 0 5px rgba(0, 200, 83, 0.5); }
 .senha-invalida { border-color: var(--cor-alerta) !important; box-shadow: 0 0 5px rgba(255, 61, 0, 0.5); }
+
+/* --- ESTILOS DE SUB-MENU (DROPDOWN) --- */
+.submenu { list-style: none; margin-top: 5px; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 5px; }
+.submenu li { margin-bottom: 2px !important; }
+.submenu li a { font-size: 0.85rem !important; padding: 10px 15px !important; border-radius: 5px !important; background: transparent !important; }
+.submenu li a:hover, .submenu li.active a { background: rgba(138, 43, 226, 0.3) !important; color: white !important; }
+
+.menu-toggle { display: flex !important; justify-content: space-between; align-items: center; cursor: pointer; }
+.seta { font-size: 0.7rem; transition: transform 0.3s ease; }
+.seta.aberta { transform: rotate(180deg); color: var(--cor-destaque); }
