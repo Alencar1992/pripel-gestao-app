@@ -147,3 +147,18 @@ button:disabled { background: #555; cursor: not-allowed; }
 .menu-toggle { display: flex !important; justify-content: space-between; align-items: center; cursor: pointer; }
 .seta { font-size: 0.7rem; transition: transform 0.3s ease; }
 .seta.aberta { transform: rotate(180deg); color: var(--cor-destaque); }
+
+/* === TABELA DE FLUXO DE CAIXA (EXTRATO) === */
+.table-responsive { width: 100%; overflow-x: auto; border-radius: 8px; border: 1px solid var(--borda); }
+.tabela-extrato { width: 100%; border-collapse: collapse; background-color: var(--bg-fundo); }
+.tabela-extrato th, .tabela-extrato td { padding: 15px; text-align: left; border-bottom: 1px solid var(--borda); font-size: 0.95rem; }
+.tabela-extrato th { background-color: var(--bg-painel); color: var(--texto-mutado); font-weight: bold; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
+.tabela-extrato tbody tr:last-child td { border-bottom: none; }
+.tabela-extrato tbody tr:hover { background-color: rgba(255,255,255,0.02); }
+
+.badge-tipo { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; display: inline-block; }
+.badge-entrada { background-color: rgba(0, 200, 83, 0.1); color: var(--cor-sucesso); border: 1px solid rgba(0, 200, 83, 0.3); }
+.badge-saida { background-color: rgba(255, 61, 0, 0.1); color: var(--cor-alerta); border: 1px solid rgba(255, 61, 0, 0.3); }
+
+.valor-entrada { color: var(--cor-sucesso); font-weight: bold; text-align: right; }
+.valor-saida { color: var(--cor-alerta); font-weight: bold; text-align: right; }
