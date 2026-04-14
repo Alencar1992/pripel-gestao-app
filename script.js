@@ -109,12 +109,12 @@ menuToggles.forEach(toggle => {
 // Mapeamento das Telas
 const menusApp = { 
     dashboard: document.getElementById('menu-dashboard'), venda: document.getElementById('menu-venda'), despesa: document.getElementById('menu-despesa'),
-    precificacao: document.getElementById('menu-precificacao'), resumo: document.getElementById('menu-resumo'), cronograma: document.getElementById('menu-cronograma'),
+    precificacao: document.getElementById('menu-precificacao'), resumo: document.getElementById('menu-resumo'), fluxo: document.getElementById('menu-fluxo'), cronograma: document.getElementById('menu-cronograma'),
     parametros: document.getElementById('menu-parametros'), custos: document.getElementById('menu-custos')
 };
 const telasApp = { 
     dashboard: document.getElementById('tela-dashboard'), venda: document.getElementById('tela-venda'), despesa: document.getElementById('tela-despesa'),
-    precificacao: document.getElementById('tela-precificacao'), resumo: document.getElementById('tela-resumo'), cronograma: document.getElementById('tela-cronograma'),
+    precificacao: document.getElementById('tela-precificacao'), resumo: document.getElementById('tela-resumo'), fluxo: document.getElementById('tela-fluxo'), cronograma: document.getElementById('tela-cronograma'),
     parametros: document.getElementById('tela-parametros'), custos: document.getElementById('tela-custos')
 };
 
