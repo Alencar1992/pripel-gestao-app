@@ -1,7 +1,7 @@
 const URL_API = "https://script.google.com/macros/s/AKfycbxo0HmHlzJklmZ8jM987fSb9ijS6XtaH-otVAZaaGfQbm22Tdgtx7moFdoYDRF5e9E4/exec";
 
 // =======================================================
-// 1. VERIFICAÇÃO DE LOGIN AUTOMÁTICO (PERSISTÊNCIA)
+// 1. VERIFICAÇÃO DE LOGIN (sessionStorage - Tranca ao fechar)
 // =======================================================
 const telaLogin = document.getElementById('tela-login');
 const appContainer = document.getElementById('app-container');
@@ -9,7 +9,8 @@ const nomeUsuarioLogado = document.getElementById('nomeUsuarioLogado');
 const textoBoasVindas = document.getElementById('textoBoasVindas');
 
 document.addEventListener('DOMContentLoaded', () => {
-    const usuarioSalvo = localStorage.getItem('priPelUser');
+    // sessionStorage morre quando o navegador é fechado!
+    const usuarioSalvo = sessionStorage.getItem('priPelUser');
     if (usuarioSalvo) {
         const dadosUser = JSON.parse(usuarioSalvo);
         telaLogin.style.display = 'none';
@@ -30,12 +31,44 @@ document.getElementById('link-voltar').addEventListener('click', (e) => { e.prev
 
 window.toggleSenha = function(inputId, btn) { const input = document.getElementById(inputId); if (input.type === 'password') { input.type = 'text'; btn.innerText = '🙈'; } else { input.type = 'password'; btn.innerText = '👁️'; } };
 
+// --- Validação de Cadastro (Com trava de 8 a 12 caracteres) ---
 const cadSenha = document.getElementById('cadSenha'); const cadSenhaConfirma = document.getElementById('cadSenhaConfirma'); const msgSenhaMatch = document.getElementById('msgSenhaMatch'); const btnSalvarCad = document.getElementById('btnSalvarCad');
-function validarSenhas() { const s1 = cadSenha.value; const s2 = cadSenhaConfirma.value; if (s1 === '' || s2 === '') { msgSenhaMatch.innerText = ''; btnSalvarCad.disabled = true; return; } if (s1 === s2) { msgSenhaMatch.innerText = '✅ Senhas iguais!'; msgSenhaMatch.style.color = 'var(--cor-sucesso)'; btnSalvarCad.disabled = false; } else { msgSenhaMatch.innerText = '❌ As senhas não coincidem!'; msgSenhaMatch.style.color = 'var(--cor-alerta)'; btnSalvarCad.disabled = true; } }
+function validarSenhas() { 
+    const s1 = cadSenha.value; const s2 = cadSenhaConfirma.value; 
+    
+    if (s1 === '' || s2 === '') { msgSenhaMatch.innerText = ''; btnSalvarCad.disabled = true; return; } 
+    
+    // Trava de tamanho de senha
+    if (s1.length < 8 || s1.length > 12) {
+        msgSenhaMatch.innerText = '❌ A senha deve ter entre 8 e 12 caracteres!';
+        msgSenhaMatch.style.color = 'var(--cor-alerta)';
+        btnSalvarCad.disabled = true;
+        return;
+    }
+
+    if (s1 === s2) { msgSenhaMatch.innerText = '✅ Senhas válidas e iguais!'; msgSenhaMatch.style.color = 'var(--cor-sucesso)'; btnSalvarCad.disabled = false; } 
+    else { msgSenhaMatch.innerText = '❌ As senhas não coincidem!'; msgSenhaMatch.style.color = 'var(--cor-alerta)'; btnSalvarCad.disabled = true; } 
+}
 cadSenha.addEventListener('input', validarSenhas); cadSenhaConfirma.addEventListener('input', validarSenhas);
 
+// --- Validação de Troca de Senha (Com trava de 8 a 12 caracteres) ---
 const novaSenha = document.getElementById('novaSenha'); const novaSenhaConfirma = document.getElementById('novaSenhaConfirma'); const msgTrocaSenhaMatch = document.getElementById('msgTrocaSenhaMatch'); const btnSalvarSenha = document.getElementById('btnSalvarSenha');
-function validarTrocaSenhas() { const s1 = novaSenha.value; const s2 = novaSenhaConfirma.value; if (s1 === '' || s2 === '') { msgTrocaSenhaMatch.innerText = ''; btnSalvarSenha.disabled = true; return; } if (s1 === s2) { msgTrocaSenhaMatch.innerText = '✅ Senhas iguais!'; msgTrocaSenhaMatch.style.color = 'var(--cor-sucesso)'; btnSalvarSenha.disabled = false; } else { msgTrocaSenhaMatch.innerText = '❌ As senhas não coincidem!'; msgTrocaSenhaMatch.style.color = 'var(--cor-alerta)'; btnSalvarSenha.disabled = true; } }
+function validarTrocaSenhas() { 
+    const s1 = novaSenha.value; const s2 = novaSenhaConfirma.value; 
+    
+    if (s1 === '' || s2 === '') { msgTrocaSenhaMatch.innerText = ''; btnSalvarSenha.disabled = true; return; } 
+    
+    // Trava de tamanho de senha
+    if (s1.length < 8 || s1.length > 12) {
+        msgTrocaSenhaMatch.innerText = '❌ A nova senha deve ter entre 8 e 12 caracteres!';
+        msgTrocaSenhaMatch.style.color = 'var(--cor-alerta)';
+        btnSalvarSenha.disabled = true;
+        return;
+    }
+
+    if (s1 === s2) { msgTrocaSenhaMatch.innerText = '✅ Senhas válidas e iguais!'; msgTrocaSenhaMatch.style.color = 'var(--cor-sucesso)'; btnSalvarSenha.disabled = false; } 
+    else { msgTrocaSenhaMatch.innerText = '❌ As senhas não coincidem!'; msgTrocaSenhaMatch.style.color = 'var(--cor-alerta)'; btnSalvarSenha.disabled = true; } 
+}
 novaSenha.addEventListener('input', validarTrocaSenhas); novaSenhaConfirma.addEventListener('input', validarTrocaSenhas);
 
 // ==========================================================
@@ -49,8 +82,8 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
         if (resultado.status === "sucesso") {
             boxesLogin.statusBox.style.color = "#00C853"; boxesLogin.statusBox.innerText = "✅ Acesso Liberado!";
             
-            // SALVA NA MEMÓRIA DO NAVEGADOR
-            localStorage.setItem('priPelUser', JSON.stringify({ nome: resultado.nomeCompleto }));
+            // SALVA NA MEMÓRIA DA SESSÃO (sessionStorage)
+            sessionStorage.setItem('priPelUser', JSON.stringify({ nome: resultado.nomeCompleto }));
 
             setTimeout(() => {
                 telaLogin.style.display = 'none'; appContainer.style.display = 'flex';
@@ -80,10 +113,10 @@ document.getElementById('formTrocaSenha').addEventListener('submit', async (e) =
 // 4. APP PRINCIPAL (SUB-MENUS E NAVEGAÇÃO)
 // ==========================================================
 
-// Lógica para Deslogar
+// Lógica para Deslogar (Limpa a sessão)
 document.getElementById('btnSair').addEventListener('click', (e) => {
     e.preventDefault(); 
-    localStorage.removeItem('priPelUser'); // Limpa a memória
+    sessionStorage.removeItem('priPelUser'); // Limpa a memória curta
     appContainer.style.display = 'none'; 
     telaLogin.style.display = 'flex';
 });
@@ -106,7 +139,7 @@ menuToggles.forEach(toggle => {
     });
 });
 
-// Mapeamento das Telas
+// Mapeamento das Telas (Com o Fluxo de Caixa)
 const menusApp = { 
     dashboard: document.getElementById('menu-dashboard'), venda: document.getElementById('menu-venda'), despesa: document.getElementById('menu-despesa'),
     precificacao: document.getElementById('menu-precificacao'), resumo: document.getElementById('menu-resumo'), fluxo: document.getElementById('menu-fluxo'), cronograma: document.getElementById('menu-cronograma'),
