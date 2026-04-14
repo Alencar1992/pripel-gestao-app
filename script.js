@@ -252,3 +252,91 @@ document.getElementById('btnLimparCalc').addEventListener('click', () => {
     document.getElementById('formPrecificacao').reset();
     calcularPrecificacao(); // Roda a função para zerar os números da tela
 });
+// ==========================================================
+// MÓDULO NOVO: CALCULADORA DE PRECIFICAÇÃO (REGRAS SHOPEE)
+// ==========================================================
+
+// Aplica a máscara de moeda nos campos novos
+document.getElementById('calcCustoMaterial').addEventListener('input', aplicarMascaraMoeda);
+document.getElementById('calcCustoExtra').addEventListener('input', aplicarMascaraMoeda);
+
+// Alternar visual entre Shopee e Link de Pagamento
+document.getElementById('calcCanal').addEventListener('change', (e) => {
+    const isShopee = e.target.value === 'shopee';
+    document.getElementById('boxShopee').style.display = isShopee ? 'block' : 'none';
+    document.getElementById('boxLink').style.display = isShopee ? 'none' : 'block';
+    calcularPrecificacao();
+});
+
+function calcularPrecificacao() {
+    const matVal = parseFloat(limparMoedaParaEnvio(document.getElementById('calcCustoMaterial').value)) || 0;
+    const extVal = parseFloat(limparMoedaParaEnvio(document.getElementById('calcCustoExtra').value)) || 0;
+    const margem = parseFloat(document.getElementById('calcMargem').value) || 0;
+    
+    const canal = document.getElementById('calcCanal').value;
+    const custoTotal = matVal + extVal;
+    
+    // O Lucro é calculado sobre o Custo. Target = Custo + Lucro (O que você precisa receber limpo)
+    const lucroBruto = custoTotal * (margem / 100);
+    const target = custoTotal + lucroBruto; 
+
+    let precoSugerido = 0;
+    let valorTaxa = 0;
+
+    if (canal === 'shopee') {
+        const isCPF = document.getElementById('calcShopeeTipo').value === 'cpf';
+        const taxaFixaCPF = isCPF ? 3 : 0;
+        
+        // Matemática Reversa: Testa as 4 faixas da imagem para descobrir o preço de venda (P)
+        // Faixa 1 (Até 79,99): 20% + 4 + CPF
+        let p1 = (target + 4 + taxaFixaCPF) / 0.80;
+        
+        // Faixa 2 (80 a 99,99): 14% + 16 + CPF
+        let p2 = (target + 16 + taxaFixaCPF) / 0.86;
+        
+        // Faixa 3 (100 a 199,99): 14% + 20 + CPF
+        let p3 = (target + 20 + taxaFixaCPF) / 0.86;
+        
+        // Faixa 4 (Acima de 200): 14% + 26 + CPF
+        let p4 = (target + 26 + taxaFixaCPF) / 0.86;
+
+        // O robô verifica qual dessas faixas é a matematicamente correta
+        if (p1 < 80) { precoSugerido = p1; } 
+        else if (p2 >= 80 && p2 < 100) { precoSugerido = p2; } 
+        else if (p3 >= 100 && p3 < 200) { precoSugerido = p3; } 
+        else { precoSugerido = p4; }
+
+        // Recalcula o desconto da Shopee para exibir na tela
+        if (precoSugerido < 80) valorTaxa = (precoSugerido * 0.20) + 4 + taxaFixaCPF;
+        else if (precoSugerido < 100) valorTaxa = (precoSugerido * 0.14) + 16 + taxaFixaCPF;
+        else if (precoSugerido < 200) valorTaxa = (precoSugerido * 0.14) + 20 + taxaFixaCPF;
+        else valorTaxa = (precoSugerido * 0.14) + 26 + taxaFixaCPF;
+
+    } else {
+        // Regra do Link de Pagamento (Porcentagem Fixa)
+        const taxaLink = parseFloat(document.getElementById('calcTaxaLink').value) || 0;
+        if (taxaLink < 100) {
+            precoSugerido = target / (1 - (taxaLink / 100));
+        }
+        valorTaxa = precoSugerido * (taxaLink / 100);
+    }
+
+    const lucroLiquido = precoSugerido - custoTotal - valorTaxa;
+
+    // Joga os valores na tela
+    document.getElementById('calcPrecoFinal').innerText = formatarMoeda(precoSugerido);
+    document.getElementById('calcCustoTotalOut').innerText = formatarMoeda(custoTotal);
+    document.getElementById('calcTaxaOut').innerText = formatarMoeda(valorTaxa);
+    document.getElementById('calcLucroOut').innerText = formatarMoeda(lucroLiquido);
+}
+
+// Escuta os campos e calcula na mesma hora em que você digita
+['calcCustoMaterial', 'calcCustoExtra', 'calcMargem', 'calcTaxaLink', 'calcShopeeTipo', 'calcCanal'].forEach(id => {
+    document.getElementById(id).addEventListener('input', calcularPrecificacao);
+});
+
+// Botão de Limpar
+document.getElementById('btnLimparCalc').addEventListener('click', () => {
+    document.getElementById('formPrecificacao').reset();
+    calcularPrecificacao(); // Zera os números
+});
