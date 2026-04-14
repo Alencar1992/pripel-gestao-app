@@ -130,3 +130,23 @@ button:disabled { background: #555; cursor: not-allowed; }
     width: 100%;
     flex: 1;
 }
+
+/* ESTILOS ESPECÍFICOS PARA O MODAL DE VENDAS */
+.moeda-input { background: #2d3436 !important; border: 1px solid #636e72 !important; }
+
+/* Indicadores de Status (Vendas) */
+.status-venda { padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+.status-aguardando { background: rgba(255, 159, 67, 0.2); color: #ff9f43; }
+.status-concluido { background: rgba(0, 210, 211, 0.2); color: #00d2d3; }
+
+/* Estilo do Resumo do Pedido */
+#lista-produtos-resumo div {
+    background: #353b48;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+}
