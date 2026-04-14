@@ -99,10 +99,46 @@ Object.keys(menusApp).forEach(key => { if (menusApp[key]) { menusApp[key].addEve
 
 document.getElementById('btnCancelarVenda').addEventListener('click', () => { document.getElementById('formVenda').reset(); });
 
+// ==========================================================
+// MÓDULO NOVO: MÁSCARA DE MOEDA (CAIXA ELETRÔNICO)
+// ==========================================================
+function aplicarMascaraMoeda(e) {
+    let valor = e.target.value.replace(/\D/g, ''); // Remove tudo que não é número
+    if (valor === '') {
+        e.target.value = '';
+        return;
+    }
+    // Divide por 100 para criar os centavos e formata
+    valor = (parseInt(valor, 10) / 100).toFixed(2);
+    valor = valor.replace('.', ','); // Troca ponto por vírgula para os centavos
+    valor = valor.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.'); // Coloca o ponto de milhar
+    e.target.value = valor;
+}
+
+// Aplica a função para formatar na hora que digita
+document.getElementById('custo').addEventListener('input', aplicarMascaraMoeda);
+document.getElementById('valor').addEventListener('input', aplicarMascaraMoeda);
+document.getElementById('valorDespesa').addEventListener('input', aplicarMascaraMoeda);
+
+// Função para transformar "1.500,50" em número de banco de dados (1500.50) antes de enviar
+function limparMoedaParaEnvio(valorFormatado) {
+    if (!valorFormatado) return "0";
+    return (parseInt(valorFormatado.replace(/\D/g, ''), 10) / 100).toString();
+}
+
+// ==========================================================
+// ENVIO PARA O BANCO DE DADOS (ATUALIZADO)
+// ==========================================================
+
 // VENDAS 
 document.getElementById('formVenda').addEventListener('submit', async (e) => { 
     e.preventDefault(); const btn = document.getElementById('btnEnviarVenda'); const msg = document.getElementById('mensagemVenda'); btn.disabled = true; msg.style.color = "var(--texto-claro)"; msg.innerText = "Enviando..."; 
-    const dados = [ document.getElementById('data').value, document.getElementById('cliente').value, document.getElementById('categoriaProduto').value, document.getElementById('formaPagamento').value, document.getElementById('custo').value || "0", document.getElementById('valor').value ]; 
+    
+    // Limpa os valores em Reais para enviar para a planilha como número
+    const custoLimpo = limparMoedaParaEnvio(document.getElementById('custo').value);
+    const valorLimpo = limparMoedaParaEnvio(document.getElementById('valor').value);
+    
+    const dados = [ document.getElementById('data').value, document.getElementById('cliente').value, document.getElementById('categoriaProduto').value, document.getElementById('formaPagamento').value, custoLimpo, valorLimpo ]; 
     try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ planilha: "vendas", dados: dados, usuarioLogado: obterUserLogado() }) }); const resultado = await res.json(); 
     if (resultado.status === "sucesso") { msg.style.color = "var(--cor-sucesso)"; msg.innerText = "Salvo com sucesso!"; document.getElementById('formVenda').reset(); carregarDashboard(); } else throw new Error(resultado.mensagem); } catch (err) { msg.style.color = "var(--cor-alerta)"; msg.innerText = "Erro: " + err.message; } finally { btn.disabled = false; setTimeout(() => msg.innerText = "", 4000); } 
 });
@@ -110,7 +146,11 @@ document.getElementById('formVenda').addEventListener('submit', async (e) => {
 // DESPESAS 
 document.getElementById('formDespesa').addEventListener('submit', async (e) => { 
     e.preventDefault(); const btn = document.getElementById('btnEnviarDespesa'); const msg = document.getElementById('mensagemDespesa'); btn.disabled = true; msg.style.color = "var(--texto-claro)"; msg.innerText = "Enviando..."; 
-    const dados = [ document.getElementById('dataDespesa').value, document.getElementById('categoriaDespesa').value, document.getElementById('valorDespesa').value, document.getElementById('statusDespesa').value ]; 
+    
+    // Limpa o valor em Reais para enviar para a planilha como número
+    const valorDespesaLimpo = limparMoedaParaEnvio(document.getElementById('valorDespesa').value);
+
+    const dados = [ document.getElementById('dataDespesa').value, document.getElementById('categoriaDespesa').value, valorDespesaLimpo, document.getElementById('statusDespesa').value ]; 
     try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ planilha: "despesas", dados: dados, usuarioLogado: obterUserLogado() }) }); const resultado = await res.json(); 
     if (resultado.status === "sucesso") { msg.style.color = "var(--cor-sucesso)"; msg.innerText = "Salvo com sucesso!"; document.getElementById('formDespesa').reset(); carregarDashboard(); } else throw new Error(resultado.mensagem); } catch (err) { msg.style.color = "var(--cor-alerta)"; msg.innerText = "Erro: " + err.message; } finally { btn.disabled = false; setTimeout(() => msg.innerText = "", 4000); } 
 });
