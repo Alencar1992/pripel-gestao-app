@@ -124,3 +124,9 @@ button:disabled { background: #555; cursor: not-allowed; }
 
 .valor-entrada { color: var(--cor-sucesso); font-weight: bold; text-align: right; }
 .valor-saida { color: var(--cor-alerta); font-weight: bold; text-align: right; }
+
+/* === A MÁGICA QUE OBRIGA O APP A PREENCHER A TELA TODA === */
+#app-container {
+    width: 100%;
+    flex: 1;
+}
