@@ -154,3 +154,55 @@ document.getElementById('formDespesa').addEventListener('submit', async (e) => {
     try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ planilha: "despesas", dados: dados, usuarioLogado: obterUserLogado() }) }); const resultado = await res.json(); 
     if (resultado.status === "sucesso") { msg.style.color = "var(--cor-sucesso)"; msg.innerText = "Salvo com sucesso!"; document.getElementById('formDespesa').reset(); carregarDashboard(); } else throw new Error(resultado.mensagem); } catch (err) { msg.style.color = "var(--cor-alerta)"; msg.innerText = "Erro: " + err.message; } finally { btn.disabled = false; setTimeout(() => msg.innerText = "", 4000); } 
 });
+
+// ==========================================================
+// MÓDULO NOVO: CARREGAR FLUXO DE CAIXA (EXTRATO)
+// ==========================================================
+async function carregarFluxoCaixa() {
+    const tbody = document.getElementById('corpoTabelaFluxo');
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px;">⏳ Buscando histórico no banco de dados...</td></tr>';
+    
+    try {
+        const response = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "buscar_fluxo" }) });
+        const resultado = await response.json();
+        
+        if (resultado.status === "sucesso") {
+            tbody.innerHTML = ''; // Limpa a mensagem de carregando
+            
+            if (resultado.dados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--texto-mutado);">Nenhum lançamento encontrado ainda.</td></tr>';
+                return;
+            }
+            
+            resultado.dados.forEach(item => {
+                const tr = document.createElement('tr');
+                const isEntrada = item.tipo === "Entrada";
+                
+                // Escolhe as cores e sinais (+ ou -) dependendo se é venda ou despesa
+                const badgeClass = isEntrada ? "badge-entrada" : "badge-saida";
+                const valorClass = isEntrada ? "valor-entrada" : "valor-saida";
+                const sinal = isEntrada ? "+ " : "- ";
+                
+                tr.innerHTML = `
+                    <td style="color: var(--texto-mutado);">${item.dataF}</td>
+                    <td style="font-weight: 500;">${item.descricao}</td>
+                    <td><span class="badge-tipo ${badgeClass}">${item.tipo}</span></td>
+                    <td class="${valorClass}">${sinal}${formatarMoeda(item.valor)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--cor-alerta); padding: 30px;">❌ Erro ao carregar extrato.</td></tr>`;
+        }
+    } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--cor-alerta); padding: 30px;">❌ Erro de conexão. Tente novamente.</td></tr>';
+    }
+}
+
+// Botão manual de recarregar a tabela
+document.getElementById('btnAtualizarFluxo').addEventListener('click', carregarFluxoCaixa);
+
+// O pulo do gato: Faz a tabela carregar sozinha sempre que você clica no menu "Fluxo de Caixa"
+menusApp.fluxo.addEventListener('click', () => {
+    carregarFluxoCaixa();
+});
