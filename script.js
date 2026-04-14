@@ -206,3 +206,49 @@ document.getElementById('btnAtualizarFluxo').addEventListener('click', carregarF
 menusApp.fluxo.addEventListener('click', () => {
     carregarFluxoCaixa();
 });
+
+// ==========================================================
+// MÓDULO NOVO: CALCULADORA DE PRECIFICAÇÃO
+// ==========================================================
+
+// Aplica a máscara de moeda nos novos campos de R$
+document.getElementById('calcCustoMaterial').addEventListener('input', aplicarMascaraMoeda);
+document.getElementById('calcCustoExtra').addEventListener('input', aplicarMascaraMoeda);
+
+function calcularPrecificacao() {
+    // Pega os valores digitados (ou zero se estiver vazio)
+    const matVal = parseFloat(limparMoedaParaEnvio(document.getElementById('calcCustoMaterial').value)) || 0;
+    const extVal = parseFloat(limparMoedaParaEnvio(document.getElementById('calcCustoExtra').value)) || 0;
+    const margem = parseFloat(document.getElementById('calcMargem').value) || 0;
+    const taxa = parseFloat(document.getElementById('calcTaxa').value) || 0;
+
+    const custoTotal = matVal + extVal;
+    
+    // Cálculo: O lucro é baseado na margem sobre o custo total
+    const lucroBruto = custoTotal * (margem / 100);
+    let precoSugerido = 0;
+    
+    // Calcula o preço final embutindo a taxa do cartão para não ter prejuízo
+    if (taxa < 100) {
+        precoSugerido = (custoTotal + lucroBruto) / (1 - (taxa / 100));
+    }
+
+    const valorTaxa = precoSugerido * (taxa / 100);
+    const lucroLiquido = precoSugerido - custoTotal - valorTaxa;
+
+    // Atualiza a tela
+    document.getElementById('calcPrecoFinal').innerText = formatarMoeda(precoSugerido);
+    document.getElementById('calcCustoTotalOut').innerText = formatarMoeda(custoTotal);
+    document.getElementById('calcLucroOut').innerText = formatarMoeda(lucroLiquido);
+}
+
+// Escuta tudo o que for digitado nos 4 campos e calcula na mesma hora
+['calcCustoMaterial', 'calcCustoExtra', 'calcMargem', 'calcTaxa'].forEach(id => {
+    document.getElementById(id).addEventListener('input', calcularPrecificacao);
+});
+
+// Botão de Limpar
+document.getElementById('btnLimparCalc').addEventListener('click', () => {
+    document.getElementById('formPrecificacao').reset();
+    calcularPrecificacao(); // Roda a função para zerar os números da tela
+});
