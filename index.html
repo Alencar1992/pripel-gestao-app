@@ -142,7 +142,117 @@
             </div>
 
             <div class="card" id="tela-venda" style="display: none;">
-                <h1>Nova Venda</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h1 style="margin: 0; border: none;">Vendas - Abril 2026</h1>
+        <div style="display: flex; gap: 10px;">
+            <button id="btnAbrirModalVenda" style="background: var(--cor-sucesso); padding: 10px 20px; font-size: 0.9rem;">➕ Adicionar Nova Venda</button>
+            <button id="btnFiltrarVendas" style="background: #6c5ce7; padding: 10px 20px; font-size: 0.9rem;">🔍 Filtrar</button>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+        <div style="background: var(--bg-fundo); padding: 20px; border-left: 4px solid var(--cor-sucesso); border-radius: 8px;">
+            <small style="color: var(--texto-mutado);">Vendas Efetivadas</small>
+            <p id="vendasEfetivadasTxt" style="font-size: 1.5rem; font-weight: bold; color: var(--cor-sucesso); margin-top: 5px;">R$ 0,00</p>
+        </div>
+        <div style="background: var(--bg-fundo); padding: 20px; border-left: 4px solid #6c5ce7; border-radius: 8px;">
+            <small style="color: var(--texto-mutado);">Previsão de Recebimento</small>
+            <p id="previsaoRecebimentoTxt" style="font-size: 1.5rem; font-weight: bold; color: #a29bfe; margin-top: 5px;">R$ 0,00</p>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="tabela-extrato">
+            <thead>
+                <tr>
+                    <th>Nº Pedido</th>
+                    <th>Data da Venda</th>
+                    <th>Cliente</th>
+                    <th>Produtos</th>
+                    <th>Status da Venda</th>
+                    <th style="text-align: right;">Valor</th>
+                </tr>
+            </thead>
+            <tbody id="corpoTabelaVendas">
+                <tr><td colspan="6" style="text-align: center; padding: 50px; color: var(--texto-mutado);">Não foram encontrados registros</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="modalVenda" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); overflow-y: auto;">
+    <div class="card" style="margin: 30px auto; max-width: 1100px;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px;">
+            <button id="btnFecharModalVenda" style="background: transparent; font-size: 1.5rem; width: auto; margin: 0;">⬅</button>
+            <h1 style="margin: 0; border: none;">Cadastro de Nova Venda</h1>
+        </div>
+
+        <div style="display: flex; justify-content: space-around; margin-bottom: 40px; position: relative;">
+            <div style="text-align: center; z-index: 2;">
+                <div id="step1-circle" style="width: 35px; height: 35px; background: var(--cor-destaque); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;">1</div>
+                <small>Produtos</small>
+            </div>
+            <div style="text-align: center; z-index: 2;">
+                <div id="step2-circle" style="width: 35px; height: 35px; background: var(--borda); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;">2</div>
+                <small>Pagamentos e Taxas</small>
+            </div>
+            <div style="text-align: center; z-index: 2;">
+                <div id="step3-circle" style="width: 35px; height: 35px; background: var(--borda); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;">3</div>
+                <small>Revisão</small>
+            </div>
+            <div style="position: absolute; top: 17px; left: 15%; right: 15%; height: 2px; background: var(--borda); z-index: 1;"></div>
+        </div>
+
+        <div id="venda-passo-1">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Cliente:</label>
+                    <select id="venda-cliente"><option value="">Digite o nome do cliente...</option></select>
+                </div>
+                <div class="form-group">
+                    <label>Forma de Pagamento:</label>
+                    <select id="venda-pagamento">
+                        <option value="Elo7">Elo7</option>
+                        <option value="Shopee">Shopee</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="PIX">PIX</option>
+                        <option value="Operadoras">Operadoras de Pagamento</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Data da Venda:</label><input type="date" id="venda-data"></div>
+                <div class="form-group"><label>Data da Entrega:</label><input type="date" id="venda-entrega"></div>
+            </div>
+
+            <div style="display: flex; gap: 20px; margin-top: 30px;">
+                <div style="flex: 1; background: var(--bg-fundo); padding: 20px; border-radius: 8px;">
+                    <div class="form-grid" style="grid-template-columns: 1fr;">
+                        <div class="form-group"><label>Produto:</label><input type="text" id="add-prod-nome" placeholder="Digite o produto..."></div>
+                        <div class="form-group"><label>Tema:</label><input type="text" id="add-prod-tema" placeholder="Digite o tema..."></div>
+                        <div style="display: flex; gap: 15px;">
+                            <div class="form-group" style="flex: 1;"><label>Valor Unitário:</label><input type="text" id="add-prod-valor" class="moeda-input"></div>
+                            <div class="form-group" style="flex: 1;"><label>Quantidade:</label><input type="number" id="add-prod-qtd" value="1"></div>
+                        </div>
+                        <button type="button" id="btnAddProdutoLista" style="width: 100%;">➕ Adicionar</button>
+                    </div>
+                </div>
+
+                <div style="flex: 1; background: #2d3436; padding: 20px; border-radius: 8px;">
+                    <h4 style="margin-bottom: 15px;">Resumo do Pedido</h4>
+                    <div id="lista-produtos-resumo" style="min-height: 150px;">
+                        <p style="text-align: center; color: var(--texto-mutado); margin-top: 40px;">⚠️ Nenhum produto adicionado</p>
+                    </div>
+                    <div style="border-top: 1px solid var(--borda); padding-top: 15px; margin-top: 15px;">
+                        <strong>Total: <span id="venda-total-acumulado">R$ 0,00</span></strong>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; margin-top: 30px;">
+                <button id="btnIrPasso2" style="width: 150px;">Próximo ➡</button>
+            </div>
+        </div>
+    </div>
+</div>
                 <form id="formVenda" class="form-grid">
                     <div class="form-group"><label>Data do Pedido:</label><input type="date" id="data" required></div>
                     <div class="form-group"><label>Cliente:</label><input type="text" id="cliente" required></div>
