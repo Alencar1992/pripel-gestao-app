@@ -9,10 +9,9 @@
 <body>
 
     <div id="tela-login" class="login-wrapper">
-        
-        <div class="login-image-side"></div> <div class="login-form-side">
+        <div class="login-image-side"></div>
+        <div class="login-form-side">
             <div class="login-box">
-                
                 <div id="box-login" style="display: block;">
                     <h2>PriPel Gestão</h2>
                     <p>Acesse sua conta para continuar</p>
@@ -28,7 +27,6 @@
                         <button type="submit" id="btnEntrar">Entrar no Sistema</button>
                     </form>
                 </div>
-
                 <div id="box-cadastro" style="display: none;">
                     <h2>Novo Usuário</h2>
                     <p>Preencha os dados abaixo</p>
@@ -53,7 +51,6 @@
                         <button type="submit" id="btnSalvarCad" disabled>Criar Conta</button>
                     </form>
                 </div>
-
                 <div id="box-senha" style="display: none;">
                     <h2>Alterar Senha</h2>
                     <p>Confirme seu usuário e nova senha</p>
@@ -77,29 +74,48 @@
                         <button type="submit" id="btnSalvarSenha" disabled>Atualizar Senha</button>
                     </form>
                 </div>
-
                 <div id="statusLogin" style="margin-top: 15px; text-align: center; font-weight: bold; display: none;"></div>
-                
                 <div class="login-links">
                     <a href="#" id="link-voltar" style="display: none; color: var(--cor-alerta); font-weight: bold;">⬅ Voltar</a>
                     <a href="#" id="link-cadastrar">Cadastrar Usuário</a>
                     <a href="#" id="link-alterar">Alterar Senha</a>
                 </div>
-
             </div>
         </div>
     </div>
     
     <div id="app-container" class="dashboard" style="display: none;">
+        
         <aside class="sidebar">
             <h2>PriPel Gestão</h2>
             <nav>
-                <ul>
-                    <li class="active"><a href="#" id="menu-dashboard">Resumo Financeiro</a></li>
-                    <li><a href="#" id="menu-venda">Lançar Venda</a></li>
-                    <li><a href="#" id="menu-despesa">Lançar Despesa</a></li>
-                    <li><a href="#" id="menu-cronograma">Cronograma</a></li>
-                    <li><a href="#" id="menu-precificacao">Precificação</a></li>
+                <ul id="menu-principal">
+                    <li class="active"><a href="#" id="menu-dashboard">Painel Principal</a></li>
+                    
+                    <li class="has-submenu">
+                        <a href="#" class="menu-toggle">Gestão Financeira <span class="seta">▼</span></a>
+                        <ul class="submenu" style="display: none;">
+                            <li><a href="#" id="menu-precificacao">Precificação</a></li>
+                            <li><a href="#" id="menu-venda">Vendas</a></li>
+                            <li><a href="#" id="menu-despesa">Despesas</a></li>
+                            <li><a href="#" id="menu-resumo">Resumo</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="has-submenu">
+                        <a href="#" class="menu-toggle">Produção <span class="seta">▼</span></a>
+                        <ul class="submenu" style="display: none;">
+                            <li><a href="#" id="menu-cronograma">Cronograma</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="has-submenu">
+                        <a href="#" class="menu-toggle">Configurações <span class="seta">▼</span></a>
+                        <ul class="submenu" style="display: none;">
+                            <li><a href="#" id="menu-parametros">Parâmetros</a></li>
+                            <li><a href="#" id="menu-custos">Custos Base</a></li>
+                        </ul>
+                    </li>
                 </ul>
             </nav>
             <div class="user-info">
@@ -112,7 +128,7 @@
         <main class="content">
             <header class="topbar">
                 <button id="btnToggleMenu" class="menu-btn">☰</button>
-                <h2 id="textoBoasVindas" style="margin-bottom: 0; color: var(--texto-mutado);">Olá, seja bem-vindo(a)!</h2>
+                <h2 id="textoBoasVindas" style="margin-bottom: 0; color: var(--texto-mutado);">Olá!</h2>
             </header>
 
             <div class="card" id="tela-dashboard">
@@ -128,19 +144,14 @@
                 <h1>Nova Venda</h1>
                 <form id="formVenda" class="form-grid">
                     <div class="form-group"><label>Data do Pedido:</label><input type="date" id="data" required></div>
-                    <div class="form-group"><label>Cliente:</label><input type="text" id="cliente" placeholder="Nome do cliente" required></div>
-                    <div class="form-group"><label>Categoria do Produto:</label><input type="text" id="categoriaProduto" placeholder="Ex: Papelaria" required></div>
+                    <div class="form-group"><label>Cliente:</label><input type="text" id="cliente" required></div>
+                    <div class="form-group"><label>Categoria do Produto:</label><input type="text" id="categoriaProduto" required></div>
                     <div class="form-group">
                         <label>Forma de Pagamento:</label>
-                        <select id="formaPagamento">
-                            <option value="PIX">PIX</option>
-                            <option value="Cartão">Cartão</option>
-                            <option value="Dinheiro">Dinheiro</option>
-                        </select>
+                        <select id="formaPagamento"><option value="PIX">PIX</option><option value="Cartão">Cartão</option><option value="Dinheiro">Dinheiro</option></select>
                     </div>
-                    <div class="form-group"><label>Custo (Opcional):</label><input type="number" step="0.01" id="custo" placeholder="0.00"></div>
-                    <div class="form-group"><label>Valor da Venda:</label><input type="number" step="0.01" id="valor" placeholder="0.00" required></div>
-
+                    <div class="form-group"><label>Custo (Opcional):</label><input type="number" step="0.01" id="custo"></div>
+                    <div class="form-group"><label>Valor da Venda:</label><input type="number" step="0.01" id="valor" required></div>
                     <div class="form-group full-width botoes-acao">
                         <button type="button" id="btnCancelarVenda" class="btn-secundario">Cancelar</button>
                         <button type="submit" id="btnEnviarVenda">Salvar Venda</button>
@@ -155,15 +166,17 @@
                     <div class="form-group"><label>Vencimento:</label><input type="date" id="dataDespesa" required></div>
                     <div class="form-group"><label>Categoria:</label><input type="text" id="categoriaDespesa" required></div>
                     <div class="form-group"><label>Valor (R$):</label><input type="number" step="0.01" id="valorDespesa" required></div>
-                    <div class="form-group"><label>Status:</label>
-                        <select id="statusDespesa">
-                            <option value="Pendente">Pendente</option>
-                            <option value="Pago">Pago</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>Status:</label><select id="statusDespesa"><option value="Pendente">Pendente</option><option value="Pago">Pago</option></select></div>
                     <div class="form-group full-width"><button type="submit" id="btnEnviarDespesa">Salvar Despesa</button><p id="mensagemDespesa"></p></div>
                 </form>
             </div>
+
+            <div class="card" id="tela-precificacao" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Precificação em Construção 🚧</h1></div>
+            <div class="card" id="tela-resumo" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Resumo Financeiro em Construção 🚧</h1></div>
+            <div class="card" id="tela-cronograma" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Cronograma de Produção em Construção 🚧</h1></div>
+            <div class="card" id="tela-parametros" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Parâmetros em Construção 🚧</h1></div>
+            <div class="card" id="tela-custos" style="display: none;"><h1 style="text-align:center; color: var(--cor-destaque);">Custos Base em Construção 🚧</h1></div>
+
         </main>
     </div>
     <script src="script.js"></script>
