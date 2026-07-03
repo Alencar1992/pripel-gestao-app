@@ -16,6 +16,69 @@
 
 <body>
 
+    <!-- ==========================================================
+     PAINEL DE PEDIDOS - substitui o conteúdo antigo de
+     <div class="card" id="tela-cronograma">...</div> no seu index.html.
+     O <div class="card"> por fora continua igual, só o conteúdo de
+     dentro muda.
+     ========================================================== -->
+<div class="card" id="tela-cronograma" style="display: none;">
+  <div class="pp-scope" id="painelPedidosRoot">
+<header>
+  <div class="wrap">
+    <h1>Painel de Pedidos — Kit Festa</h1>
+    <p>Carregue a planilha da pasta Downloads para ver prazos e temas de produção.</p>
+  </div>
+</header>
+
+<div class="upload-box">
+  <div class="upload-card">
+    <label class="btn">
+      Selecionar planilha (.csv / .xlsx)
+      <input type="file" id="ppFileInput" accept=".csv,.xlsx,.xls">
+    </label>
+    <span class="file-status" id="ppFileStatus">Nenhum arquivo carregado ainda.</span>
+    <button id="ppBtnSalvarPlanilha" class="btn btn-ok" type="button" style="display:none;">💾 Salvar planilha atualizada</button>
+  </div>
+  <div id="ppDiagnostico" style="font-size:0.82rem; margin-top:8px;"></div>
+</div>
+
+<div id="ppStatsBox" class="stats" style="display:none;"></div>
+
+<div id="ppSearchBox" class="search-row" style="display:none;">
+  <input type="text" id="ppSearchInput" placeholder="Buscar por ID do pedido, comprador ou tema...">
+</div>
+
+<div id="ppOrdersBox" class="orders"></div>
+
+<div id="ppEmptyState" class="empty-state">
+  <h2>Nenhum pedido carregado</h2>
+  <p>Clique em "Selecionar planilha" acima e escolha o arquivo da sua pasta Downloads.</p>
+</div>
+
+<!-- Modal de edição: nome da criança, idade e observações do pedido -->
+<div id="ppModalOverlay" class="modal-overlay">
+  <div class="modal-box">
+    <h3>Editar pedido</h3>
+    <div class="modal-sub">Essas informações ficam salvas neste navegador.</div>
+
+    <label for="ppInputNomeCrianca">Nome da criança</label>
+    <input type="text" id="ppInputNomeCrianca" placeholder="Ex: Maria">
+
+    <label for="ppInputIdade">Idade</label>
+    <input type="text" id="ppInputIdade" placeholder="Ex: 5 anos">
+
+    <label for="ppInputObservacoes">Outras observações</label>
+    <textarea id="ppInputObservacoes" placeholder="Ex: retirar acento do nome, entregar até 14h..."></textarea>
+
+    <div class="modal-actions">
+      <button class="btn-cancelar" id="ppBtnCancelarModal">Cancelar</button>
+      <button class="btn-salvar" id="ppBtnSalvarModal">Salvar</button>
+    </div>
+  </div>
+</div>
+  </div>
+</div>
 
 
     <div id="tela-login" class="login-wrapper">
