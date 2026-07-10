@@ -31,6 +31,7 @@ let idPedidoEmEdicao = null;
 let linhasOriginais = [];
 let indicesColunasAtuais = {};
 let nomeArquivoAtual = "";
+let abaAtual = "PRODUÇÃO"; // <- NOVA VARIÁVEL
 
 function normalizarTexto(txt) {
   return String(txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim().toUpperCase();
@@ -277,11 +278,13 @@ function renderizarPedidos(pedidos) {
           <span style="color:${statusPrazo.cor}; font-weight:bold;">${diasTexto}</span>
         </div>
         <div class="status-row" style="display:flex; gap:10px;">
-          <select class="status-select" data-id="${escapeHtml(p.idPedido)}" style="flex:1; padding:8px; border:1px solid var(--border); border-radius:5px; background:var(--card-bg); color:var(--ink);">
-            <option value="">Status do pedido...</option>
-            ${opcoesStatusHtml}
-          </select>
-          <button class="btn-editar" data-id="${escapeHtml(p.idPedido)}" type="button" style="padding:8px 15px; background:var(--teal); color:white; border:none; border-radius:5px; cursor:pointer;">✎ Editar</button>
+          <div class="status-row" style="display:flex; gap:10px;">
+          <!-- Substituído o Select por um Input Editável -->
+          <input type="text" class="status-input" data-id="${escapeHtml(p.idPedido)}" 
+                 value="${escapeHtml(statusPedidoAtual)}" placeholder="Digite o status..." 
+                 style="flex:1; padding:8px; border:1px solid var(--border); border-radius:5px; background:var(--card-bg); color:var(--ink);">
+                 
+          <button class="btn-editar" data-id="${escapeHtml(p.idPedido)}" type="button" style="padding:8px 15px; background:var(--teal); color:white; border:none; border-radius:5px; cursor:pointer;">✎ Detalhes</button>
         </div>
         ${blocoInfoCrianca}
       </div>
@@ -292,54 +295,111 @@ function renderizarPedidos(pedidos) {
 /* ==============================================================
    EVENTOS (UPLOAD, BUSCA E EDIÇÃO)
    ============================================================== */
-document.getElementById("ppFileInput").addEventListener("change", function(evento){
-  const arquivo = evento.target.files[0];
-  if (!arquivo) return;
-
-  document.getElementById("ppFileStatus").textContent = "Lendo arquivo...";
-  const leitor = new FileReader();
-  leitor.onload = function(e){
-    try {
-      const dadosBrutos = new Uint8Array(e.target.result);
-      const planilha = XLSX.read(dadosBrutos, { type: "array", cellDates: true });
-      const primeiraAba = planilha.Sheets[planilha.SheetNames[0]];
-      const linhas = XLSX.utils.sheet_to_json(primeiraAba, { header: 1, defval: "" });
-
-      const resultado = processarPlanilha(linhas);
-      pedidosProcessados = resultado.pedidos;
-      linhasOriginais = linhas;
-      indicesColunasAtuais = resultado.indices;
-      nomeArquivoAtual = arquivo.name.replace(/\.[^.]+$/, ""); 
-
-      document.getElementById("ppFileStatus").textContent = `Arquivo: ${arquivo.name} — Carregado com sucesso.`;
-      document.getElementById("ppDiagnostico").innerHTML = diagnosticarColunas(resultado.indices);
-      document.getElementById("ppSearchBox").style.display = "block";
-      document.getElementById("ppBtnSalvarPlanilha").style.display = "inline-block";
-
-      // --- INTEGRAÇÃO COM O BANCO DE DADOS: Salva o Histórico no momento do upload ---
-const dadosParaEnvio = pedidosProcessados.map(p => {
-    const edicao = carregarEdicaoPedido(p.idPedido);
-    return [
-        p.idPedido, 
-        p.comprador, 
-        edicao.temaManual || p.nomeVariacao, 
-        p.nomeProduto, 
-        p.quantidade, 
-        p.endereco, 
-        p.dtCompra ? p.dtCompra.toISOString() : "", 
-        new Date().toISOString()
-    ];
+// --- LÓGICA DE NAVEGAÇÃO DAS ABAS ATUALIZADA ---
+document.getElementById("btnTabProducao").addEventListener("click", function() {
+    this.style.background = "var(--teal)"; this.style.color = "white"; this.style.border = "none";
+    const btnFin = document.getElementById("btnTabFinalizados");
+    btnFin.style.background = "var(--card-bg)"; btnFin.style.color = "var(--ink-soft)"; btnFin.style.border = "1px solid var(--border)";
+    
+    abaAtual = "PRODUÇÃO";
+    carregarDadosDoBanco("PRODUÇÃO");
 });
 
-// Envia para o banco e DEPOIS recarrega a tela fundindo antigos e novos
-fetch(URL_API, {
-    method: 'POST',
-    body: JSON.stringify({ acao: "salvar_historico_lote", dados: dadosParaEnvio })
-})
-.then(res => res.json())
-.then(resposta => {
-    document.getElementById("ppFileStatus").textContent = `Sucesso! ${resposta.inseridos} novos pedidos adicionados ao banco.`;
-    carregarDadosDoBanco("PRODUÇÃO"); // Baixa a lista completa atualizada
+document.getElementById("btnTabFinalizados").addEventListener("click", function() {
+    this.style.background = "var(--teal)"; this.style.color = "white"; this.style.border = "none";
+    const btnProd = document.getElementById("btnTabProducao");
+    btnProd.style.background = "var(--card-bg)"; btnProd.style.color = "var(--ink-soft)"; btnProd.style.border = "1px solid var(--border)";
+    
+    abaAtual = "FINALIZADO";
+    carregarDadosDoBanco("FINALIZADO");
+});
+
+
+// --- LÓGICA DE FILTROS COM TEMA E STATUS ---
+function pedidosFiltradosAtuais() {
+  const termoGeral = normalizarTexto(document.getElementById("ppSearchInput").value);
+  const termoTema = normalizarTexto(document.getElementById("ppFilterTema").value);
+  const termoStatus = normalizarTexto(document.getElementById("ppFilterStatus").value);
+  
+  let pedidosAtivos = pedidosProcessados.filter(p => {
+      const statusLocal = carregarStatusPedido(p.idPedido);
+      const statusNorm = normalizarTexto(statusLocal);
+      
+      // Oculta os finalizados apenas se estivermos na aba de Produção
+      if (abaAtual === "PRODUÇÃO" && (statusNorm === "FEITO" || statusNorm === "POSTADO")) {
+          return false;
+      }
+      return true;
+  });
+
+  return pedidosAtivos.filter(p => {
+      const edicao = carregarEdicaoPedido(p.idPedido);
+      const temaAtual = normalizarTexto(edicao.temaManual || p.nomeVariacao);
+      const statusAtual = normalizarTexto(carregarStatusPedido(p.idPedido));
+      
+      const bateGeral = !termoGeral || normalizarTexto(p.idPedido).includes(termoGeral) || normalizarTexto(p.comprador).includes(termoGeral);
+      const bateTema = !termoTema || temaAtual.includes(termoTema);
+      const bateStatus = !termoStatus || statusAtual.includes(termoStatus);
+      
+      return bateGeral && bateTema && bateStatus;
+  });
+}
+
+function atualizarTela() { 
+  const listaPronta = pedidosFiltradosAtuais();
+  renderizarEstatisticas(listaPronta);
+  renderizarPedidos(listaPronta); 
+}
+
+// Escuta a digitação nos três campos de filtro
+document.getElementById("ppSearchInput").addEventListener("input", atualizarTela);
+document.getElementById("ppFilterTema").addEventListener("input", atualizarTela);
+document.getElementById("ppFilterStatus").addEventListener("input", atualizarTela);
+
+
+// --- SALVAMENTO E AUTOMAÇÃO DO STATUS EDITÁVEL ---
+document.getElementById("ppOrdersBox").addEventListener("change", async function(evento){
+  
+  // Salva o Campo de Status Livre
+  if (evento.target.classList.contains("status-input")) {
+    const idPedido = evento.target.dataset.id;
+    const novoStatus = evento.target.value.trim();
+    
+    salvarStatusPedido(idPedido, novoStatus);
+
+    const statusNorm = normalizarTexto(novoStatus);
+    
+    // Automação: Se o texto digitado for exatamente "FEITO" ou "POSTADO", envia para o banco
+    if (abaAtual === "PRODUÇÃO" && (statusNorm === "FEITO" || statusNorm === "POSTADO")) {
+      evento.target.closest(".tag").style.opacity = "0.4";
+      evento.target.closest(".tag").style.pointerEvents = "none";
+
+      try {
+        await fetch(URL_API, {
+          method: 'POST',
+          body: JSON.stringify({
+            acao: "atualizar_status_banco",
+            idPedido: idPedido,
+            novoStatusSistema: "FINALIZADO"
+          })
+        });
+        atualizarTela(); 
+      } catch (e) {
+        console.error("Erro ao finalizar pedido:", e);
+      }
+    } else {
+        atualizarTela(); // Atualiza para refletir o filtro de status em tempo real, se estiver ativo
+    }
+  }
+
+  // Salva o campo de texto do Tema (Card)
+  if (evento.target.classList.contains("input-tema-card")) {
+    const idPedido = evento.target.dataset.id;
+    const dados = carregarEdicaoPedido(idPedido);
+    dados.temaManual = evento.target.value.trim();
+    salvarEdicaoPedido(idPedido, dados);
+    atualizarTela(); // Reflete no filtro de tema em tempo real
+  }
 });
 // ---------------------------------------------------------------------------------
 
