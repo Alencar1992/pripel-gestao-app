@@ -433,8 +433,22 @@
 
                     <div id="ppStatsBox" class="stats" style="display:none;"></div>
 
-                    <div id="ppSearchBox" class="search-row" style="display:none;">
-                        <input type="text" id="ppSearchInput" placeholder="Buscar por ID do pedido, comprador ou tema...">
+                    <!-- NOVA ÁREA DE BUSCA E FILTROS -->
+                    <div id="ppSearchBox" class="search-row" style="display:none; flex-direction: column; gap: 12px;">
+                    <!-- Busca Geral -->
+                    <input type="text" id="ppSearchInput" placeholder="Busca geral (ID do pedido ou Nome do Comprador)..." style="width: 100%;">
+    
+                     <!-- Filtros Específicos -->
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px;">
+                    <label style="font-size: 0.75rem; font-weight: bold; color: var(--ink-soft); margin-bottom: 4px; display: block;">Filtro por Tema:</label>
+                    <input type="text" id="ppFilterTema" placeholder="Ex: Safari, Sereia..." style="width: 100%;">
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                    <label style="font-size: 0.75rem; font-weight: bold; color: var(--ink-soft); margin-bottom: 4px; display: block;">Filtro por Status:</label>
+                    <input type="text" id="ppFilterStatus" placeholder="Ex: Impresso, Feito..." style="width: 100%;">
+                    </div>
+                    </div>
                     </div>
 
                     <div id="ppOrdersBox" class="orders"></div>
