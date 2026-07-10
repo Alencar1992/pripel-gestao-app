@@ -304,6 +304,24 @@ fetch(URL_API, {
         dados: dadosParaEnvio 
     })
 }).then(res => console.log("Histórico enviado!"));
+
+// Função para carregar pedidos do banco de dados (ao iniciar o app)
+async function carregarDadosDoBanco() {
+  const response = await fetch(URL_API, { 
+    method: 'POST', 
+    body: JSON.stringify({ acao: "buscar_producao" }) 
+  });
+  const resultado = await response.json();
+  
+  if (resultado.status === "sucesso") {
+    // Aqui você preenche a sua variável global de pedidos
+    pedidosProcessados = resultado.dados.map(row => ({
+      idPedido: row[0],
+      // ... mapeie os outros campos conforme a ordem das colunas no seu Sheet
+    }));
+    atualizarTela();
+  }
+}
 /* ==============================================================
    EVENTOS (UPLOAD, BUSCA E EDIÇÃO)
    ============================================================== */
