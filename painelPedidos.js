@@ -4,8 +4,8 @@
 const MAPA_COLUNAS = {
   idPedido:      ["ID DO PEDIDO"],
   dataPrevista:  ["DATA PREVISTA DE ENVIO"],
-  nomeProduto:   ["NOME DO PRODUTO"],
-  nomeVariacao:  ["NOME DA VARIACAO", "NOME DA VARIAÇÃO"],
+  nomeProduto:   ["NOME DO PRODUTO"], // Coluna N
+  nomeVariacao:  ["NOME DA VARIACAO", "NOME DA VARIAÇÃO"], // Coluna P
   quantidade:    ["QUANTIDADE"],
   numProdutos:   ["NUMERO DE PRODUTOS PEDIDOS", "NÚMERO DE PRODUTOS PEDIDOS"],
   comprador:     ["NOME DE USUARIO (COMPRADOR)", "NOME DE USUÁRIO (COMPRADOR)"],
@@ -14,9 +14,10 @@ const MAPA_COLUNAS = {
 
 const MAPA_COLUNAS_OPCIONAIS = {
   statusSalvo:        ["STATUS DO PEDIDO"],
+  temaManualSalvo:    ["TEMA"], // Nova coluna para o tema digitado
   nomeCriancaSalvo:   ["NOME DA CRIANÇA", "NOME DA CRIANCA"],
   idadeSalva:         ["IDADE"],
-  observacoesSalvas:   ["OBSERVAÇÕES", "OBSERVACOES"],
+  observacoesSalvas:  ["OBSERVAÇÕES", "OBSERVACOES"],
 };
 
 const DIAS_PRODUCAO = 5; 
@@ -77,7 +78,7 @@ function pegarPorLetra(linha, letra) {
 }
 
 /* ==============================================================
-   LÓGICA DE NEGÓCIO (PRAZOS E TEMAS)
+   LÓGICA DE NEGÓCIO (PRAZOS E STATUS)
    ============================================================== */
 function calcularProgramacaoEnvio(dtCompra) {
   const dataCompra = converterParaData(dtCompra);
@@ -93,17 +94,6 @@ function calcularProgramacaoEnvio(dtCompra) {
   const diasRestantes = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
   return { prazo, diasRestantes };
-}
-
-function pegarTerceiraPalavra(texto) {
-  const palavras = String(texto || "").trim().split(/\s+/).filter(Boolean);
-  if (palavras.length === 0) return "";
-  return palavras[2] || palavras[palavras.length - 1];
-}
-
-function calcularTema(colunaNBruta, variacaoCurta) {
-  const temaCurto = pegarTerceiraPalavra(colunaNBruta);
-  return [temaCurto, String(variacaoCurta || "").trim()].filter(Boolean).join(" ");
 }
 
 function classificarStatus(diasRestantes) {
@@ -123,7 +113,7 @@ function formatarData(data) {
 }
 
 function diagnosticarColunas(indices) {
-  const nomesAmigaveis = { idPedido: "ID DO PEDIDO", dataPrevista: "DATA PREVISTA DE ENVIO", nomeProduto: "NOME DO PRODUTO", nomeVariacao: "NOME DA VARIAÇÃO", quantidade: "QUANTIDADE", numProdutos: "Nº PRODUTOS PEDIDOS", comprador: "COMPRADOR", endereco: "ENDEREÇO" };
+  const nomesAmigaveis = { idPedido: "ID DO PEDIDO", dataPrevista: "DATA PREVISTA DE ENVIO", nomeProduto: "NOME DO PRODUTO (N)", nomeVariacao: "NOME DA VARIAÇÃO (P)", quantidade: "QUANTIDADE", numProdutos: "Nº PRODUTOS PEDIDOS", comprador: "COMPRADOR", endereco: "ENDEREÇO" };
   const naoEncontradas = Object.keys(indices).filter(chave => indices[chave] === -1).map(chave => nomesAmigaveis[chave] || chave);
   if (naoEncontradas.length === 0) return `<span style="color:var(--cor-sucesso)">✓ Todas as colunas esperadas foram encontradas.</span>`;
   return `<span style="color:var(--cor-alerta)">⚠ Colunas não encontradas: ${naoEncontradas.join(", ")} — confira se o nome do cabeçalho bate.</span>`;
@@ -142,8 +132,8 @@ function salvarEdicaoPedido(idPedido, dados) { try { localStorage.setItem("kitfe
 function carregarEdicaoPedido(idPedido) {
   try {
     const bruto = localStorage.getItem("kitfesta_edicao_" + idPedido);
-    return bruto ? JSON.parse(bruto) : { nomeCrianca: "", idade: "", observacoes: "" };
-  } catch(erro) { return { nomeCrianca: "", idade: "", observacoes: "" }; }
+    return bruto ? JSON.parse(bruto) : { temaManual: "", nomeCrianca: "", idade: "", observacoes: "" };
+  } catch(erro) { return { temaManual: "", nomeCrianca: "", idade: "", observacoes: "" }; }
 }
 
 function sincronizarComArquivo(idPedido, dadosDoArquivo) {
@@ -152,11 +142,12 @@ function sincronizarComArquivo(idPedido, dadosDoArquivo) {
   if (!statusJaSalvo && dadosDoArquivo.status) salvarStatusPedido(idPedido, dadosDoArquivo.status);
 
   const edicaoJaSalva = carregarEdicaoPedido(idPedido);
-  const semEdicaoNoNavegador = !edicaoJaSalva.nomeCrianca && !edicaoJaSalva.idade && !edicaoJaSalva.observacoes;
-  const temDadosNoArquivo = dadosDoArquivo.nomeCrianca || dadosDoArquivo.idade || dadosDoArquivo.observacoes;
+  const semEdicaoNoNavegador = !edicaoJaSalva.temaManual && !edicaoJaSalva.nomeCrianca && !edicaoJaSalva.idade && !edicaoJaSalva.observacoes;
+  const temDadosNoArquivo = dadosDoArquivo.temaManual || dadosDoArquivo.nomeCrianca || dadosDoArquivo.idade || dadosDoArquivo.observacoes;
 
   if (semEdicaoNoNavegador && temDadosNoArquivo) {
     salvarEdicaoPedido(idPedido, {
+      temaManual: dadosDoArquivo.temaManual || "",
       nomeCrianca: dadosDoArquivo.nomeCrianca || "",
       idade: dadosDoArquivo.idade || "",
       observacoes: dadosDoArquivo.observacoes || "",
@@ -184,13 +175,11 @@ function processarPlanilha(linhas) {
     const dtCompraValor = pegarPorLetra(linha, "L");
     const { prazo, diasRestantes } = calcularProgramacaoEnvio(dtCompraValor);
 
-    const colunaNBruta = pegarPorLetra(linha, "N");
-    const variacaoCurta = pegarPorLetra(linha, "P");
-    const tema = calcularTema(colunaNBruta, variacaoCurta);
     const idPedidoValor = pegar("idPedido");
 
     sincronizarComArquivo(idPedidoValor, {
       status: pegarOpcional("statusSalvo"),
+      temaManual: pegarOpcional("temaManualSalvo"),
       nomeCrianca: pegarOpcional("nomeCriancaSalvo"),
       idade: pegarOpcional("idadeSalva"),
       observacoes: pegarOpcional("observacoesSalvas"),
@@ -200,7 +189,7 @@ function processarPlanilha(linhas) {
       idPedido: idPedidoValor, dataPrevista: pegar("dataPrevista"), dtCompra: converterParaData(dtCompraValor),
       nomeProduto: pegar("nomeProduto"), nomeVariacao: pegar("nomeVariacao"), quantidade: pegar("quantidade"),
       numProdutos: pegar("numProdutos"), comprador: pegar("comprador"), endereco: pegar("endereco"),
-      tema: tema, prazoProducao: prazo, diasRestantes: diasRestantes,
+      prazoProducao: prazo, diasRestantes: diasRestantes,
     };
   });
 
@@ -248,38 +237,51 @@ function renderizarPedidos(pedidos) {
     const opcoesStatusHtml = OPCOES_STATUS_PEDIDO.map(opcao => `<option value="${opcao}" ${opcao === statusPedidoAtual ? "selected" : ""}>${opcao}</option>`).join("");
 
     const edicao = carregarEdicaoPedido(p.idPedido);
+    
+    // Campo Editável de Tema no próprio card
+    const temaManualInput = `
+        <div style="margin-bottom: 15px;">
+          <label style="font-size: 0.75rem; font-weight: bold; color: var(--ink-soft); text-transform: uppercase;">Tema</label>
+          <input type="text" class="input-tema-card" data-id="${escapeHtml(p.idPedido)}" value="${escapeHtml(edicao.temaManual || "")}" placeholder="Digite o tema..." style="width: 100%; margin-top: 4px; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--paper-2); color: var(--ink); font-size: 0.9rem; transition: border-color 0.2s ease;">
+        </div>
+    `;
+
     const temInfoCrianca = edicao.nomeCrianca || edicao.idade || edicao.observacoes;
     const blocoInfoCrianca = temInfoCrianca ? `
-        <div class="info-crianca" style="background:#f1f2f6; padding:10px; border-radius:5px; margin-top:10px;">
+        <div class="info-crianca" style="background:var(--paper-2); padding:10px; border-radius:5px; margin-top:10px;">
           ${edicao.nomeCrianca ? `<strong>Criança:</strong> ${escapeHtml(edicao.nomeCrianca)}<br>` : ""}
           ${edicao.idade ? `<strong>Idade:</strong> ${escapeHtml(edicao.idade)}<br>` : ""}
           ${edicao.observacoes ? `<strong>Obs:</strong> ${escapeHtml(edicao.observacoes)}` : ""}
         </div>` : "";
 
     return `
-      <div class="tag" style="border-top: 4px solid ${statusPrazo.cor}; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
+      <div class="tag" style="border-top: 4px solid ${statusPrazo.cor}; background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
         <div class="tag-top" style="display:flex; justify-content:space-between; margin-bottom:10px;">
           <span class="tag-id mono" style="font-weight:bold;">#${escapeHtml(p.idPedido) || "—"}</span>
           <span class="badge" style="background:${statusPrazo.cor}; color:white; padding:4px 8px; border-radius:4px; font-size:0.8rem;">${statusPrazo.texto}</span>
         </div>
-        <h3 style="margin: 0 0 5px 0;">${escapeHtml(p.tema) || escapeHtml(p.nomeProduto) || "Sem tema"}</h3>
-        <div class="tema" style="font-size:0.9rem; color:#636e72; margin-bottom: 15px;">${escapeHtml(p.nomeProduto) || ""}</div>
+        
+        <h3 style="margin: 0 0 5px 0; color: var(--teal); font-size: 1.2rem;">${escapeHtml(p.nomeVariacao) || "Sem Variação"}</h3>
+        <div class="tema" style="font-size:0.85rem; color:var(--ink-soft); margin-bottom: 12px; line-height: 1.4;">${escapeHtml(p.nomeProduto) || ""}</div>
+        
+        ${temaManualInput}
+        
         <dl style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size:0.85rem; margin-bottom:15px;">
-          <dt style="color:#b2bec3;">Comprador</dt><dd style="margin:0; font-weight:bold;">${escapeHtml(p.comprador) || "—"}</dd>
-          <dt style="color:#b2bec3;">Quantidade</dt><dd style="margin:0; font-weight:bold;">${escapeHtml(p.quantidade) || "—"}</dd>
-          <dt style="color:#b2bec3;">Endereço</dt><dd style="margin:0; font-weight:bold;">${escapeHtml(p.endereco) || "—"}</dd>
-          <dt style="color:#b2bec3;">DT Compra</dt><dd style="margin:0; font-weight:bold;">${formatarData(p.dtCompra)}</dd>
+          <dt style="color:var(--ink-soft);">Comprador</dt><dd style="margin:0; font-weight:bold;">${escapeHtml(p.comprador) || "—"}</dd>
+          <dt style="color:var(--ink-soft);">Quantidade</dt><dd style="margin:0; font-weight:bold;">${escapeHtml(p.quantidade) || "—"}</dd>
+          <dt style="color:var(--ink-soft);">Endereço</dt><dd style="margin:0; font-weight:bold;">${escapeHtml(p.endereco) || "—"}</dd>
+          <dt style="color:var(--ink-soft);">DT Compra</dt><dd style="margin:0; font-weight:bold;">${formatarData(p.dtCompra)}</dd>
         </dl>
-        <div class="producao-line" style="background:#dfe6e9; padding:10px; border-radius:5px; margin-bottom:15px; display:flex; justify-content:space-between;">
+        <div class="producao-line" style="background:var(--paper-2); padding:10px; border-radius:5px; margin-bottom:15px; display:flex; justify-content:space-between;">
           <span>Prazo: <strong>${formatarData(p.prazoProducao)}</strong></span>
           <span style="color:${statusPrazo.cor}; font-weight:bold;">${diasTexto}</span>
         </div>
         <div class="status-row" style="display:flex; gap:10px;">
-          <select class="status-select" data-id="${escapeHtml(p.idPedido)}" style="flex:1; padding:8px; border:1px solid #dfe6e9; border-radius:5px;">
+          <select class="status-select" data-id="${escapeHtml(p.idPedido)}" style="flex:1; padding:8px; border:1px solid var(--border); border-radius:5px; background:var(--card-bg); color:var(--ink);">
             <option value="">Status do pedido...</option>
             ${opcoesStatusHtml}
           </select>
-          <button class="btn-editar" data-id="${escapeHtml(p.idPedido)}" type="button" style="padding:8px 15px; background:var(--cor-destaque); color:white; border:none; border-radius:5px; cursor:pointer;">✎ Editar</button>
+          <button class="btn-editar" data-id="${escapeHtml(p.idPedido)}" type="button" style="padding:8px 15px; background:var(--teal); color:white; border:none; border-radius:5px; cursor:pointer;">✎ Editar</button>
         </div>
         ${blocoInfoCrianca}
       </div>
@@ -326,16 +328,26 @@ document.getElementById("ppFileInput").addEventListener("change", function(event
 function pedidosFiltradosAtuais() {
   const termo = normalizarTexto(document.getElementById("ppSearchInput").value);
   if (!termo) return pedidosProcessados;
-  return pedidosProcessados.filter(p => normalizarTexto(p.idPedido).includes(termo) || normalizarTexto(p.comprador).includes(termo) || normalizarTexto(p.tema).includes(termo));
+  return pedidosProcessados.filter(p => normalizarTexto(p.idPedido).includes(termo) || normalizarTexto(p.comprador).includes(termo) || normalizarTexto(p.nomeVariacao).includes(termo));
 }
 
 function atualizarTela() { renderizarPedidos(pedidosFiltradosAtuais()); }
 
 document.getElementById("ppSearchInput").addEventListener("input", atualizarTela);
 
+// Listener Global para capturar mudanças no Status E no campo manual de Tema
 document.getElementById("ppOrdersBox").addEventListener("change", function(evento){
-  if (!evento.target.classList.contains("status-select")) return;
-  salvarStatusPedido(evento.target.dataset.id, evento.target.value);
+  // Salva o Select de Status
+  if (evento.target.classList.contains("status-select")) {
+    salvarStatusPedido(evento.target.dataset.id, evento.target.value);
+  }
+  // Salva o campo de texto do Tema
+  if (evento.target.classList.contains("input-tema-card")) {
+    const idPedido = evento.target.dataset.id;
+    const dados = carregarEdicaoPedido(idPedido);
+    dados.temaManual = evento.target.value.trim();
+    salvarEdicaoPedido(idPedido, dados);
+  }
 });
 
 document.getElementById("ppOrdersBox").addEventListener("click", function(evento){
@@ -344,11 +356,15 @@ document.getElementById("ppOrdersBox").addEventListener("click", function(evento
   
   idPedidoEmEdicao = botao.dataset.id;
   const dados = carregarEdicaoPedido(idPedidoEmEdicao);
-  document.getElementById("ppInputNomeCrianca").value = dados.nomeCrianca;
-  document.getElementById("ppInputIdade").value = dados.idade;
-  document.getElementById("ppInputObservacoes").value = dados.observacoes;
   
-  // Alterado para usar display block e garantir exibição
+  // Preenche o modal
+  const inputTema = document.getElementById("ppInputTema");
+  if(inputTema) inputTema.value = dados.temaManual || "";
+  
+  document.getElementById("ppInputNomeCrianca").value = dados.nomeCrianca || "";
+  document.getElementById("ppInputIdade").value = dados.idade || "";
+  document.getElementById("ppInputObservacoes").value = dados.observacoes || "";
+  
   document.getElementById("ppModalOverlay").style.display = "flex";
 });
 
@@ -362,13 +378,18 @@ document.getElementById("ppModalOverlay").addEventListener("click", function(eve
 
 document.getElementById("ppBtnSalvarModal").addEventListener("click", function(){
   if (!idPedidoEmEdicao) return;
+  
+  const inputTema = document.getElementById("ppInputTema");
+  
   salvarEdicaoPedido(idPedidoEmEdicao, {
+    temaManual: inputTema ? inputTema.value.trim() : "",
     nomeCrianca: document.getElementById("ppInputNomeCrianca").value.trim(),
     idade: document.getElementById("ppInputIdade").value.trim(),
     observacoes: document.getElementById("ppInputObservacoes").value.trim(),
   });
+  
   fecharModalEdicao();
-  atualizarTela();
+  atualizarTela(); // Recarrega a tela para exibir o tema digitado
 });
 
 /* ==============================================================
@@ -386,9 +407,11 @@ document.getElementById("ppBtnSalvarPlanilha").addEventListener("click", functio
 
   const cabecalho = [...linhasOriginais[0]];
   const idxStatus = garantirColuna(cabecalho, "STATUS DO PEDIDO");
+  const idxTemaManual = garantirColuna(cabecalho, "TEMA");
   const idxNomeCrianca = garantirColuna(cabecalho, "NOME DA CRIANÇA");
   const idxIdade = garantirColuna(cabecalho, "IDADE");
   const idxObservacoes = garantirColuna(cabecalho, "OBSERVAÇÕES");
+  
   const indiceIdPedido = indicesColunasAtuais.idPedido;
 
   const linhasAtualizadas = linhasOriginais.slice(1).map(linhaOriginal => {
@@ -398,6 +421,7 @@ document.getElementById("ppBtnSalvarPlanilha").addEventListener("click", functio
     const edicao = carregarEdicaoPedido(idPedido);
 
     linha[idxStatus] = status;
+    linha[idxTemaManual] = edicao.temaManual;
     linha[idxNomeCrianca] = edicao.nomeCrianca;
     linha[idxIdade] = edicao.idade;
     linha[idxObservacoes] = edicao.observacoes;
