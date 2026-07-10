@@ -205,7 +205,7 @@ function renderizarEstatisticas(pedidos) {
   const box = document.getElementById("ppStatsBox");
   box.style.display = "grid";
   box.innerHTML = `
-    <div class="stat-card"><div class="num">${total}</div><div class="label">Total</div></div>
+    <div class="stat-card"><div class="num">${total}</div><div class="label">Total (Em Produção)</div></div>
     <div class="stat-card" style="border-left: 4px solid var(--cor-alerta);"><div class="num" style="color:var(--cor-alerta);">${atrasados}</div><div class="label">Atrasados</div></div>
     <div class="stat-card" style="border-left: 4px solid var(--cor-destaque);"><div class="num" style="color:var(--cor-destaque);">${urgentes}</div><div class="label">Urgentes (0-1 dia)</div></div>
     <div class="stat-card" style="border-left: 4px solid var(--cor-sucesso);"><div class="num" style="color:var(--cor-sucesso);">${noPrazo}</div><div class="label">No prazo</div></div>
@@ -288,40 +288,7 @@ function renderizarPedidos(pedidos) {
     `;
   }).join("");
 }
-// Dentro do listener do 'ppFileInput', logo após processar a planilha:
-const resultado = processarPlanilha(linhas);
-pedidosProcessados = resultado.pedidos;
 
-// --- NOVO: Enviar para o banco de dados ---
-const dadosParaEnvio = pedidosProcessados.map(p => [
-    p.idPedido, p.comprador, p.tema, p.nomeProduto, p.quantidade, new Date().toISOString()
-]);
-
-fetch(URL_API, {
-    method: 'POST',
-    body: JSON.stringify({ 
-        acao: "salvar_historico_lote", 
-        dados: dadosParaEnvio 
-    })
-}).then(res => console.log("Histórico enviado!"));
-
-// Função para carregar pedidos do banco de dados (ao iniciar o app)
-async function carregarDadosDoBanco() {
-  const response = await fetch(URL_API, { 
-    method: 'POST', 
-    body: JSON.stringify({ acao: "buscar_producao" }) 
-  });
-  const resultado = await response.json();
-  
-  if (resultado.status === "sucesso") {
-    // Aqui você preenche a sua variável global de pedidos
-    pedidosProcessados = resultado.dados.map(row => ({
-      idPedido: row[0],
-      // ... mapeie os outros campos conforme a ordem das colunas no seu Sheet
-    }));
-    atualizarTela();
-  }
-}
 /* ==============================================================
    EVENTOS (UPLOAD, BUSCA E EDIÇÃO)
    ============================================================== */
@@ -344,12 +311,33 @@ document.getElementById("ppFileInput").addEventListener("change", function(event
       indicesColunasAtuais = resultado.indices;
       nomeArquivoAtual = arquivo.name.replace(/\.[^.]+$/, ""); 
 
-      document.getElementById("ppFileStatus").textContent = `Arquivo: ${arquivo.name} — ${pedidosProcessados.length} pedido(s) carregado(s).`;
+      document.getElementById("ppFileStatus").textContent = `Arquivo: ${arquivo.name} — Carregado com sucesso.`;
       document.getElementById("ppDiagnostico").innerHTML = diagnosticarColunas(resultado.indices);
       document.getElementById("ppSearchBox").style.display = "block";
       document.getElementById("ppBtnSalvarPlanilha").style.display = "inline-block";
 
-      renderizarEstatisticas(pedidosProcessados);
+      // --- INTEGRAÇÃO COM O BANCO DE DADOS: Salva o Histórico no momento do upload ---
+      const dadosParaEnvio = pedidosProcessados.map(p => {
+          const edicao = carregarEdicaoPedido(p.idPedido);
+          return [
+              p.idPedido, 
+              p.comprador, 
+              edicao.temaManual || p.nomeVariacao, // Salva o tema se tiver, senão manda a variação
+              p.nomeProduto, 
+              p.quantidade, 
+              new Date().toISOString()
+          ];
+      });
+
+      fetch(URL_API, {
+          method: 'POST',
+          body: JSON.stringify({ 
+              acao: "salvar_historico_lote", 
+              dados: dadosParaEnvio 
+          })
+      }).then(res => console.log("Histórico enviado para o banco de dados!"));
+      // ---------------------------------------------------------------------------------
+
       atualizarTela();
     } catch(erro) {
       document.getElementById("ppFileStatus").textContent = "Erro na leitura. Confira se é .csv ou .xlsx válido.";
@@ -360,21 +348,58 @@ document.getElementById("ppFileInput").addEventListener("change", function(event
 
 function pedidosFiltradosAtuais() {
   const termo = normalizarTexto(document.getElementById("ppSearchInput").value);
-  if (!termo) return pedidosProcessados;
-  return pedidosProcessados.filter(p => normalizarTexto(p.idPedido).includes(termo) || normalizarTexto(p.comprador).includes(termo) || normalizarTexto(p.nomeVariacao).includes(termo));
+  
+  // O SEGREDO ESTÁ AQUI: Filtra os pedidos que já foram marcados como FEITO ou POSTADO localmente.
+  // Assim, a tela de produção fica sempre limpa.
+  let pedidosAtivos = pedidosProcessados.filter(p => {
+      const statusLocal = carregarStatusPedido(p.idPedido);
+      return statusLocal !== "FEITO" && statusLocal !== "POSTADO";
+  });
+
+  if (!termo) return pedidosAtivos;
+  return pedidosAtivos.filter(p => normalizarTexto(p.idPedido).includes(termo) || normalizarTexto(p.comprador).includes(termo) || normalizarTexto(p.nomeVariacao).includes(termo));
 }
 
-function atualizarTela() { renderizarPedidos(pedidosFiltradosAtuais()); }
+function atualizarTela() { 
+  const listaPronta = pedidosFiltradosAtuais();
+  renderizarEstatisticas(listaPronta); // Atualiza os números (ex: se o pedido sumir, o total diminui)
+  renderizarPedidos(listaPronta); 
+}
 
 document.getElementById("ppSearchInput").addEventListener("input", atualizarTela);
 
 // Listener Global para capturar mudanças no Status E no campo manual de Tema
-document.getElementById("ppOrdersBox").addEventListener("change", function(evento){
-  // Salva o Select de Status
+document.getElementById("ppOrdersBox").addEventListener("change", async function(evento){
+  
+  // Lógica de Mover Status para o Banco de Dados
   if (evento.target.classList.contains("status-select")) {
-    salvarStatusPedido(evento.target.dataset.id, evento.target.value);
+    const idPedido = evento.target.dataset.id;
+    const novoStatus = evento.target.value;
+    
+    salvarStatusPedido(idPedido, novoStatus);
+
+    // Se marcou como FEITO ou POSTADO, tira da frente e manda pro banco
+    if (novoStatus === "FEITO" || novoStatus === "POSTADO") {
+      evento.target.closest(".tag").style.opacity = "0.4"; // Deixa transparente enquanto processa
+      evento.target.closest(".tag").style.pointerEvents = "none"; // Impede duplo clique
+
+      try {
+        await fetch(URL_API, {
+          method: 'POST',
+          body: JSON.stringify({
+            acao: "atualizar_status_banco",
+            idPedido: idPedido,
+            novoStatusSistema: "FINALIZADO"
+          })
+        });
+        atualizarTela(); // A tela recarrega e o pedido some sozinho!
+      } catch (e) {
+        console.error("Erro de conexão ao finalizar pedido:", e);
+      }
+    }
   }
-  // Salva o campo de texto do Tema
+
+  // Lógica de Salvar o Tema Manual
   if (evento.target.classList.contains("input-tema-card")) {
     const idPedido = evento.target.dataset.id;
     const dados = carregarEdicaoPedido(idPedido);
