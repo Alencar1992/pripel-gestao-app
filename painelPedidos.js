@@ -317,25 +317,90 @@ document.getElementById("ppFileInput").addEventListener("change", function(event
       document.getElementById("ppBtnSalvarPlanilha").style.display = "inline-block";
 
       // --- INTEGRAÇÃO COM O BANCO DE DADOS: Salva o Histórico no momento do upload ---
-      const dadosParaEnvio = pedidosProcessados.map(p => {
-          const edicao = carregarEdicaoPedido(p.idPedido);
-          return [
-              p.idPedido, 
-              p.comprador, 
-              edicao.temaManual || p.nomeVariacao, // Salva o tema se tiver, senão manda a variação
-              p.nomeProduto, 
-              p.quantidade, 
-              new Date().toISOString()
-          ];
-      });
+const dadosParaEnvio = pedidosProcessados.map(p => {
+    const edicao = carregarEdicaoPedido(p.idPedido);
+    return [
+        p.idPedido, 
+        p.comprador, 
+        edicao.temaManual || p.nomeVariacao, 
+        p.nomeProduto, 
+        p.quantidade, 
+        p.endereco, 
+        p.dtCompra ? p.dtCompra.toISOString() : "", 
+        new Date().toISOString()
+    ];
+});
 
-      fetch(URL_API, {
-          method: 'POST',
-          body: JSON.stringify({ 
-              acao: "salvar_historico_lote", 
-              dados: dadosParaEnvio 
-          })
-      }).then(res => console.log("Histórico enviado para o banco de dados!"));
+// Envia para o banco e DEPOIS recarrega a tela fundindo antigos e novos
+fetch(URL_API, {
+    method: 'POST',
+    body: JSON.stringify({ acao: "salvar_historico_lote", dados: dadosParaEnvio })
+})
+.then(res => res.json())
+.then(resposta => {
+    document.getElementById("ppFileStatus").textContent = `Sucesso! ${resposta.inseridos} novos pedidos adicionados ao banco.`;
+    carregarDadosDoBanco("PRODUÇÃO"); // Baixa a lista completa atualizada
+});
+// ---------------------------------------------------------------------------------
+
+
+// Função reconstruída para carregar e montar os pedidos salvos no banco
+async function carregarDadosDoBanco(statusDesejado) {
+    document.getElementById("ppOrdersBox").innerHTML = "<p style='text-align:center; padding: 20px; color: var(--ink-soft);'>Carregando dados do banco...</p>";
+    
+    try {
+        const response = await fetch(URL_API, { 
+            method: 'POST', 
+            body: JSON.stringify({ acao: "buscar_pedidos", statusFiltro: statusDesejado }) 
+        });
+        const resultado = await response.json();
+        
+        if (resultado.status === "sucesso") {
+            // Reconstrói a lista global com base nas colunas do Sheets
+            pedidosProcessados = resultado.dados.map(row => {
+                const dataCompraObj = row[6] ? new Date(row[6]) : null;
+                const prazos = calcularProgramacaoEnvio(dataCompraObj);
+                
+                return {
+                    idPedido: String(row[0]),
+                    comprador: row[1],
+                    nomeVariacao: row[2], 
+                    nomeProduto: row[3],
+                    quantidade: row[4],
+                    endereco: row[5],
+                    dtCompra: dataCompraObj,
+                    prazoProducao: prazos.prazo,
+                    diasRestantes: prazos.diasRestantes
+                };
+            });
+            atualizarTela();
+        }
+    } catch (e) {
+        console.error("Erro ao buscar dados do banco:", e);
+    }
+}
+
+// --- LÓGICA DE NAVEGAÇÃO DAS ABAS (PRODUÇÃO / FINALIZADOS) ---
+document.getElementById("btnTabProducao").addEventListener("click", function() {
+    this.style.background = "var(--teal)"; this.style.color = "white"; this.style.border = "none";
+    const btnFin = document.getElementById("btnTabFinalizados");
+    btnFin.style.background = "var(--card-bg)"; btnFin.style.color = "var(--ink-soft)"; btnFin.style.border = "1px solid var(--border)";
+    
+    carregarDadosDoBanco("PRODUÇÃO");
+});
+
+document.getElementById("btnTabFinalizados").addEventListener("click", function() {
+    this.style.background = "var(--teal)"; this.style.color = "white"; this.style.border = "none";
+    const btnProd = document.getElementById("btnTabProducao");
+    btnProd.style.background = "var(--card-bg)"; btnProd.style.color = "var(--ink-soft)"; btnProd.style.border = "1px solid var(--border)";
+    
+    carregarDadosDoBanco("FINALIZADO");
+});
+
+// Dispara o carregamento automático dos pedidos em produção ao abrir o sistema
+window.addEventListener('DOMContentLoaded', () => {
+    carregarDadosDoBanco("PRODUÇÃO");
+});
       // ---------------------------------------------------------------------------------
 
       atualizarTela();
