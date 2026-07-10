@@ -195,22 +195,6 @@ function processarPlanilha(linhas) {
 
   return { pedidos, indices };
 }
-// Dentro do listener do 'ppFileInput', logo após processar a planilha:
-const resultado = processarPlanilha(linhas);
-pedidosProcessados = resultado.pedidos;
-
-// --- NOVO: Enviar para o banco de dados ---
-const dadosParaEnvio = pedidosProcessados.map(p => [
-    p.idPedido, p.comprador, p.tema, p.nomeProduto, p.quantidade, new Date().toISOString()
-]);
-
-fetch(URL_API, {
-    method: 'POST',
-    body: JSON.stringify({ 
-        acao: "salvar_historico_lote", 
-        dados: dadosParaEnvio 
-    })
-}).then(res => console.log("Histórico enviado!"));
 
 function renderizarEstatisticas(pedidos) {
   const total = pedidos.length;
@@ -304,7 +288,22 @@ function renderizarPedidos(pedidos) {
     `;
   }).join("");
 }
+// Dentro do listener do 'ppFileInput', logo após processar a planilha:
+const resultado = processarPlanilha(linhas);
+pedidosProcessados = resultado.pedidos;
 
+// --- NOVO: Enviar para o banco de dados ---
+const dadosParaEnvio = pedidosProcessados.map(p => [
+    p.idPedido, p.comprador, p.tema, p.nomeProduto, p.quantidade, new Date().toISOString()
+]);
+
+fetch(URL_API, {
+    method: 'POST',
+    body: JSON.stringify({ 
+        acao: "salvar_historico_lote", 
+        dados: dadosParaEnvio 
+    })
+}).then(res => console.log("Histórico enviado!"));
 /* ==============================================================
    EVENTOS (UPLOAD, BUSCA E EDIÇÃO)
    ============================================================== */
