@@ -235,8 +235,6 @@ function renderizarPedidos(pedidos) {
     const diasTexto = p.diasRestantes === null ? "sem data" : p.diasRestantes < 0 ? `${Math.abs(p.diasRestantes)} dia(s) atrasado` : `${p.diasRestantes} dia(s) restante(s)`;
 
     const statusPedidoAtual = carregarStatusPedido(p.idPedido);
-    const opcoesStatusHtml = OPCOES_STATUS_PEDIDO.map(opcao => `<option value="${opcao}" ${opcao === statusPedidoAtual ? "selected" : ""}>${opcao}</option>`).join("");
-
     const edicao = carregarEdicaoPedido(p.idPedido);
     
     // Campo Editável de Tema no próprio card
@@ -278,7 +276,6 @@ function renderizarPedidos(pedidos) {
           <span style="color:${statusPrazo.cor}; font-weight:bold;">${diasTexto}</span>
         </div>
         <div class="status-row" style="display:flex; gap:10px;">
-          <div class="status-row" style="display:flex; gap:10px;">
           <!-- Substituído o Select por um Input Editável -->
           <input type="text" class="status-input" data-id="${escapeHtml(p.idPedido)}" 
                  value="${escapeHtml(statusPedidoAtual)}" placeholder="Digite o status..." 
@@ -295,242 +292,218 @@ function renderizarPedidos(pedidos) {
 /* ==============================================================
    EVENTOS (UPLOAD, BUSCA E EDIÇÃO)
    ============================================================== */
-// --- LÓGICA DE NAVEGAÇÃO DAS ABAS ATUALIZADA ---
-document.getElementById("btnTabProducao").addEventListener("click", function() {
-    this.style.background = "var(--teal)"; this.style.color = "white"; this.style.border = "none";
-    const btnFin = document.getElementById("btnTabFinalizados");
-    btnFin.style.background = "var(--card-bg)"; btnFin.style.color = "var(--ink-soft)"; btnFin.style.border = "1px solid var(--border)";
-    
-    abaAtual = "PRODUÇÃO";
-    carregarDadosDoBanco("PRODUÇÃO");
-});
 
-document.getElementById("btnTabFinalizados").addEventListener("click", function() {
-    this.style.background = "var(--teal)"; this.style.color = "white"; this.style.border = "none";
-    const btnProd = document.getElementById("btnTabProducao");
-    btnProd.style.background = "var(--card-bg)"; btnProd.style.color = "var(--ink-soft)"; btnProd.style.border = "1px solid var(--border)";
-    
-    abaAtual = "FINALIZADO";
-    carregarDadosDoBanco("FINALIZADO");
-});
+function definirEstadoAbas() {
+  const producaoAtiva = abaAtual === "PRODUÇÃO";
+  const btnProducao = document.getElementById("btnTabProducao");
+  const btnFinalizados = document.getElementById("btnTabFinalizados");
 
+  btnProducao.style.background = producaoAtiva ? "var(--teal)" : "var(--card-bg)";
+  btnProducao.style.color = producaoAtiva ? "white" : "var(--ink-soft)";
+  btnProducao.style.border = producaoAtiva ? "none" : "1px solid var(--border)";
 
-// --- LÓGICA DE FILTROS COM TEMA E STATUS ---
+  btnFinalizados.style.background = producaoAtiva ? "var(--card-bg)" : "var(--teal)";
+  btnFinalizados.style.color = producaoAtiva ? "var(--ink-soft)" : "white";
+  btnFinalizados.style.border = producaoAtiva ? "1px solid var(--border)" : "none";
+}
+
 function pedidosFiltradosAtuais() {
   const termoGeral = normalizarTexto(document.getElementById("ppSearchInput").value);
   const termoTema = normalizarTexto(document.getElementById("ppFilterTema").value);
   const termoStatus = normalizarTexto(document.getElementById("ppFilterStatus").value);
-  
-  let pedidosAtivos = pedidosProcessados.filter(p => {
-      const statusLocal = carregarStatusPedido(p.idPedido);
-      const statusNorm = normalizarTexto(statusLocal);
-      
-      // Oculta os finalizados apenas se estivermos na aba de Produção
-      if (abaAtual === "PRODUÇÃO" && (statusNorm === "FEITO" || statusNorm === "POSTADO")) {
-          return false;
-      }
-      return true;
-  });
 
-  return pedidosAtivos.filter(p => {
-      const edicao = carregarEdicaoPedido(p.idPedido);
-      const temaAtual = normalizarTexto(edicao.temaManual || p.nomeVariacao);
-      const statusAtual = normalizarTexto(carregarStatusPedido(p.idPedido));
-      
-      const bateGeral = !termoGeral || normalizarTexto(p.idPedido).includes(termoGeral) || normalizarTexto(p.comprador).includes(termoGeral);
-      const bateTema = !termoTema || temaAtual.includes(termoTema);
-      const bateStatus = !termoStatus || statusAtual.includes(termoStatus);
-      
-      return bateGeral && bateTema && bateStatus;
+  return pedidosProcessados.filter(pedido => {
+    const status = normalizarTexto(carregarStatusPedido(pedido.idPedido));
+    const edicao = carregarEdicaoPedido(pedido.idPedido);
+    const tema = normalizarTexto(edicao.temaManual || pedido.nomeVariacao);
+
+    if (abaAtual === "PRODUÇÃO" && (status === "FEITO" || status === "POSTADO")) {
+      return false;
+    }
+
+    const correspondeGeral = !termoGeral
+      || normalizarTexto(pedido.idPedido).includes(termoGeral)
+      || normalizarTexto(pedido.comprador).includes(termoGeral)
+      || normalizarTexto(pedido.nomeVariacao).includes(termoGeral);
+    const correspondeTema = !termoTema || tema.includes(termoTema);
+    const correspondeStatus = !termoStatus || status.includes(termoStatus);
+
+    return correspondeGeral && correspondeTema && correspondeStatus;
   });
 }
 
-function atualizarTela() { 
-  const listaPronta = pedidosFiltradosAtuais();
-  renderizarEstatisticas(listaPronta);
-  renderizarPedidos(listaPronta); 
+function atualizarTela() {
+  const pedidos = pedidosFiltradosAtuais();
+  renderizarEstatisticas(pedidos);
+  renderizarPedidos(pedidos);
 }
 
-// Escuta a digitação nos três campos de filtro
+async function carregarDadosDoBanco(statusDesejado = abaAtual) {
+  const ordersBox = document.getElementById("ppOrdersBox");
+  ordersBox.innerHTML = "<p style='text-align:center; padding:20px; color:var(--ink-soft);'>Carregando dados do banco...</p>";
+
+  try {
+    const response = await fetch(URL_API, {
+      method: "POST",
+      body: JSON.stringify({ acao: "buscar_pedidos", statusFiltro: statusDesejado }),
+    });
+    const resultado = await response.json();
+
+    if (!response.ok || resultado.status !== "sucesso" || !Array.isArray(resultado.dados)) {
+      throw new Error(resultado.mensagem || "Não foi possível carregar os pedidos.");
+    }
+
+    pedidosProcessados = resultado.dados.map(row => {
+      const dataCompra = row[6] ? new Date(row[6]) : null;
+      const prazos = calcularProgramacaoEnvio(dataCompra);
+
+      return {
+        idPedido: String(row[0] ?? ""),
+        comprador: row[1] ?? "",
+        nomeVariacao: row[2] ?? "",
+        nomeProduto: row[3] ?? "",
+        quantidade: row[4] ?? "",
+        endereco: row[5] ?? "",
+        dtCompra: dataCompra,
+        prazoProducao: prazos.prazo,
+        diasRestantes: prazos.diasRestantes,
+      };
+    });
+
+    document.getElementById("ppSearchBox").style.display = "block";
+    atualizarTela();
+  } catch (erro) {
+    console.error("Erro ao buscar dados do banco:", erro);
+    ordersBox.innerHTML = `<p style="text-align:center; padding:20px; color:var(--cor-alerta);">${escapeHtml(erro.message)}</p>`;
+  }
+}
+
+async function selecionarAba(novaAba) {
+  abaAtual = novaAba;
+  definirEstadoAbas();
+  await carregarDadosDoBanco(novaAba);
+}
+
+document.getElementById("btnTabProducao").addEventListener("click", () => selecionarAba("PRODUÇÃO"));
+document.getElementById("btnTabFinalizados").addEventListener("click", () => selecionarAba("FINALIZADO"));
 document.getElementById("ppSearchInput").addEventListener("input", atualizarTela);
 document.getElementById("ppFilterTema").addEventListener("input", atualizarTela);
 document.getElementById("ppFilterStatus").addEventListener("input", atualizarTela);
 
+document.getElementById("ppFileInput").addEventListener("change", async function(evento) {
+  const arquivo = evento.target.files[0];
+  if (!arquivo) return;
 
-// --- SALVAMENTO E AUTOMAÇÃO DO STATUS EDITÁVEL ---
-document.getElementById("ppOrdersBox").addEventListener("change", async function(evento){
-  
-  // Salva o Campo de Status Livre
+  const statusBox = document.getElementById("ppFileStatus");
+  statusBox.textContent = "Lendo arquivo...";
+
+  try {
+    const dadosBrutos = new Uint8Array(await arquivo.arrayBuffer());
+    const planilha = XLSX.read(dadosBrutos, { type: "array", cellDates: true });
+    const primeiraAba = planilha.Sheets[planilha.SheetNames[0]];
+    const linhas = XLSX.utils.sheet_to_json(primeiraAba, { header: 1, defval: "" });
+    const resultado = processarPlanilha(linhas);
+
+    pedidosProcessados = resultado.pedidos;
+    linhasOriginais = linhas;
+    indicesColunasAtuais = resultado.indices;
+    nomeArquivoAtual = arquivo.name.replace(/\.[^.]+$/, "");
+
+    statusBox.textContent = `Arquivo: ${arquivo.name} — enviando pedidos...`;
+    document.getElementById("ppDiagnostico").innerHTML = diagnosticarColunas(resultado.indices);
+    document.getElementById("ppSearchBox").style.display = "block";
+    document.getElementById("ppBtnSalvarPlanilha").style.display = "inline-block";
+    atualizarTela();
+
+    const dados = pedidosProcessados.map(pedido => {
+      const edicao = carregarEdicaoPedido(pedido.idPedido);
+      return [
+        pedido.idPedido,
+        pedido.comprador,
+        edicao.temaManual || pedido.nomeVariacao,
+        pedido.nomeProduto,
+        pedido.quantidade,
+        pedido.endereco,
+        pedido.dtCompra ? pedido.dtCompra.toISOString() : "",
+        new Date().toISOString(),
+      ];
+    });
+
+    const response = await fetch(URL_API, {
+      method: "POST",
+      body: JSON.stringify({ acao: "salvar_historico_lote", dados }),
+    });
+    const resposta = await response.json();
+
+    if (!response.ok || resposta.status === "erro") {
+      throw new Error(resposta.mensagem || "Não foi possível salvar os pedidos.");
+    }
+
+    statusBox.textContent = `Sucesso! ${resposta.inseridos ?? dados.length} pedido(s) processado(s).`;
+    await selecionarAba("PRODUÇÃO");
+  } catch (erro) {
+    console.error("Erro ao importar planilha:", erro);
+    statusBox.textContent = `Erro: ${erro.message || "Confira se o arquivo é CSV ou XLSX válido."}`;
+  } finally {
+    evento.target.value = "";
+  }
+});
+
+document.getElementById("ppOrdersBox").addEventListener("change", async function(evento) {
   if (evento.target.classList.contains("status-input")) {
     const idPedido = evento.target.dataset.id;
     const novoStatus = evento.target.value.trim();
-    
     salvarStatusPedido(idPedido, novoStatus);
 
-    const statusNorm = normalizarTexto(novoStatus);
-    
-    // Automação: Se o texto digitado for exatamente "FEITO" ou "POSTADO", envia para o banco
-    if (abaAtual === "PRODUÇÃO" && (statusNorm === "FEITO" || statusNorm === "POSTADO")) {
-      evento.target.closest(".tag").style.opacity = "0.4";
-      evento.target.closest(".tag").style.pointerEvents = "none";
+    const statusNormalizado = normalizarTexto(novoStatus);
+    if (abaAtual === "PRODUÇÃO" && (statusNormalizado === "FEITO" || statusNormalizado === "POSTADO")) {
+      const card = evento.target.closest(".tag");
+      if (card) {
+        card.style.opacity = "0.4";
+        card.style.pointerEvents = "none";
+      }
 
       try {
-        await fetch(URL_API, {
-          method: 'POST',
+        const response = await fetch(URL_API, {
+          method: "POST",
           body: JSON.stringify({
             acao: "atualizar_status_banco",
-            idPedido: idPedido,
-            novoStatusSistema: "FINALIZADO"
-          })
-        });
-        atualizarTela(); 
-      } catch (e) {
-        console.error("Erro ao finalizar pedido:", e);
-      }
-    } else {
-        atualizarTela(); // Atualiza para refletir o filtro de status em tempo real, se estiver ativo
-    }
-  }
-
-  // Salva o campo de texto do Tema (Card)
-  if (evento.target.classList.contains("input-tema-card")) {
-    const idPedido = evento.target.dataset.id;
-    const dados = carregarEdicaoPedido(idPedido);
-    dados.temaManual = evento.target.value.trim();
-    salvarEdicaoPedido(idPedido, dados);
-    atualizarTela(); // Reflete no filtro de tema em tempo real
-  }
-});
-// ---------------------------------------------------------------------------------
-
-
-// Função reconstruída para carregar e montar os pedidos salvos no banco
-async function carregarDadosDoBanco(statusDesejado) {
-    document.getElementById("ppOrdersBox").innerHTML = "<p style='text-align:center; padding: 20px; color: var(--ink-soft);'>Carregando dados do banco...</p>";
-    
-    try {
-        const response = await fetch(URL_API, { 
-            method: 'POST', 
-            body: JSON.stringify({ acao: "buscar_pedidos", statusFiltro: statusDesejado }) 
+            idPedido,
+            novoStatusSistema: "FINALIZADO",
+          }),
         });
         const resultado = await response.json();
-        
-        if (resultado.status === "sucesso") {
-            // Reconstrói a lista global com base nas colunas do Sheets
-            pedidosProcessados = resultado.dados.map(row => {
-                const dataCompraObj = row[6] ? new Date(row[6]) : null;
-                const prazos = calcularProgramacaoEnvio(dataCompraObj);
-                
-                return {
-                    idPedido: String(row[0]),
-                    comprador: row[1],
-                    nomeVariacao: row[2], 
-                    nomeProduto: row[3],
-                    quantidade: row[4],
-                    endereco: row[5],
-                    dtCompra: dataCompraObj,
-                    prazoProducao: prazos.prazo,
-                    diasRestantes: prazos.diasRestantes
-                };
-            });
-            atualizarTela();
+
+        if (!response.ok || resultado.status === "erro") {
+          throw new Error(resultado.mensagem || "Não foi possível finalizar o pedido.");
         }
-    } catch (e) {
-        console.error("Erro ao buscar dados do banco:", e);
-    }
-}
 
-// --- LÓGICA DE NAVEGAÇÃO DAS ABAS (PRODUÇÃO / FINALIZADOS) ---
-document.getElementById("btnTabProducao").addEventListener("click", function() {
-    this.style.background = "var(--teal)"; this.style.color = "white"; this.style.border = "none";
-    const btnFin = document.getElementById("btnTabFinalizados");
-    btnFin.style.background = "var(--card-bg)"; btnFin.style.color = "var(--ink-soft)"; btnFin.style.border = "1px solid var(--border)";
-    
-    carregarDadosDoBanco("PRODUÇÃO");
-});
-
-document.getElementById("btnTabFinalizados").addEventListener("click", function() {
-    this.style.background = "var(--teal)"; this.style.color = "white"; this.style.border = "none";
-    const btnProd = document.getElementById("btnTabProducao");
-    btnProd.style.background = "var(--card-bg)"; btnProd.style.color = "var(--ink-soft)"; btnProd.style.border = "1px solid var(--border)";
-    
-    carregarDadosDoBanco("FINALIZADO");
-});
-
-// Dispara o carregamento automático dos pedidos em produção ao abrir o sistema
-window.addEventListener('DOMContentLoaded', () => {
-    carregarDadosDoBanco("PRODUÇÃO");
-});
-      // ---------------------------------------------------------------------------------
-
-      atualizarTela();
-    } catch(erro) {
-      document.getElementById("ppFileStatus").textContent = "Erro na leitura. Confira se é .csv ou .xlsx válido.";
-    }
-  };
-  leitor.readAsArrayBuffer(arquivo);
-});
-
-function pedidosFiltradosAtuais() {
-  const termo = normalizarTexto(document.getElementById("ppSearchInput").value);
-  
-  // O SEGREDO ESTÁ AQUI: Filtra os pedidos que já foram marcados como FEITO ou POSTADO localmente.
-  // Assim, a tela de produção fica sempre limpa.
-  let pedidosAtivos = pedidosProcessados.filter(p => {
-      const statusLocal = carregarStatusPedido(p.idPedido);
-      return statusLocal !== "FEITO" && statusLocal !== "POSTADO";
-  });
-
-  if (!termo) return pedidosAtivos;
-  return pedidosAtivos.filter(p => normalizarTexto(p.idPedido).includes(termo) || normalizarTexto(p.comprador).includes(termo) || normalizarTexto(p.nomeVariacao).includes(termo));
-}
-
-function atualizarTela() { 
-  const listaPronta = pedidosFiltradosAtuais();
-  renderizarEstatisticas(listaPronta); // Atualiza os números (ex: se o pedido sumir, o total diminui)
-  renderizarPedidos(listaPronta); 
-}
-
-document.getElementById("ppSearchInput").addEventListener("input", atualizarTela);
-
-// Listener Global para capturar mudanças no Status E no campo manual de Tema
-document.getElementById("ppOrdersBox").addEventListener("change", async function(evento){
-  
-  // Lógica de Mover Status para o Banco de Dados
-  if (evento.target.classList.contains("status-select")) {
-    const idPedido = evento.target.dataset.id;
-    const novoStatus = evento.target.value;
-    
-    salvarStatusPedido(idPedido, novoStatus);
-
-    // Se marcou como FEITO ou POSTADO, tira da frente e manda pro banco
-    if (novoStatus === "FEITO" || novoStatus === "POSTADO") {
-      evento.target.closest(".tag").style.opacity = "0.4"; // Deixa transparente enquanto processa
-      evento.target.closest(".tag").style.pointerEvents = "none"; // Impede duplo clique
-
-      try {
-        await fetch(URL_API, {
-          method: 'POST',
-          body: JSON.stringify({
-            acao: "atualizar_status_banco",
-            idPedido: idPedido,
-            novoStatusSistema: "FINALIZADO"
-          })
-        });
-        atualizarTela(); // A tela recarrega e o pedido some sozinho!
-      } catch (e) {
-        console.error("Erro de conexão ao finalizar pedido:", e);
+        await carregarDadosDoBanco(abaAtual);
+      } catch (erro) {
+        console.error("Erro ao finalizar pedido:", erro);
+        if (card) {
+          card.style.opacity = "1";
+          card.style.pointerEvents = "auto";
+        }
+        alert(erro.message);
       }
+    } else {
+      atualizarTela();
     }
   }
 
-  // Lógica de Salvar o Tema Manual
   if (evento.target.classList.contains("input-tema-card")) {
     const idPedido = evento.target.dataset.id;
     const dados = carregarEdicaoPedido(idPedido);
     dados.temaManual = evento.target.value.trim();
     salvarEdicaoPedido(idPedido, dados);
+    atualizarTela();
   }
+});
+
+window.addEventListener("DOMContentLoaded", () => {
+  definirEstadoAbas();
+  carregarDadosDoBanco("PRODUÇÃO");
 });
 
 document.getElementById("ppOrdersBox").addEventListener("click", function(evento){
