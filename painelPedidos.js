@@ -31,7 +31,8 @@ let idPedidoEmEdicao = null;
 let linhasOriginais = [];
 let indicesColunasAtuais = {};
 let nomeArquivoAtual = "";
-let abaAtual = "PRODUÇÃO"; // <- NOVA VARIÁVEL
+let abaAtual = "PRODUÇÃO";
+let temasCadastrados = []; // <- NOVA VARIÁVEL
 
 function normalizarTexto(txt) {
   return String(txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim().toUpperCase();
@@ -237,11 +238,15 @@ function renderizarPedidos(pedidos) {
     const statusPedidoAtual = carregarStatusPedido(p.idPedido);
     const edicao = carregarEdicaoPedido(p.idPedido);
     
-    // Campo Editável de Tema no próprio card
+    const temaSelecionado = edicao.temaManual || p.nomeVariacao || "";
+    const opcoesTemaHtml = [...new Set([...temasCadastrados, temaSelecionado].filter(Boolean))].sort((x,y) => x.localeCompare(y, "pt-BR")).map(tema => `<option value="${escapeHtml(tema)}"${tema === temaSelecionado ? " selected" : ""}>${escapeHtml(tema)}</option>`).join("");
     const temaManualInput = `
-        <div style="margin-bottom: 15px;">
-          <label style="font-size: 0.75rem; font-weight: bold; color: var(--ink-soft); text-transform: uppercase;">Tema</label>
-          <input type="text" class="input-tema-card" data-id="${escapeHtml(p.idPedido)}" value="${escapeHtml(edicao.temaManual || "")}" placeholder="Digite o tema..." style="width: 100%; margin-top: 4px; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--paper-2); color: var(--ink); font-size: 0.9rem; transition: border-color 0.2s ease;">
+        <div style="margin-bottom:15px;">
+          <label style="font-size:.75rem;font-weight:bold;color:var(--ink-soft);text-transform:uppercase;">Tema</label>
+          <select class="select-tema-card" data-id="${escapeHtml(p.idPedido)}" style="width:100%;margin-top:4px;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--paper-2);color:var(--ink);">
+            <option value="">Selecione um tema...</option>${opcoesTemaHtml}
+          </select>
+          <span class="tema-save-status" style="display:block;min-height:16px;margin-top:4px;font-size:.75rem;"></span>
         </div>
     `;
 
@@ -292,6 +297,34 @@ function renderizarPedidos(pedidos) {
 /* ==============================================================
    EVENTOS (UPLOAD, BUSCA E EDIÇÃO)
    ============================================================== */
+
+async function apiTemas(payload) {
+  const response = await fetch(URL_API, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload) });
+  const result = await response.json();
+  if (result.status !== "sucesso") throw new Error(result.mensagem || "Operação não concluída.");
+  return result;
+}
+
+async function carregarTemas() {
+  try {
+    const result = await apiTemas({acao:"listar_temas"});
+    temasCadastrados = [...new Set((result.temas || []).map(t => String(t).trim()).filter(Boolean))];
+    atualizarTela();
+  } catch (e) {
+    const status = document.getElementById("ppTemaStatus");
+    status.style.color = "var(--cor-alerta)"; status.textContent = e.message;
+  }
+}
+
+async function cadastrarTema() {
+  const input=document.getElementById("ppNovoTema"), button=document.getElementById("ppBtnCadastrarTema"), status=document.getElementById("ppTemaStatus");
+  const tema=input.value.trim();
+  if (!tema) { status.style.color="var(--cor-alerta)"; status.textContent="Digite o nome do tema."; return; }
+  button.disabled=true; status.textContent="Cadastrando...";
+  try { await apiTemas({acao:"cadastrar_tema",tema}); input.value=""; status.style.color="var(--cor-sucesso)"; status.textContent="Tema cadastrado."; await carregarTemas(); }
+  catch(e) { status.style.color="var(--cor-alerta)"; status.textContent=e.message; }
+  finally { button.disabled=false; }
+}
 
 function definirEstadoAbas() {
   const producaoAtiva = abaAtual === "PRODUÇÃO";
@@ -389,6 +422,8 @@ document.getElementById("btnTabFinalizados").addEventListener("click", () => sel
 document.getElementById("ppSearchInput").addEventListener("input", atualizarTela);
 document.getElementById("ppFilterTema").addEventListener("input", atualizarTela);
 document.getElementById("ppFilterStatus").addEventListener("input", atualizarTela);
+document.getElementById("ppBtnCadastrarTema").addEventListener("click", cadastrarTema);
+document.getElementById("ppNovoTema").addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); cadastrarTema(); } });
 
 document.getElementById("ppFileInput").addEventListener("change", async function(evento) {
   const arquivo = evento.target.files[0];
@@ -492,17 +527,21 @@ document.getElementById("ppOrdersBox").addEventListener("change", async function
     }
   }
 
-  if (evento.target.classList.contains("input-tema-card")) {
-    const idPedido = evento.target.dataset.id;
-    const dados = carregarEdicaoPedido(idPedido);
-    dados.temaManual = evento.target.value.trim();
-    salvarEdicaoPedido(idPedido, dados);
-    atualizarTela();
+  if (evento.target.classList.contains("select-tema-card")) {
+    const select=evento.target, idPedido=select.dataset.id, tema=select.value, status=select.parentElement.querySelector(".tema-save-status");
+    select.disabled=true; status.textContent="Salvando...";
+    try {
+      await apiTemas({acao:"atualizar_tema_pedido",idPedido,tema});
+      const dados=carregarEdicaoPedido(idPedido); dados.temaManual=tema; salvarEdicaoPedido(idPedido,dados);
+      status.style.color="var(--cor-sucesso)"; status.textContent="Tema salvo.";
+    } catch(e) { status.style.color="var(--cor-alerta)"; status.textContent=e.message; }
+    finally { select.disabled=false; }
   }
 });
 
 window.addEventListener("DOMContentLoaded", () => {
   definirEstadoAbas();
+  carregarTemas();
   carregarDadosDoBanco("PRODUÇÃO");
 });
 
