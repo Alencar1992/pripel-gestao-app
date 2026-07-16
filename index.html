@@ -447,7 +447,8 @@
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 200px;">
                     <label style="font-size: 0.75rem; font-weight: bold; color: var(--ink-soft); margin-bottom: 4px; display: block;">Filtro por Tema:</label>
-                    <input type="text" id="ppFilterTema" placeholder="Ex: Safari, Sereia..." style="width: 100%;">
+                    <input type="text" id="ppFilterTema" list="ppTemasFiltroList" autocomplete="off" placeholder="Digite ou selecione um tema..." style="width:100%;padding-right:34px;">
+                    <datalist id="ppTemasFiltroList"></datalist>
                     </div>
                     <div style="flex: 1; min-width: 200px;">
                     <label style="font-size: 0.75rem; font-weight: bold; color: var(--ink-soft); margin-bottom: 4px; display: block;">Filtro por Status:</label>
@@ -519,6 +520,6 @@
         </main>
     </div>
     <script src="script.js?v=20260716-4"></script>
-    <script src="painelPedidos.js?v=20260716-5"></script>
+    <script src="painelPedidos.js?v=20260716-6"></script>
 </body>
 </html>
