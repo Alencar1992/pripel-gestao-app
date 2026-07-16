@@ -247,16 +247,17 @@ document.getElementById('formCadastro').addEventListener('submit', async (e) => 
 // Envio da alteração de senha
 document.getElementById('formTrocaSenha').addEventListener('submit', async (e) => {
     e.preventDefault();
+    validarNovaSenha();
     if (btnSalvarSenha.disabled) return;
 
     btnSalvarSenha.disabled = true;
-    boxesLogin.statusBox.style.display = 'block';
-    boxesLogin.statusBox.style.color = '#FFD700';
-    boxesLogin.statusBox.innerText = '⏳ Atualizando senha...';
+    msgTrocaSenhaMatch.style.color = '#FFD700';
+    msgTrocaSenhaMatch.innerText = '⏳ Atualizando senha...';
 
     try {
         const response = await fetch(URL_API, {
             method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({
                 acao: 'alterar_senha',
                 usuario: document.getElementById('trocaUser').value.trim(),
@@ -265,20 +266,24 @@ document.getElementById('formTrocaSenha').addEventListener('submit', async (e) =
         });
         const resultado = await response.json();
 
-        if (!response.ok || resultado.status !== 'sucesso') {
+        if (resultado.status !== 'sucesso') {
             throw new Error(resultado.mensagem || 'Não foi possível alterar a senha.');
         }
 
+        msgTrocaSenhaMatch.style.color = 'var(--cor-sucesso)';
+        msgTrocaSenhaMatch.innerText = '✅ ' + resultado.mensagem;
+        boxesLogin.statusBox.style.display = 'block';
         boxesLogin.statusBox.style.color = 'var(--cor-sucesso)';
-        boxesLogin.statusBox.innerText = '✅ ' + resultado.mensagem;
-        document.getElementById('formTrocaSenha').reset();
-        msgTrocaSenhaMatch.innerText = '';
-        setTimeout(() => exibirBox('login'), 1800);
+        boxesLogin.statusBox.innerText = '✅ Senha atualizada. Você já pode entrar com a nova senha.';
+
+        setTimeout(() => {
+            document.getElementById('formTrocaSenha').reset();
+            exibirBox('login');
+        }, 2200);
     } catch (erro) {
-        boxesLogin.statusBox.style.color = 'var(--cor-alerta)';
-        boxesLogin.statusBox.innerText = '❌ ' + erro.message;
-    } finally {
-        validarNovaSenha();
+        msgTrocaSenhaMatch.style.color = 'var(--cor-alerta)';
+        msgTrocaSenhaMatch.innerText = '❌ ' + erro.message;
+        btnSalvarSenha.disabled = false;
     }
 });
 
