@@ -33,6 +33,7 @@ let indicesColunasAtuais = {};
 let nomeArquivoAtual = "";
 let abaAtual = "PRODUÇÃO";
 let temasCadastrados = []; // <- NOVA VARIÁVEL
+let temaEmEdicao = "";
 
 function normalizarTexto(txt) {
   return String(txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim().toUpperCase();
@@ -242,7 +243,10 @@ function renderizarPedidos(pedidos) {
     const opcoesTemaHtml = [...new Set([...temasCadastrados, temaSelecionado].filter(Boolean))].sort((x,y) => x.localeCompare(y, "pt-BR")).map(tema => `<option value="${escapeHtml(tema)}"${tema === temaSelecionado ? " selected" : ""}>${escapeHtml(tema)}</option>`).join("");
     const temaManualInput = `
         <div style="margin-bottom:15px;">
-          <label style="font-size:.75rem;font-weight:bold;color:var(--ink-soft);text-transform:uppercase;">Tema</label>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <label style="font-size:.75rem;font-weight:bold;color:var(--ink-soft);text-transform:uppercase;">Tema</label>
+            <button type="button" class="btn-editar-tema" data-tema="${escapeHtml(temaSelecionado)}" title="Editar ou excluir tema" aria-label="Editar tema" style="padding:0;border:0;background:transparent;color:var(--teal);cursor:pointer;font-size:.95rem;line-height:1;">✎</button>
+          </div>
           <select class="select-tema-card" data-id="${escapeHtml(p.idPedido)}" style="width:100%;margin-top:4px;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--paper-2);color:var(--ink);">
             <option value="">Selecione um tema...</option>${opcoesTemaHtml}
           </select>
@@ -316,12 +320,41 @@ async function carregarTemas() {
   }
 }
 
+function abrirModalTema(tema = "") {
+  temaEmEdicao = String(tema || "").trim();
+  document.getElementById("ppTemaModalTitulo").textContent = temaEmEdicao ? "Editar tema" : "Cadastrar tema";
+  document.getElementById("ppNovoTema").value = temaEmEdicao;
+  document.getElementById("ppTemaStatus").textContent = "";
+  document.getElementById("ppBtnExcluirTema").style.display = temaEmEdicao ? "inline-block" : "none";
+  document.getElementById("ppTemaModalOverlay").style.display = "flex";
+  setTimeout(() => document.getElementById("ppNovoTema").focus(), 0);
+}
+
+function fecharModalTema() {
+  document.getElementById("ppTemaModalOverlay").style.display = "none";
+  temaEmEdicao = "";
+}
+
 async function cadastrarTema() {
   const input=document.getElementById("ppNovoTema"), button=document.getElementById("ppBtnCadastrarTema"), status=document.getElementById("ppTemaStatus");
   const tema=input.value.trim();
   if (!tema) { status.style.color="var(--cor-alerta)"; status.textContent="Digite o nome do tema."; return; }
-  button.disabled=true; status.textContent="Cadastrando...";
-  try { await apiTemas({acao:"cadastrar_tema",tema}); input.value=""; status.style.color="var(--cor-sucesso)"; status.textContent="Tema cadastrado."; await carregarTemas(); }
+  button.disabled=true; status.textContent="Salvando...";
+  try {
+    if (temaEmEdicao) await apiTemas({acao:"renomear_tema",temaAtual:temaEmEdicao,novoTema:tema});
+    else await apiTemas({acao:"cadastrar_tema",tema});
+    await carregarTemas();
+    fecharModalTema();
+  }
+  catch(e) { status.style.color="var(--cor-alerta)"; status.textContent=e.message; }
+  finally { button.disabled=false; }
+}
+
+async function excluirTema() {
+  if (!temaEmEdicao || !confirm(`Excluir o tema "${temaEmEdicao}"? Ele também será removido dos pedidos que o utilizam.`)) return;
+  const button=document.getElementById("ppBtnExcluirTema"), status=document.getElementById("ppTemaStatus");
+  button.disabled=true; status.textContent="Excluindo...";
+  try { await apiTemas({acao:"excluir_tema",tema:temaEmEdicao}); await carregarTemas(); fecharModalTema(); }
   catch(e) { status.style.color="var(--cor-alerta)"; status.textContent=e.message; }
   finally { button.disabled=false; }
 }
@@ -422,7 +455,11 @@ document.getElementById("btnTabFinalizados").addEventListener("click", () => sel
 document.getElementById("ppSearchInput").addEventListener("input", atualizarTela);
 document.getElementById("ppFilterTema").addEventListener("input", atualizarTela);
 document.getElementById("ppFilterStatus").addEventListener("input", atualizarTela);
+document.getElementById("ppBtnAbrirTema").addEventListener("click", () => abrirModalTema());
 document.getElementById("ppBtnCadastrarTema").addEventListener("click", cadastrarTema);
+document.getElementById("ppBtnExcluirTema").addEventListener("click", excluirTema);
+document.getElementById("ppBtnCancelarTema").addEventListener("click", fecharModalTema);
+document.getElementById("ppTemaModalOverlay").addEventListener("click", e => { if (e.target.id === "ppTemaModalOverlay") fecharModalTema(); });
 document.getElementById("ppNovoTema").addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); cadastrarTema(); } });
 
 document.getElementById("ppFileInput").addEventListener("change", async function(evento) {
@@ -546,6 +583,9 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 document.getElementById("ppOrdersBox").addEventListener("click", function(evento){
+  const botaoTema = evento.target.closest(".btn-editar-tema");
+  if (botaoTema) { abrirModalTema(botaoTema.dataset.tema); return; }
+
   const botao = evento.target.closest(".btn-editar");
   if (!botao) return;
   
