@@ -313,6 +313,13 @@ async function carregarTemas() {
   try {
     const result = await apiTemas({acao:"listar_temas"});
     temasCadastrados = [...new Set((result.temas || []).map(t => String(t).trim()).filter(Boolean))];
+    const listaFiltro = document.getElementById("ppTemasFiltroList");
+    if (listaFiltro) {
+      listaFiltro.innerHTML = temasCadastrados
+        .sort((a, b) => a.localeCompare(b, "pt-BR"))
+        .map(tema => `<option value="${escapeHtml(tema)}"></option>`)
+        .join("");
+    }
     atualizarTela();
   } catch (e) {
     const status = document.getElementById("ppTemaStatus");
