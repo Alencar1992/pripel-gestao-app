@@ -36,6 +36,8 @@ let abaAtual = "PRODUÇÃO";
 let temasCadastrados = []; // <- NOVA VARIÁVEL
 let temaEmEdicao = "";
 let etapasProducao = [];
+let modoVisualizacaoPedidos = "cards";
+let filtroPrazoAtivo = "todos";
 
 function normalizarTexto(txt) {
   return String(txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim().toUpperCase();
@@ -211,10 +213,10 @@ function renderizarEstatisticas(pedidos) {
   const box = document.getElementById("ppStatsBox");
   box.style.display = "grid";
   box.innerHTML = `
-    <div class="stat-card"><div class="num">${total}</div><div class="label">Total (Em Produção)</div></div>
-    <div class="stat-card" style="border-left: 4px solid var(--cor-alerta);"><div class="num" style="color:var(--cor-alerta);">${atrasados}</div><div class="label">Atrasados</div></div>
-    <div class="stat-card" style="border-left: 4px solid var(--cor-destaque);"><div class="num" style="color:var(--cor-destaque);">${urgentes}</div><div class="label">Urgentes (0-1 dia)</div></div>
-    <div class="stat-card" style="border-left: 4px solid var(--cor-sucesso);"><div class="num" style="color:var(--cor-sucesso);">${noPrazo}</div><div class="label">No prazo</div></div>
+    <button type="button" class="stat-card filtro-prazo-card" data-filtro="todos" style="cursor:pointer;${filtroPrazoAtivo === "todos" ? "outline:2px solid var(--teal);" : ""}"><div class="num">${total}</div><div class="label">Total (Em Produção)</div></button>
+    <button type="button" class="stat-card filtro-prazo-card" data-filtro="atrasados" style="cursor:pointer;border-left:4px solid var(--cor-alerta);${filtroPrazoAtivo === "atrasados" ? "outline:2px solid var(--cor-alerta);" : ""}"><div class="num" style="color:var(--cor-alerta);">${atrasados}</div><div class="label">Atrasados</div></button>
+    <button type="button" class="stat-card filtro-prazo-card" data-filtro="urgentes" style="cursor:pointer;border-left:4px solid var(--cor-destaque);${filtroPrazoAtivo === "urgentes" ? "outline:2px solid var(--cor-destaque);" : ""}"><div class="num" style="color:var(--cor-destaque);">${urgentes}</div><div class="label">Urgentes (0-1 dia)</div></button>
+    <button type="button" class="stat-card filtro-prazo-card" data-filtro="noprazo" style="cursor:pointer;border-left:4px solid var(--cor-sucesso);${filtroPrazoAtivo === "noprazo" ? "outline:2px solid var(--cor-sucesso);" : ""}"><div class="num" style="color:var(--cor-sucesso);">${noPrazo}</div><div class="label">No prazo</div></button>
   `;
 }
 
@@ -235,6 +237,14 @@ function renderizarPedidos(pedidos) {
     return a.diasRestantes - b.diasRestantes;
   });
 
+  if (modoVisualizacaoPedidos === "lista") {
+    box.innerHTML = `<div class="table-responsive"><table style="width:100%;border-collapse:collapse;"><thead><tr><th>Pedido</th><th>Tema</th><th>Comprador</th><th>Prazo</th><th>Status</th><th></th></tr></thead><tbody>${ordenados.map(p => {
+      const edicao = carregarEdicaoPedido(p.idPedido), status = carregarStatusPedido(p.idPedido), tema = edicao.temaManual || p.nomeVariacao || "";
+      return `<tr class="tag"><td class="mono">#${escapeHtml(p.idPedido)}</td><td><input class="tema-topo-input" data-id="${escapeHtml(p.idPedido)}" list="ppTemasFiltroList" value="${escapeHtml(tema)}" style="min-width:170px;"></td><td>${escapeHtml(p.comprador) || "—"}</td><td>${formatarData(p.prazoProducao)}</td><td><input class="status-input" data-id="${escapeHtml(p.idPedido)}" list="ppEtapasList" value="${escapeHtml(status)}" placeholder="Digite o status..."><div class="campo-data-postagem" style="display:${normalizarTexto(status) === "POSTADO" ? "block" : "none"};"><input type="date" class="data-postagem-input" data-id="${escapeHtml(p.idPedido)}" value="${escapeHtml(edicao.dataPostagem || "")}"></div></td><td><button class="btn-editar" data-id="${escapeHtml(p.idPedido)}" type="button">Detalhes</button></td></tr>`;
+    }).join("")}</tbody></table></div>`;
+    return;
+  }
+
   box.innerHTML = ordenados.map(p => {
     const statusPrazo = classificarStatus(p.diasRestantes);
     const diasTexto = p.diasRestantes === null ? "sem data" : p.diasRestantes < 0 ? `${Math.abs(p.diasRestantes)} dia(s) atrasado` : `${p.diasRestantes} dia(s) restante(s)`;
@@ -243,19 +253,6 @@ function renderizarPedidos(pedidos) {
     const edicao = carregarEdicaoPedido(p.idPedido);
     
     const temaSelecionado = edicao.temaManual || p.nomeVariacao || "";
-    const opcoesTemaHtml = [...new Set([...temasCadastrados, temaSelecionado].filter(Boolean))].sort((x,y) => x.localeCompare(y, "pt-BR")).map(tema => `<option value="${escapeHtml(tema)}"${tema === temaSelecionado ? " selected" : ""}>${escapeHtml(tema)}</option>`).join("");
-    const temaManualInput = `
-        <div style="margin-bottom:15px;">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <label style="font-size:.75rem;font-weight:bold;color:var(--ink-soft);text-transform:uppercase;">Tema</label>
-            <button type="button" class="btn-editar-tema" data-tema="${escapeHtml(temaSelecionado)}" title="Editar ou excluir tema" aria-label="Editar tema" style="padding:0;border:0;background:transparent;color:var(--teal);cursor:pointer;font-size:.95rem;line-height:1;">✎</button>
-          </div>
-          <select class="select-tema-card" data-id="${escapeHtml(p.idPedido)}" style="width:100%;margin-top:4px;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--paper-2);color:var(--ink);">
-            <option value="">Selecione um tema...</option>${opcoesTemaHtml}
-          </select>
-          <span class="tema-save-status" style="display:block;min-height:16px;margin-top:4px;font-size:.75rem;"></span>
-        </div>
-    `;
 
     const temInfoCrianca = edicao.nomeCrianca || edicao.idade || edicao.observacoes;
     const blocoInfoCrianca = temInfoCrianca ? `
@@ -277,17 +274,15 @@ function renderizarPedidos(pedidos) {
           <span class="badge" style="background:${statusPrazo.cor}; color:white; padding:4px 8px; border-radius:4px; font-size:0.8rem;">${statusPrazo.texto}</span>
         </div>
         
-        <h3 style="margin: 0 0 5px 0; color: var(--teal); font-size: 1.2rem;">${escapeHtml(p.nomeVariacao) || "Sem Variação"}</h3>
+        <input type="text" class="tema-topo-input" data-id="${escapeHtml(p.idPedido)}" list="ppTemasFiltroList" value="${escapeHtml(temaSelecionado)}" placeholder="Digite ou selecione o tema..." aria-label="Tema do pedido" style="width:100%;margin:0 0 5px;color:var(--teal);font-size:1.2rem;font-weight:bold;border:0;border-bottom:1px dashed var(--border);background:transparent;padding:3px 0;">
         <div class="tema" style="font-size:0.85rem; color:var(--ink-soft); margin-bottom: 12px; line-height: 1.4;">${escapeHtml(p.nomeProduto) || ""}</div>
-        
-        ${temaManualInput}
-        
+
         <dl style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size:0.85rem; margin-bottom:15px;">
           <dt style="color:var(--ink-soft);">Comprador</dt><dd style="margin:0; font-weight:bold;">${escapeHtml(p.comprador) || "—"}</dd>
           <dt style="color:var(--ink-soft);">Quantidade</dt><dd style="margin:0; font-weight:bold;">${escapeHtml(p.quantidade) || "—"}</dd>
-          <dt style="color:var(--ink-soft);">Endereço</dt><dd style="margin:0; font-weight:bold;">${escapeHtml(p.endereco) || "—"}</dd>
           <dt style="color:var(--ink-soft);">DT Compra</dt><dd style="margin:0; font-weight:bold;">${formatarData(p.dtCompra)}</dd>
         </dl>
+        <div style="font-size:.85rem;margin:-5px 0 15px;"><span style="display:block;color:var(--ink-soft);">Endereço</span><strong style="display:block;margin-top:3px;line-height:1.35;">${escapeHtml(p.endereco) || "—"}</strong></div>
         <div class="producao-line" style="background:var(--paper-2); padding:10px; border-radius:5px; margin-bottom:15px; display:flex; justify-content:space-between;">
           <span>Prazo: <strong>${formatarData(p.prazoProducao)}</strong></span>
           <span style="color:${statusPrazo.cor}; font-weight:bold;">${diasTexto}</span>
@@ -327,6 +322,7 @@ async function carregarEtapasProducao() {
     datalist.replaceChildren();
     etapasProducao.forEach(etapa => { const option = document.createElement("option"); option.value = etapa; datalist.appendChild(option); });
     renderizarEtapasProducao();
+    atualizarListaValoresFiltro();
   } catch (erro) {
     const mensagem = document.getElementById("mensagemEtapasProducao");
     mensagem.style.color = "var(--cor-alerta)";
@@ -406,6 +402,7 @@ async function carregarTemas() {
         .map(tema => `<option value="${escapeHtml(tema)}"></option>`)
         .join("");
     }
+    atualizarListaValoresFiltro();
     atualizarTela();
   } catch (e) {
     const status = document.getElementById("ppTemaStatus");
@@ -466,10 +463,37 @@ function definirEstadoAbas() {
   btnFinalizados.style.border = producaoAtiva ? "1px solid var(--border)" : "none";
 }
 
-function pedidosFiltradosAtuais() {
+function atualizarListaValoresFiltro() {
+  const tipo = document.getElementById("ppFilterTipo").value;
+  const valores = tipo === "status" ? etapasProducao : temasCadastrados;
+  const lista = document.getElementById("ppFiltroValoresList");
+  lista.replaceChildren();
+  [...new Set(valores.filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR")).forEach(valor => {
+    const option = document.createElement("option"); option.value = valor; lista.appendChild(option);
+  });
+}
+
+async function garantirValorCadastrado(tipo, valor) {
+  if (!valor) return;
+  const colecao = tipo === "status" ? etapasProducao : temasCadastrados;
+  if (colecao.some(item => normalizarTexto(item) === normalizarTexto(valor))) return;
+  if (tipo === "status") {
+    const resultado = await chamarApi({ acao: "salvar_etapa", etapa: valor, usuario: obterUserLogado() });
+    if (resultado.status !== "sucesso") throw new Error(resultado.mensagem || "Não foi possível cadastrar o status.");
+    etapasProducao.push(valor);
+    const option = document.createElement("option"); option.value = valor; document.getElementById("ppEtapasList").appendChild(option);
+  } else {
+    await apiTemas({ acao: "cadastrar_tema", tema: valor, usuario: obterUserLogado() });
+    temasCadastrados.push(valor);
+    const option = document.createElement("option"); option.value = valor; document.getElementById("ppTemasFiltroList").appendChild(option);
+  }
+  atualizarListaValoresFiltro();
+}
+
+function pedidosFiltradosAtuais(aplicarPrazo = true) {
   const termoGeral = normalizarTexto(document.getElementById("ppSearchInput").value);
-  const termoTema = normalizarTexto(document.getElementById("ppFilterTema").value);
-  const termoStatus = normalizarTexto(document.getElementById("ppFilterStatus").value);
+  const tipoFiltro = document.getElementById("ppFilterTipo").value;
+  const termoFiltro = normalizarTexto(document.getElementById("ppFilterValor").value);
 
   return pedidosProcessados.filter(pedido => {
     const status = normalizarTexto(carregarStatusPedido(pedido.idPedido));
@@ -484,17 +508,19 @@ function pedidosFiltradosAtuais() {
       || normalizarTexto(pedido.idPedido).includes(termoGeral)
       || normalizarTexto(pedido.comprador).includes(termoGeral)
       || normalizarTexto(pedido.nomeVariacao).includes(termoGeral);
-    const correspondeTema = !termoTema || tema.includes(termoTema);
-    const correspondeStatus = !termoStatus || status.includes(termoStatus);
+    const correspondeFiltro = !termoFiltro || (tipoFiltro === "status" ? status : tema).includes(termoFiltro);
+    const correspondePrazo = !aplicarPrazo || filtroPrazoAtivo === "todos"
+      || (filtroPrazoAtivo === "atrasados" && pedido.diasRestantes !== null && pedido.diasRestantes < 0)
+      || (filtroPrazoAtivo === "urgentes" && pedido.diasRestantes !== null && pedido.diasRestantes >= 0 && pedido.diasRestantes <= 1)
+      || (filtroPrazoAtivo === "noprazo" && pedido.diasRestantes !== null && pedido.diasRestantes > 1);
 
-    return correspondeGeral && correspondeTema && correspondeStatus;
+    return correspondeGeral && correspondeFiltro && correspondePrazo;
   });
 }
 
 function atualizarTela() {
-  const pedidos = pedidosFiltradosAtuais();
-  renderizarEstatisticas(pedidos);
-  renderizarPedidos(pedidos);
+  renderizarEstatisticas(pedidosFiltradosAtuais(false));
+  renderizarPedidos(pedidosFiltradosAtuais(true));
 }
 
 async function carregarDadosDoBanco(statusDesejado = abaAtual) {
@@ -548,8 +574,16 @@ async function selecionarAba(novaAba) {
 document.getElementById("btnTabProducao").addEventListener("click", () => selecionarAba("PRODUÇÃO"));
 document.getElementById("btnTabFinalizados").addEventListener("click", () => selecionarAba("FINALIZADO"));
 document.getElementById("ppSearchInput").addEventListener("input", atualizarTela);
-document.getElementById("ppFilterTema").addEventListener("input", atualizarTela);
-document.getElementById("ppFilterStatus").addEventListener("input", atualizarTela);
+document.getElementById("ppFilterTipo").addEventListener("change", () => { document.getElementById("ppFilterValor").value = ""; atualizarListaValoresFiltro(); atualizarTela(); });
+document.getElementById("ppFilterValor").addEventListener("input", atualizarTela);
+document.getElementById("ppFilterValor").addEventListener("change", async evento => {
+  try { await garantirValorCadastrado(document.getElementById("ppFilterTipo").value, evento.target.value.trim()); }
+  catch (erro) { alert(erro.message); }
+  atualizarTela();
+});
+document.getElementById("ppBtnVistaCards").addEventListener("click", () => { modoVisualizacaoPedidos = "cards"; document.getElementById("ppBtnVistaCards").style.background = "var(--teal)"; document.getElementById("ppBtnVistaLista").style.background = "var(--card-bg)"; atualizarTela(); });
+document.getElementById("ppBtnVistaLista").addEventListener("click", () => { modoVisualizacaoPedidos = "lista"; document.getElementById("ppBtnVistaLista").style.background = "var(--teal)"; document.getElementById("ppBtnVistaLista").style.color = "white"; document.getElementById("ppBtnVistaCards").style.background = "var(--card-bg)"; atualizarTela(); });
+document.getElementById("ppStatsBox").addEventListener("click", evento => { const card = evento.target.closest(".filtro-prazo-card"); if (!card) return; filtroPrazoAtivo = card.dataset.filtro; atualizarTela(); });
 document.getElementById("ppBtnAbrirTema").addEventListener("click", () => abrirModalTema());
 document.getElementById("ppBtnCadastrarTema").addEventListener("click", cadastrarTema);
 document.getElementById("ppBtnExcluirTema").addEventListener("click", excluirTema);
@@ -627,6 +661,9 @@ document.getElementById("ppOrdersBox").addEventListener("change", async function
     const edicaoAtual = carregarEdicaoPedido(idPedido);
     const statusNormalizado = normalizarTexto(novoStatus);
 
+    try { await garantirValorCadastrado("status", novoStatus); }
+    catch (erro) { alert(erro.message); return; }
+
     if (statusNormalizado === "POSTADO" && !edicaoAtual.dataPostagem) {
       salvarStatusPedido(idPedido, novoStatus);
       const cardPostado = evento.target.closest(".tag");
@@ -669,7 +706,7 @@ document.getElementById("ppOrdersBox").addEventListener("change", async function
           throw new Error(resultado.mensagem || "Não foi possível finalizar o pedido.");
         }
 
-        await carregarDadosDoBanco(abaAtual);
+        await selecionarAba(statusNormalizado === "POSTADO" ? "FINALIZADO" : abaAtual);
       } catch (erro) {
         console.error("Erro ao finalizar pedido:", erro);
         if (card) {
@@ -697,19 +734,19 @@ document.getElementById("ppOrdersBox").addEventListener("change", async function
       salvarStatusPedido(idPedido, etapa);
       const finalizacao = await chamarApi({ acao: "atualizar_status_banco", idPedido, novoStatusSistema: "FINALIZADO" });
       if (finalizacao.status !== "sucesso") throw new Error(finalizacao.mensagem || "Não foi possível finalizar o pedido.");
-      await carregarDadosDoBanco(abaAtual);
+      await selecionarAba("FINALIZADO");
     } catch (erro) { alert(erro.message); }
   }
 
-  if (evento.target.classList.contains("select-tema-card")) {
-    const select=evento.target, idPedido=select.dataset.id, tema=select.value, status=select.parentElement.querySelector(".tema-save-status");
-    select.disabled=true; status.textContent="Salvando...";
+  if (evento.target.classList.contains("tema-topo-input")) {
+    const input = evento.target, idPedido = input.dataset.id, tema = input.value.trim();
+    input.disabled = true;
     try {
+      await garantirValorCadastrado("tema", tema);
       await apiTemas({acao:"atualizar_tema_pedido",idPedido,tema,usuario:obterUserLogado()});
       const dados=carregarEdicaoPedido(idPedido); dados.temaManual=tema; salvarEdicaoPedido(idPedido,dados);
-      status.style.color="var(--cor-sucesso)"; status.textContent="Tema salvo.";
-    } catch(e) { status.style.color="var(--cor-alerta)"; status.textContent=e.message; }
-    finally { select.disabled=false; }
+    } catch(e) { alert(e.message); }
+    finally { input.disabled=false; }
   }
 });
 
@@ -718,13 +755,11 @@ window.addEventListener("DOMContentLoaded", async () => {
   definirEstadoAbas();
   carregarTemas();
   carregarEtapasProducao();
+  atualizarListaValoresFiltro();
   carregarDadosDoBanco("PRODUÇÃO");
 });
 
 document.getElementById("ppOrdersBox").addEventListener("click", async function(evento){
-  const botaoTema = evento.target.closest(".btn-editar-tema");
-  if (botaoTema) { abrirModalTema(botaoTema.dataset.tema); return; }
-
   const botao = evento.target.closest(".btn-editar");
   if (!botao) return;
   
