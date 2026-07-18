@@ -321,10 +321,10 @@
 
             <!-- TELA: DESPESAS -->
             <div class="card" id="tela-despesa" style="display: none;">
-                <h1>Registrar Nova Despesa</h1>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;"><h1 id="tituloFormDespesa">Registrar Nova Despesa</h1><button type="button" id="btnAtualizarDespesas" style="width:auto;padding:10px 16px;">🔄 Atualizar</button></div>
                 <form id="formDespesa" class="form-grid">
                     <div class="form-group"><label>Vencimento:</label><input type="date" id="dataDespesa" required></div>
-                    <div class="form-group"><label>Categoria:</label><input type="text" id="categoriaDespesa" required></div>
+                    <div class="form-group"><label>Categoria:</label><input type="text" id="categoriaDespesa" list="listaCategoriasDespesa" placeholder="Digite ou selecione..." required><datalist id="listaCategoriasDespesa"></datalist></div>
                     <div class="form-group"><label>Valor (R$):</label><input type="text" inputmode="numeric" placeholder="0,00" id="valorDespesa" required></div>
                     <div class="form-group">
                         <label>Status:</label>
@@ -333,11 +333,34 @@
                             <option value="Pago">Pago</option>
                         </select>
                     </div>
+                    <div class="form-group full-width"><label>Observações:</label><textarea id="observacaoDespesa" rows="3" placeholder="Informações adicionais..."></textarea></div>
                     <div class="form-group full-width">
-                        <button type="submit" id="btnEnviarDespesa">Salvar Despesa</button>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;"><button type="button" id="btnCancelarEdicaoDespesa" class="btn-secundario" style="display:none;width:auto;">Cancelar edição</button><button type="submit" id="btnEnviarDespesa" style="width:auto;">Salvar Despesa</button></div>
                         <p id="mensagemDespesa"></p>
                     </div>
                 </form>
+
+                <div class="dashboard-cards" style="margin-top:28px;">
+                    <div class="info-card"><h3>Total filtrado</h3><p class="valor" id="totalDespesasFiltrado">R$ 0,00</p></div>
+                    <div class="info-card"><h3>Pendente</h3><p class="valor" id="totalDespesasPendentes">R$ 0,00</p></div>
+                    <div class="info-card"><h3>Pago</h3><p class="valor" id="totalDespesasPagas">R$ 0,00</p></div>
+                </div>
+
+                <div class="form-grid" style="margin:24px 0;">
+                    <div class="form-group"><label>Pesquisar:</label><input type="search" id="pesquisaDespesas" placeholder="Categoria, observação ou status..."></div>
+                    <div class="form-group"><label>Categoria:</label><select id="filtroCategoriaDespesa"><option value="">Todas</option></select></div>
+                    <div class="form-group"><label>Período inicial:</label><input type="date" id="filtroDespesaInicio"></div>
+                    <div class="form-group"><label>Período final:</label><input type="date" id="filtroDespesaFim"></div>
+                    <div class="form-group"><label>Status:</label><select id="filtroStatusDespesa"><option value="">Todos</option><option value="Pendente">Pendente</option><option value="Pago">Pago</option></select></div>
+                    <div class="form-group" style="justify-content:flex-end;"><button type="button" id="btnLimparFiltrosDespesa" class="btn-secundario">Limpar filtros</button></div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="tabela-extrato">
+                        <thead><tr><th>Vencimento</th><th>Categoria</th><th>Status</th><th>Observações</th><th style="text-align:right;">Valor</th><th style="text-align:center;">Ações</th></tr></thead>
+                        <tbody id="corpoTabelaDespesas"><tr><td colspan="6" style="text-align:center;padding:35px;">Carregando despesas...</td></tr></tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- TELA: FLUXO DE CAIXA -->
@@ -541,7 +564,7 @@
 
         </main>
     </div>
-    <script src="script.js?v=20260718-2"></script>
+    <script src="script.js?v=20260718-3"></script>
     <script src="painelPedidos.js?v=20260718-1"></script>
 </body>
 </html>
