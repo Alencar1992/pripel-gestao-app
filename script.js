@@ -115,6 +115,7 @@ function obterUserLogado() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    if (window.innerWidth <= 768) document.querySelector('.sidebar').classList.add('recolhida');
     const usuarioSalvo = sessionStorage.getItem('priPelUser');
     if (usuarioSalvo) {
         const dadosUser = JSON.parse(usuarioSalvo);
@@ -144,7 +145,8 @@ function trocarTelaApp(telaAtivaId) {
     if (telaAtivaId === 'despesa') carregarDespesas();
     if (telaAtivaId === 'cronograma' && typeof carregarDadosDoBanco === 'function') carregarDadosDoBanco('PRODUÇÃO');
     if (telaAtivaId === 'custos' || telaAtivaId === 'precificacao') carregarProdutos();
-    if (telaAtivaId === 'parametros' && typeof carregarEtapasProducao === 'function') carregarEtapasProducao();
+    if (telaAtivaId === 'resumo') carregarResumoMensal();
+    if (telaAtivaId === 'parametros') { carregarParametros(); if (typeof carregarEtapasProducao === 'function') carregarEtapasProducao(); }
 }
 
 Object.keys(menusApp).forEach(key => { 
@@ -332,7 +334,7 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
         } 
         else if (resultado.status === "expirada") { boxesLogin.statusBox.style.color = "#FF3D00"; boxesLogin.statusBox.innerText = "⚠️ " + resultado.mensagem; setTimeout(() => { exibirBox('senha'); document.getElementById('trocaUser').value = userDigitado; }, 3000); }
         else { boxesLogin.statusBox.style.color = "#FF3D00"; boxesLogin.statusBox.innerText = "❌ " + resultado.mensagem; }
-    } catch (err) { boxesLogin.statusBox.style.color = "#FF3D00"; boxesLogin.statusBox.innerText = "❌ Erro de conexão."; } finally { btn.disabled = false; }
+    } catch (err) { boxesLogin.statusBox.style.color = "#FF3D00"; boxesLogin.statusBox.innerText = `❌ ${err.message || 'Erro de conexão.'}`; } finally { btn.disabled = false; }
 });
 
 // =======================================================
@@ -547,6 +549,119 @@ document.getElementById('btnLimparFiltrosDespesa').addEventListener('click', () 
 // =======================================================
 // 5. CALCULADORA DE PRECIFICAÇÃO (REGRAS SHOPEE)
 // =======================================================
+let parametrosSistema = { prazoProducao: 5, taxaLink: 4.99, taxaShopee: 14, taxaShopeeBaixa: 20, taxaFixaCpf: 3, categoriasDespesa: [] };
+
+async function carregarParametros(preencherFormulario = true) {
+    try {
+        const resultado = await chamarApi({ acao: 'carregar_parametros' });
+        if (resultado.status !== 'sucesso') throw new Error(resultado.mensagem || 'Não foi possível carregar os parâmetros.');
+        parametrosSistema = { ...parametrosSistema, ...(resultado.parametros || {}) };
+        if (preencherFormulario) {
+            document.getElementById('paramPrazoProducao').value = parametrosSistema.prazoProducao;
+            document.getElementById('paramTaxaLink').value = parametrosSistema.taxaLink;
+            document.getElementById('paramTaxaShopee').value = parametrosSistema.taxaShopee;
+            document.getElementById('paramTaxaShopeeBaixa').value = parametrosSistema.taxaShopeeBaixa;
+            document.getElementById('paramTaxaFixaCpf').value = parametrosSistema.taxaFixaCpf;
+            document.getElementById('paramCategoriasDespesa').value = (parametrosSistema.categoriasDespesa || []).join('\n');
+        }
+        if (!document.getElementById('calcTaxaLink').value || document.getElementById('calcTaxaLink').value === '4.99') document.getElementById('calcTaxaLink').value = parametrosSistema.taxaLink;
+        if (typeof atualizarPrazoProducao === 'function') atualizarPrazoProducao(parametrosSistema.prazoProducao);
+        return parametrosSistema;
+    } catch (erro) {
+        if (preencherFormulario) { const mensagem = document.getElementById('mensagemParametros'); mensagem.style.color = 'var(--cor-alerta)'; mensagem.textContent = `❌ ${erro.message}`; }
+        return parametrosSistema;
+    }
+}
+
+document.getElementById('formParametros').addEventListener('submit', async evento => {
+    evento.preventDefault();
+    const mensagem = document.getElementById('mensagemParametros');
+    const parametros = {
+        prazoProducao: Number(document.getElementById('paramPrazoProducao').value),
+        taxaLink: Number(document.getElementById('paramTaxaLink').value),
+        taxaShopee: Number(document.getElementById('paramTaxaShopee').value),
+        taxaShopeeBaixa: Number(document.getElementById('paramTaxaShopeeBaixa').value),
+        taxaFixaCpf: Number(document.getElementById('paramTaxaFixaCpf').value),
+        categoriasDespesa: document.getElementById('paramCategoriasDespesa').value.split(/\n|,/).map(v => v.trim()).filter(Boolean),
+        usuario: obterUserLogado()
+    };
+    mensagem.textContent = '⏳ Salvando parâmetros...';
+    try {
+        const resultado = await chamarApi({ acao: 'salvar_parametros', parametros });
+        if (resultado.status !== 'sucesso') throw new Error(resultado.mensagem || 'Não foi possível salvar.');
+        parametrosSistema = resultado.parametros;
+        mensagem.style.color = 'var(--cor-sucesso)';
+        mensagem.textContent = '✅ Parâmetros salvos e aplicados.';
+        document.getElementById('calcTaxaLink').value = parametrosSistema.taxaLink;
+        if (typeof atualizarPrazoProducao === 'function') atualizarPrazoProducao(parametrosSistema.prazoProducao);
+    } catch (erro) { mensagem.style.color = 'var(--cor-alerta)'; mensagem.textContent = `❌ ${erro.message}`; }
+});
+
+document.getElementById('btnCriarBackup').addEventListener('click', async () => {
+    const mensagem = document.getElementById('mensagemBackup');
+    mensagem.textContent = '⏳ Criando backup...';
+    try {
+        const resultado = await chamarApi({ acao: 'criar_backup', usuario: obterUserLogado() });
+        if (resultado.status !== 'sucesso') throw new Error(resultado.mensagem || 'Não foi possível criar o backup.');
+        mensagem.style.color = 'var(--cor-sucesso)';
+        mensagem.textContent = `✅ Backup criado: ${resultado.identificador}`;
+    } catch (erro) { mensagem.style.color = 'var(--cor-alerta)'; mensagem.textContent = `❌ ${erro.message}`; }
+});
+
+function variacaoPercentual(atual, anterior) {
+    if (!anterior) return atual ? 100 : 0;
+    return ((atual - anterior) / Math.abs(anterior)) * 100;
+}
+
+function renderizarComparativoResumo(atual, anterior) {
+    const tbody = document.getElementById('corpoComparativoResumo');
+    tbody.replaceChildren();
+    [['Receitas', 'receitas'], ['Despesas pagas', 'despesas'], ['Custos', 'custos'], ['Lucro real', 'lucro']].forEach(([rotulo, chave]) => {
+        const tr = document.createElement('tr');
+        adicionarCelula(tr, rotulo);
+        const valorAtual = adicionarCelula(tr, formatarMoeda(atual[chave] || 0)); valorAtual.style.textAlign = 'right';
+        const valorAnterior = adicionarCelula(tr, formatarMoeda(anterior[chave] || 0)); valorAnterior.style.textAlign = 'right';
+        const percentual = variacaoPercentual(atual[chave] || 0, anterior[chave] || 0);
+        const variacao = adicionarCelula(tr, `${percentual >= 0 ? '+' : ''}${percentual.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`); variacao.style.textAlign = 'right';
+        variacao.style.color = chave === 'despesas' || chave === 'custos' ? (percentual > 0 ? 'var(--cor-alerta)' : 'var(--cor-sucesso)') : (percentual >= 0 ? 'var(--cor-sucesso)' : 'var(--cor-alerta)');
+        tbody.appendChild(tr);
+    });
+}
+
+function renderizarCategoriasResumo(categorias) {
+    const box = document.getElementById('resumoCategorias');
+    box.replaceChildren();
+    if (!categorias.length) { box.textContent = 'Nenhuma despesa paga no período.'; return; }
+    categorias.forEach(item => {
+        const linha = document.createElement('div');
+        linha.style.cssText = 'display:flex;justify-content:space-between;gap:12px;padding:10px 14px;background:var(--bg-fundo);border-radius:8px;';
+        const nome = document.createElement('span'); nome.textContent = item.categoria;
+        const valor = document.createElement('strong'); valor.textContent = formatarMoeda(item.valor);
+        linha.append(nome, valor); box.appendChild(linha);
+    });
+}
+
+async function carregarResumoMensal() {
+    const mesInput = document.getElementById('mesResumo');
+    if (!mesInput.value) mesInput.value = dataLocalIso().slice(0, 7);
+    const mensagem = document.getElementById('mensagemResumo');
+    mensagem.textContent = '⏳ Calculando resultado...';
+    try {
+        const resultado = await chamarApi({ acao: 'resumo_mensal', mes: mesInput.value });
+        if (resultado.status !== 'sucesso') throw new Error(resultado.mensagem || 'Não foi possível calcular o resumo.');
+        document.getElementById('resumoReceitas').textContent = formatarMoeda(resultado.atual.receitas);
+        document.getElementById('resumoDespesas').textContent = formatarMoeda(resultado.atual.despesas);
+        document.getElementById('resumoCustos').textContent = formatarMoeda(resultado.atual.custos);
+        const lucro = document.getElementById('resumoLucro'); lucro.textContent = formatarMoeda(resultado.atual.lucro); lucro.style.color = resultado.atual.lucro >= 0 ? 'var(--cor-sucesso)' : 'var(--cor-alerta)';
+        renderizarComparativoResumo(resultado.atual, resultado.anterior);
+        renderizarCategoriasResumo(resultado.categorias || []);
+        mensagem.textContent = '';
+    } catch (erro) { mensagem.style.color = 'var(--cor-alerta)'; mensagem.textContent = `❌ ${erro.message}`; }
+}
+
+document.getElementById('btnAtualizarResumo').addEventListener('click', carregarResumoMensal);
+document.getElementById('mesResumo').addEventListener('change', carregarResumoMensal);
+
 let produtosCarregados = [];
 let produtoEmEdicao = null;
 
@@ -706,22 +821,24 @@ function calcularPrecificacao() {
 
     if (canal === 'shopee') {
         const isCPF = document.getElementById('calcShopeeTipo').value === 'cpf';
-        const taxaFixaCPF = isCPF ? 3 : 0;
+        const taxaFixaCPF = isCPF ? Number(parametrosSistema.taxaFixaCpf || 0) : 0;
+        const taxaPadrao = Number(parametrosSistema.taxaShopee || 14) / 100;
+        const taxaBaixa = Number(parametrosSistema.taxaShopeeBaixa || 20) / 100;
         
-        let p1 = (target + 4 + taxaFixaCPF) / 0.80;
-        let p2 = (target + 16 + taxaFixaCPF) / 0.86;
-        let p3 = (target + 20 + taxaFixaCPF) / 0.86;
-        let p4 = (target + 26 + taxaFixaCPF) / 0.86;
+        let p1 = (target + 4 + taxaFixaCPF) / (1 - taxaBaixa);
+        let p2 = (target + 16 + taxaFixaCPF) / (1 - taxaPadrao);
+        let p3 = (target + 20 + taxaFixaCPF) / (1 - taxaPadrao);
+        let p4 = (target + 26 + taxaFixaCPF) / (1 - taxaPadrao);
 
         if (p1 < 80) { precoSugerido = p1; } 
         else if (p2 >= 80 && p2 < 100) { precoSugerido = p2; } 
         else if (p3 >= 100 && p3 < 200) { precoSugerido = p3; } 
         else { precoSugerido = p4; }
 
-        if (precoSugerido < 80) valorTaxa = (precoSugerido * 0.20) + 4 + taxaFixaCPF;
-        else if (precoSugerido < 100) valorTaxa = (precoSugerido * 0.14) + 16 + taxaFixaCPF;
-        else if (precoSugerido < 200) valorTaxa = (precoSugerido * 0.14) + 20 + taxaFixaCPF;
-        else valorTaxa = (precoSugerido * 0.14) + 26 + taxaFixaCPF;
+        if (precoSugerido < 80) valorTaxa = (precoSugerido * taxaBaixa) + 4 + taxaFixaCPF;
+        else if (precoSugerido < 100) valorTaxa = (precoSugerido * taxaPadrao) + 16 + taxaFixaCPF;
+        else if (precoSugerido < 200) valorTaxa = (precoSugerido * taxaPadrao) + 20 + taxaFixaCPF;
+        else valorTaxa = (precoSugerido * taxaPadrao) + 26 + taxaFixaCPF;
     } else {
         const taxaLink = parseFloat(document.getElementById('calcTaxaLink').value) || 0;
         if (taxaLink < 100) { precoSugerido = target / (1 - (taxaLink / 100)); }
