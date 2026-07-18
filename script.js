@@ -140,6 +140,8 @@ function trocarTelaApp(telaAtivaId) {
 
     // Auto-carrega fluxo de caixa ao entrar na tela
     if (telaAtivaId === 'fluxo') carregarFluxoCaixa();
+    if (telaAtivaId === 'venda') carregarVendas();
+    if (telaAtivaId === 'cronograma' && typeof carregarDadosDoBanco === 'function') carregarDadosDoBanco('PRODUÇÃO');
 }
 
 Object.keys(menusApp).forEach(key => { 
@@ -455,19 +457,71 @@ document.getElementById('btnLimparCalc').addEventListener('click', () => {
 // =======================================================
 const modalVenda = document.getElementById('modalVenda');
 let listaProdutosVenda = [];
+let vendasCarregadas = [];
+let pedidoEmEdicao = null;
 
-document.getElementById('btnAbrirModalVenda').addEventListener('click', () => { modalVenda.style.display = 'block'; });
+function dataLocalIso() {
+    const agora = new Date();
+    return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
+}
+
+function mostrarPassoVenda(passo) {
+    [1, 2, 3].forEach(numero => {
+        document.getElementById(`venda-passo-${numero}`).style.display = numero === passo ? 'block' : 'none';
+        document.getElementById(`step${numero}-circle`).style.background = numero <= passo ? 'var(--cor-destaque)' : 'var(--borda)';
+    });
+}
+
+function limparModalVenda() {
+    pedidoEmEdicao = null;
+    listaProdutosVenda = [];
+    ['venda-cliente', 'venda-entrega', 'venda-taxa', 'venda-frete', 'venda-observacao', 'add-prod-nome', 'add-prod-tema', 'add-prod-valor'].forEach(id => {
+        document.getElementById(id).value = '';
+    });
+    document.getElementById('venda-data').value = dataLocalIso();
+    document.getElementById('venda-pagamento').value = 'PIX';
+    document.getElementById('venda-status').value = 'Confirmada';
+    document.getElementById('add-prod-qtd').value = '1';
+    document.getElementById('tituloModalVenda').textContent = 'Cadastro de Nova Venda';
+    document.getElementById('mensagemNovaVenda').textContent = '';
+    renderizarListaResumo();
+    mostrarPassoVenda(1);
+}
+
+async function carregarTemasVenda() {
+    try {
+        const resultado = await chamarApi({ acao: 'listar_temas' });
+        const lista = document.getElementById('listaTemasVenda');
+        lista.replaceChildren();
+        (resultado.temas || []).forEach(tema => {
+            const option = document.createElement('option');
+            option.value = tema;
+            lista.appendChild(option);
+        });
+    } catch (erro) {
+        console.warn('Não foi possível carregar os temas:', erro);
+    }
+}
+
+document.getElementById('btnAbrirModalVenda').addEventListener('click', () => {
+    limparModalVenda();
+    carregarTemasVenda();
+    modalVenda.style.display = 'block';
+});
 document.getElementById('btnFecharModalVenda').addEventListener('click', () => { modalVenda.style.display = 'none'; });
 
 document.getElementById('add-prod-valor').addEventListener('input', aplicarMascaraMoeda);
+document.getElementById('venda-taxa').addEventListener('input', aplicarMascaraMoeda);
+document.getElementById('venda-frete').addEventListener('input', aplicarMascaraMoeda);
 
 document.getElementById('btnAddProdutoLista').addEventListener('click', () => {
-    const nome = document.getElementById('add-prod-nome').value;
+    const nome = document.getElementById('add-prod-nome').value.trim();
+    const tema = document.getElementById('add-prod-tema').value.trim();
     const valor = parseFloat(limparMoedaParaEnvio(document.getElementById('add-prod-valor').value)) || 0;
     const qtd = parseInt(document.getElementById('add-prod-qtd').value) || 1;
 
     if(nome && valor > 0) {
-        listaProdutosVenda.push({ nome, valor, qtd, subtotal: valor * qtd });
+        listaProdutosVenda.push({ nome, tema, valor, qtd, subtotal: valor * qtd });
         renderizarListaResumo();
         document.getElementById('add-prod-nome').value = '';
         document.getElementById('add-prod-valor').value = '';
@@ -481,12 +535,211 @@ function renderizarListaResumo() {
     container.innerHTML = '';
     let total = 0;
 
-    listaProdutosVenda.forEach((p) => {
+    if (!listaProdutosVenda.length) {
+        const vazio = document.createElement('p');
+        vazio.style.cssText = 'text-align:center;color:var(--texto-mutado);margin-top:40px;';
+        vazio.textContent = '⚠️ Nenhum produto adicionado';
+        container.appendChild(vazio);
+    }
+
+    listaProdutosVenda.forEach((p, indice) => {
         total += p.subtotal;
         const div = document.createElement('div');
-        div.innerHTML = `<span>${p.qtd}x ${p.nome}</span> <span style="font-weight:bold; float:right;">${formatarMoeda(p.subtotal)}</span>`;
+        div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;';
+        const descricao = document.createElement('span');
+        descricao.textContent = `${p.qtd}x ${p.nome}${p.tema ? ` — ${p.tema}` : ''}`;
+        const valor = document.createElement('strong');
+        valor.textContent = formatarMoeda(p.subtotal);
+        const remover = document.createElement('button');
+        remover.type = 'button';
+        remover.textContent = '✕';
+        remover.title = 'Remover produto';
+        remover.style.cssText = 'width:auto;padding:4px 8px;background:var(--cor-alerta);';
+        remover.addEventListener('click', () => { listaProdutosVenda.splice(indice, 1); renderizarListaResumo(); });
+        div.append(descricao, valor, remover);
         container.appendChild(div);
     });
 
     totalTxt.innerText = formatarMoeda(total);
 }
+
+function validarPassoUmVenda() {
+    if (!document.getElementById('venda-cliente').value.trim()) return 'Informe o cliente.';
+    if (!document.getElementById('venda-data').value) return 'Informe a data da venda.';
+    if (!document.getElementById('venda-entrega').value) return 'Informe a data da entrega.';
+    if (!listaProdutosVenda.length) return 'Adicione pelo menos um produto.';
+    return '';
+}
+
+function obterVendaDoFormulario() {
+    return {
+        pedido: pedidoEmEdicao,
+        cliente: document.getElementById('venda-cliente').value.trim(),
+        pagamento: document.getElementById('venda-pagamento').value,
+        dataVenda: document.getElementById('venda-data').value,
+        dataEntrega: document.getElementById('venda-entrega').value,
+        statusVenda: document.getElementById('venda-status').value,
+        taxa: Number(limparMoedaParaEnvio(document.getElementById('venda-taxa').value)) || 0,
+        frete: Number(limparMoedaParaEnvio(document.getElementById('venda-frete').value)) || 0,
+        observacao: document.getElementById('venda-observacao').value.trim(),
+        produtos: listaProdutosVenda.map(p => ({ nome: p.nome, tema: p.tema, valor: Number(p.valor), qtd: Number(p.qtd) })),
+        usuario: obterUserLogado()
+    };
+}
+
+function montarRevisaoVenda() {
+    const venda = obterVendaDoFormulario();
+    const subtotal = venda.produtos.reduce((soma, p) => soma + p.valor * p.qtd, 0);
+    const total = subtotal + venda.frete - venda.taxa;
+    const revisao = document.getElementById('revisaoVenda');
+    revisao.replaceChildren();
+    [
+        ['Pedido', venda.pedido || 'Gerado automaticamente ao salvar'],
+        ['Cliente', venda.cliente],
+        ['Venda / Entrega', `${venda.dataVenda} / ${venda.dataEntrega}`],
+        ['Pagamento', venda.pagamento],
+        ['Produtos', venda.produtos.map(p => `${p.qtd}x ${p.nome}${p.tema ? ` (${p.tema})` : ''}`).join(', ')],
+        ['Subtotal', formatarMoeda(subtotal)],
+        ['Entrega/Frete', formatarMoeda(venda.frete)],
+        ['Taxas/Descontos', `- ${formatarMoeda(venda.taxa)}`],
+        ['Total', formatarMoeda(total)]
+    ].forEach(([rotulo, valor]) => {
+        const linha = document.createElement('div');
+        const forte = document.createElement('strong');
+        forte.textContent = `${rotulo}: `;
+        linha.append(forte, document.createTextNode(valor));
+        revisao.appendChild(linha);
+    });
+}
+
+document.getElementById('btnIrPasso2').addEventListener('click', () => {
+    const erro = validarPassoUmVenda();
+    if (erro) return alert(erro);
+    mostrarPassoVenda(2);
+});
+document.getElementById('btnVoltarPasso1').addEventListener('click', () => mostrarPassoVenda(1));
+document.getElementById('btnIrPasso3').addEventListener('click', () => { montarRevisaoVenda(); mostrarPassoVenda(3); });
+document.getElementById('btnVoltarPasso2').addEventListener('click', () => mostrarPassoVenda(2));
+
+document.getElementById('btnSalvarNovaVenda').addEventListener('click', async () => {
+    const botao = document.getElementById('btnSalvarNovaVenda');
+    const mensagem = document.getElementById('mensagemNovaVenda');
+    botao.disabled = true;
+    mensagem.style.color = 'var(--texto-claro)';
+    mensagem.textContent = '⏳ Salvando venda...';
+    try {
+        const venda = obterVendaDoFormulario();
+        const resultado = await chamarApi({ acao: pedidoEmEdicao ? 'editar_venda' : 'salvar_venda', venda });
+        if (resultado.status !== 'sucesso') throw new Error(resultado.mensagem || 'Não foi possível salvar a venda.');
+        mensagem.style.color = 'var(--cor-sucesso)';
+        mensagem.textContent = `✅ ${resultado.mensagem} Pedido ${resultado.pedido || venda.pedido}.`;
+        await Promise.all([carregarVendas(), carregarDashboard()]);
+        if (typeof carregarDadosDoBanco === 'function') await carregarDadosDoBanco('PRODUÇÃO');
+        setTimeout(() => { modalVenda.style.display = 'none'; limparModalVenda(); }, 1200);
+    } catch (erro) {
+        mensagem.style.color = 'var(--cor-alerta)';
+        mensagem.textContent = `❌ ${erro.message}`;
+    } finally {
+        botao.disabled = false;
+    }
+});
+
+function criarBotaoAcao(texto, titulo, cor, acao) {
+    const botao = document.createElement('button');
+    botao.type = 'button';
+    botao.textContent = texto;
+    botao.title = titulo;
+    botao.style.cssText = `width:auto;padding:6px 9px;margin:2px;background:${cor};`;
+    botao.addEventListener('click', acao);
+    return botao;
+}
+
+function renderizarTabelaVendas() {
+    const termo = document.getElementById('pesquisaVendas').value.trim().toLowerCase();
+    const tbody = document.getElementById('corpoTabelaVendas');
+    const filtradas = vendasCarregadas.filter(v => [v.pedido, v.cliente, v.produtosResumo, v.temasResumo, v.statusVenda].join(' ').toLowerCase().includes(termo));
+    tbody.replaceChildren();
+    if (!filtradas.length) {
+        const tr = document.createElement('tr');
+        const td = adicionarCelula(tr, 'Não foram encontrados registros');
+        td.colSpan = 7;
+        td.style.cssText = 'text-align:center;padding:50px;color:var(--texto-mutado);';
+        tbody.appendChild(tr);
+        return;
+    }
+
+    filtradas.forEach(venda => {
+        const tr = document.createElement('tr');
+        adicionarCelula(tr, venda.pedido);
+        adicionarCelula(tr, venda.dataVendaF || venda.dataVenda);
+        adicionarCelula(tr, venda.cliente);
+        adicionarCelula(tr, venda.produtosResumo);
+        adicionarCelula(tr, venda.statusVenda);
+        const valor = adicionarCelula(tr, formatarMoeda(Number(venda.valorTotal) || 0));
+        valor.style.textAlign = 'right';
+        const acoes = adicionarCelula(tr, '');
+        acoes.style.textAlign = 'center';
+        acoes.appendChild(criarBotaoAcao('✏️', 'Editar venda', '#6c5ce7', () => editarVenda(venda.pedido)));
+        if (venda.statusVenda !== 'Cancelada') acoes.appendChild(criarBotaoAcao('🚫', 'Cancelar venda', 'var(--cor-alerta)', () => cancelarVenda(venda.pedido)));
+        tbody.appendChild(tr);
+    });
+}
+
+async function carregarVendas() {
+    const tbody = document.getElementById('corpoTabelaVendas');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">⏳ Carregando vendas...</td></tr>';
+    try {
+        const resultado = await chamarApi({ acao: 'listar_vendas' });
+        if (resultado.status !== 'sucesso' || !Array.isArray(resultado.vendas)) throw new Error(resultado.mensagem || 'Resposta inválida.');
+        vendasCarregadas = resultado.vendas;
+        renderizarTabelaVendas();
+        const ativas = vendasCarregadas.filter(v => v.statusVenda !== 'Cancelada');
+        const efetivadas = ativas.filter(v => v.statusVenda === 'Confirmada').reduce((s, v) => s + Number(v.valorTotal || 0), 0);
+        const pendentes = ativas.filter(v => v.statusVenda === 'Pendente').reduce((s, v) => s + Number(v.valorTotal || 0), 0);
+        document.getElementById('vendasEfetivadasTxt').textContent = formatarMoeda(efetivadas);
+        document.getElementById('previsaoRecebimentoTxt').textContent = formatarMoeda(pendentes);
+        document.getElementById('tituloTelaVendas').textContent = `Vendas — ${new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date())}`;
+    } catch (erro) {
+        tbody.replaceChildren();
+        const tr = document.createElement('tr');
+        const td = adicionarCelula(tr, `❌ ${erro.message}`);
+        td.colSpan = 7;
+        td.style.cssText = 'text-align:center;padding:40px;color:var(--cor-alerta);';
+        tbody.appendChild(tr);
+    }
+}
+
+function editarVenda(pedido) {
+    const venda = vendasCarregadas.find(item => item.pedido === pedido);
+    if (!venda) return;
+    pedidoEmEdicao = pedido;
+    document.getElementById('tituloModalVenda').textContent = `Editar venda ${pedido}`;
+    document.getElementById('venda-cliente').value = venda.cliente;
+    document.getElementById('venda-pagamento').value = venda.pagamento;
+    document.getElementById('venda-data').value = venda.dataVenda;
+    document.getElementById('venda-entrega').value = venda.dataEntrega;
+    document.getElementById('venda-status').value = venda.statusVenda === 'Pendente' ? 'Pendente' : 'Confirmada';
+    document.getElementById('venda-taxa').value = Number(venda.taxa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    document.getElementById('venda-frete').value = Number(venda.frete || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    document.getElementById('venda-observacao').value = venda.observacao || '';
+    listaProdutosVenda = (venda.produtos || []).map(p => ({ ...p, valor: Number(p.valor), qtd: Number(p.qtd), subtotal: Number(p.valor) * Number(p.qtd) }));
+    renderizarListaResumo();
+    carregarTemasVenda();
+    mostrarPassoVenda(1);
+    modalVenda.style.display = 'block';
+}
+
+async function cancelarVenda(pedido) {
+    if (!confirm(`Cancelar a venda ${pedido}? Ela será retirada do Dashboard e do Cronograma.`)) return;
+    try {
+        const resultado = await chamarApi({ acao: 'cancelar_venda', pedido, usuario: obterUserLogado() });
+        if (resultado.status !== 'sucesso') throw new Error(resultado.mensagem || 'Não foi possível cancelar.');
+        await Promise.all([carregarVendas(), carregarDashboard()]);
+        if (typeof carregarDadosDoBanco === 'function') await carregarDadosDoBanco('PRODUÇÃO');
+    } catch (erro) {
+        alert(`Erro: ${erro.message}`);
+    }
+}
+
+document.getElementById('pesquisaVendas').addEventListener('input', renderizarTabelaVendas);
+document.getElementById('btnFiltrarVendas').addEventListener('click', carregarVendas);
