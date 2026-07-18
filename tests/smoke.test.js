@@ -14,7 +14,8 @@ new Function(pedidos);
 
 [
   'mesResumo', 'resumoLucro', 'formParametros', 'btnCriarBackup',
-  'calcProduto', 'formProduto', 'ppEtapasList', 'ppHistoricoPedido'
+  'calcProduto', 'formProduto', 'ppEtapasList', 'ppHistoricoPedido',
+  'ppFilterTipo', 'ppFilterValor', 'ppBtnVistaCards', 'ppBtnVistaLista'
 ].forEach(id => assert.match(html, new RegExp(`id=["']${id}["']`), `ID ausente: ${id}`));
 
 [
@@ -24,7 +25,7 @@ new Function(pedidos);
 
 [
   'salvar_producao', 'buscar_historico_producao', 'listar_etapas',
-  'data-postagem-input', 'POSTADO'
+  'data-postagem-input', 'POSTADO', 'tema-topo-input', 'filtro-prazo-card'
 ].forEach(item => assert.ok(pedidos.includes(item), `Integração ausente em painelPedidos.js: ${item}`));
 
 assert.match(css, /@media\s*\(max-width:\s*768px\)/, 'Regra responsiva para tablet/celular ausente.');
