@@ -34,6 +34,7 @@ let nomeArquivoAtual = "";
 let abaAtual = "PRODUÇÃO";
 let temasCadastrados = []; // <- NOVA VARIÁVEL
 let temaEmEdicao = "";
+let etapasProducao = [];
 
 function normalizarTexto(txt) {
   return String(txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim().toUpperCase();
@@ -286,7 +287,7 @@ function renderizarPedidos(pedidos) {
         </div>
         <div class="status-row" style="display:flex; gap:10px;">
           <!-- Substituído o Select por um Input Editável -->
-          <input type="text" class="status-input" data-id="${escapeHtml(p.idPedido)}" 
+          <input type="text" class="status-input" data-id="${escapeHtml(p.idPedido)}" list="ppEtapasList"
                  value="${escapeHtml(statusPedidoAtual)}" placeholder="Digite o status..." 
                  style="flex:1; padding:8px; border:1px solid var(--border); border-radius:5px; background:var(--card-bg); color:var(--ink);">
                  
@@ -308,6 +309,83 @@ async function apiTemas(payload) {
   if (result.status !== "sucesso") throw new Error(result.mensagem || "Operação não concluída.");
   return result;
 }
+
+async function carregarEtapasProducao() {
+  try {
+    const resultado = await chamarApi({ acao: "listar_etapas" });
+    if (resultado.status !== "sucesso") throw new Error(resultado.mensagem || "Não foi possível carregar as etapas.");
+    etapasProducao = resultado.etapas || [];
+    const datalist = document.getElementById("ppEtapasList");
+    datalist.replaceChildren();
+    etapasProducao.forEach(etapa => { const option = document.createElement("option"); option.value = etapa; datalist.appendChild(option); });
+    renderizarEtapasProducao();
+  } catch (erro) {
+    const mensagem = document.getElementById("mensagemEtapasProducao");
+    mensagem.style.color = "var(--cor-alerta)";
+    mensagem.textContent = erro.message;
+  }
+}
+
+function renderizarEtapasProducao() {
+  const lista = document.getElementById("listaEtapasProducao");
+  lista.replaceChildren();
+  etapasProducao.forEach((etapa, indice) => {
+    const linha = document.createElement("div");
+    linha.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:var(--bg-fundo);border-radius:8px;";
+    const nome = document.createElement("span");
+    nome.textContent = `${indice + 1}. ${etapa}`;
+    const excluir = document.createElement("button");
+    excluir.type = "button";
+    excluir.textContent = "🗑️";
+    excluir.title = "Excluir etapa";
+    excluir.style.cssText = "width:auto;padding:5px 9px;background:var(--cor-alerta);";
+    excluir.addEventListener("click", () => excluirEtapaProducao(etapa));
+    linha.append(nome, excluir);
+    lista.appendChild(linha);
+  });
+}
+
+async function adicionarEtapaProducao() {
+  const input = document.getElementById("novaEtapaProducao");
+  const etapa = input.value.trim();
+  if (!etapa) return;
+  try {
+    const resultado = await chamarApi({ acao: "salvar_etapa", etapa, usuario: obterUserLogado() });
+    if (resultado.status !== "sucesso") throw new Error(resultado.mensagem || "Não foi possível cadastrar a etapa.");
+    input.value = "";
+    etapasProducao = resultado.etapas || [];
+    await carregarEtapasProducao();
+  } catch (erro) { alert(erro.message); }
+}
+
+async function excluirEtapaProducao(etapa) {
+  if (!confirm(`Excluir a etapa ${etapa}?`)) return;
+  try {
+    const resultado = await chamarApi({ acao: "excluir_etapa", etapa, usuario: obterUserLogado() });
+    if (resultado.status !== "sucesso") throw new Error(resultado.mensagem || "Não foi possível excluir a etapa.");
+    await carregarEtapasProducao();
+  } catch (erro) { alert(erro.message); }
+}
+
+async function carregarHistoricoPedido(pedido) {
+  const box = document.getElementById("ppHistoricoPedido");
+  box.textContent = "Carregando...";
+  try {
+    const resultado = await chamarApi({ acao: "buscar_historico_producao", pedido });
+    if (resultado.status !== "sucesso") throw new Error(resultado.mensagem || "Não foi possível carregar o histórico.");
+    box.replaceChildren();
+    if (!(resultado.historico || []).length) { box.textContent = "Nenhuma alteração registrada."; return; }
+    resultado.historico.forEach(item => {
+      const linha = document.createElement("div");
+      linha.style.cssText = "padding:6px 0;border-bottom:1px solid var(--border);";
+      linha.textContent = `${item.data} — ${item.campo}: “${item.anterior || 'vazio'}” → “${item.novo || 'vazio'}” (${item.usuario})`;
+      box.appendChild(linha);
+    });
+  } catch (erro) { box.textContent = `Erro: ${erro.message}`; }
+}
+
+document.getElementById("btnAdicionarEtapa").addEventListener("click", adicionarEtapaProducao);
+document.getElementById("novaEtapaProducao").addEventListener("keydown", evento => { if (evento.key === "Enter") { evento.preventDefault(); adicionarEtapaProducao(); } });
 
 async function carregarTemas() {
   try {
@@ -429,6 +507,8 @@ async function carregarDadosDoBanco(statusDesejado = abaAtual) {
     pedidosProcessados = resultado.dados.map(row => {
       const dataCompra = row[6] ? new Date(row[6]) : null;
       const prazos = calcularProgramacaoEnvio(dataCompra);
+      salvarStatusPedido(String(row[0] ?? ""), row[12] ?? "");
+      salvarEdicaoPedido(String(row[0] ?? ""), { temaManual: row[2] ?? "", nomeCrianca: row[13] ?? "", idade: row[14] ?? "", observacoes: row[15] ?? "" });
 
       return {
         idPedido: String(row[0] ?? ""),
@@ -507,10 +587,14 @@ document.getElementById("ppFileInput").addEventListener("change", async function
         new Date().toISOString(),
       ];
     });
+    const producoesImportadas = pedidosProcessados.map(pedido => {
+      const edicao = carregarEdicaoPedido(pedido.idPedido);
+      return { pedido: pedido.idPedido, etapa: carregarStatusPedido(pedido.idPedido) || "AGUARDANDO", crianca: edicao.nomeCrianca || "", idade: edicao.idade || "", observacoes: edicao.observacoes || "" };
+    });
 
     const response = await fetch(URL_API, {
       method: "POST",
-      body: JSON.stringify({ acao: "salvar_historico_lote", dados }),
+      body: JSON.stringify({ acao: "salvar_historico_lote", dados, producoes: producoesImportadas, usuario: obterUserLogado() }),
     });
     const resposta = await response.json();
 
@@ -532,7 +616,17 @@ document.getElementById("ppOrdersBox").addEventListener("change", async function
   if (evento.target.classList.contains("status-input")) {
     const idPedido = evento.target.dataset.id;
     const novoStatus = evento.target.value.trim();
-    salvarStatusPedido(idPedido, novoStatus);
+    const edicaoAtual = carregarEdicaoPedido(idPedido);
+
+    try {
+      const resultadoProducao = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedido, etapa: novoStatus, crianca: edicaoAtual.nomeCrianca, idade: edicaoAtual.idade, observacoes: edicaoAtual.observacoes, usuario: obterUserLogado() } });
+      if (resultadoProducao.status !== "sucesso") throw new Error(resultadoProducao.mensagem || "Não foi possível salvar o status.");
+      salvarStatusPedido(idPedido, novoStatus);
+    } catch (erro) {
+      alert(erro.message);
+      await carregarDadosDoBanco(abaAtual);
+      return;
+    }
 
     const statusNormalizado = normalizarTexto(novoStatus);
     if (abaAtual === "PRODUÇÃO" && (statusNormalizado === "FEITO" || statusNormalizado === "POSTADO")) {
@@ -575,7 +669,7 @@ document.getElementById("ppOrdersBox").addEventListener("change", async function
     const select=evento.target, idPedido=select.dataset.id, tema=select.value, status=select.parentElement.querySelector(".tema-save-status");
     select.disabled=true; status.textContent="Salvando...";
     try {
-      await apiTemas({acao:"atualizar_tema_pedido",idPedido,tema});
+      await apiTemas({acao:"atualizar_tema_pedido",idPedido,tema,usuario:obterUserLogado()});
       const dados=carregarEdicaoPedido(idPedido); dados.temaManual=tema; salvarEdicaoPedido(idPedido,dados);
       status.style.color="var(--cor-sucesso)"; status.textContent="Tema salvo.";
     } catch(e) { status.style.color="var(--cor-alerta)"; status.textContent=e.message; }
@@ -586,10 +680,11 @@ document.getElementById("ppOrdersBox").addEventListener("change", async function
 window.addEventListener("DOMContentLoaded", () => {
   definirEstadoAbas();
   carregarTemas();
+  carregarEtapasProducao();
   carregarDadosDoBanco("PRODUÇÃO");
 });
 
-document.getElementById("ppOrdersBox").addEventListener("click", function(evento){
+document.getElementById("ppOrdersBox").addEventListener("click", async function(evento){
   const botaoTema = evento.target.closest(".btn-editar-tema");
   if (botaoTema) { abrirModalTema(botaoTema.dataset.tema); return; }
 
@@ -606,6 +701,7 @@ document.getElementById("ppOrdersBox").addEventListener("click", function(evento
   document.getElementById("ppInputNomeCrianca").value = dados.nomeCrianca || "";
   document.getElementById("ppInputIdade").value = dados.idade || "";
   document.getElementById("ppInputObservacoes").value = dados.observacoes || "";
+  await carregarHistoricoPedido(idPedidoEmEdicao);
   
   document.getElementById("ppModalOverlay").style.display = "flex";
 });
@@ -618,17 +714,27 @@ function fecharModalEdicao() {
 document.getElementById("ppBtnCancelarModal").addEventListener("click", fecharModalEdicao);
 document.getElementById("ppModalOverlay").addEventListener("click", function(evento){ if (evento.target.id === "ppModalOverlay") fecharModalEdicao(); });
 
-document.getElementById("ppBtnSalvarModal").addEventListener("click", function(){
+document.getElementById("ppBtnSalvarModal").addEventListener("click", async function(){
   if (!idPedidoEmEdicao) return;
   
   const inputTema = document.getElementById("ppInputTema");
   
-  salvarEdicaoPedido(idPedidoEmEdicao, {
+  const dadosAtualizados = {
     temaManual: inputTema ? inputTema.value.trim() : "",
     nomeCrianca: document.getElementById("ppInputNomeCrianca").value.trim(),
     idade: document.getElementById("ppInputIdade").value.trim(),
     observacoes: document.getElementById("ppInputObservacoes").value.trim(),
-  });
+  };
+
+  try {
+    const resultado = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedidoEmEdicao, etapa: carregarStatusPedido(idPedidoEmEdicao), crianca: dadosAtualizados.nomeCrianca, idade: dadosAtualizados.idade, observacoes: dadosAtualizados.observacoes, usuario: obterUserLogado() } });
+    if (resultado.status !== "sucesso") throw new Error(resultado.mensagem || "Não foi possível salvar os detalhes.");
+    if (dadosAtualizados.temaManual) await apiTemas({ acao: "atualizar_tema_pedido", idPedido: idPedidoEmEdicao, tema: dadosAtualizados.temaManual, usuario: obterUserLogado() });
+    salvarEdicaoPedido(idPedidoEmEdicao, dadosAtualizados);
+  } catch (erro) {
+    alert(erro.message);
+    return;
+  }
   
   fecharModalEdicao();
   atualizarTela(); // Recarrega a tela para exibir o tema digitado
