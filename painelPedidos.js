@@ -20,7 +20,8 @@ const MAPA_COLUNAS_OPCIONAIS = {
   observacoesSalvas:  ["OBSERVAÇÕES", "OBSERVACOES"],
 };
 
-const DIAS_PRODUCAO = 5; 
+let DIAS_PRODUCAO = 5;
+function atualizarPrazoProducao(dias) { DIAS_PRODUCAO = Math.max(1, Number(dias) || 5); if (pedidosProcessados.length) { pedidosProcessados.forEach(p => { const calculo = calcularProgramacaoEnvio(p.dtCompra); p.prazoProducao = calculo.prazo; p.diasRestantes = calculo.diasRestantes; }); atualizarTela(); } }
 const OPCOES_STATUS_PEDIDO = ["PRODUÇÃO", "EMBALAGEM", "CANCELADO", "FEITO", "POSTADO"];
 
 /* ==============================================================
@@ -136,8 +137,8 @@ function salvarEdicaoPedido(idPedido, dados) { try { localStorage.setItem("kitfe
 function carregarEdicaoPedido(idPedido) {
   try {
     const bruto = localStorage.getItem("kitfesta_edicao_" + idPedido);
-    return bruto ? JSON.parse(bruto) : { temaManual: "", nomeCrianca: "", idade: "", observacoes: "" };
-  } catch(erro) { return { temaManual: "", nomeCrianca: "", idade: "", observacoes: "" }; }
+    return bruto ? JSON.parse(bruto) : { temaManual: "", nomeCrianca: "", idade: "", observacoes: "", dataPostagem: "" };
+  } catch(erro) { return { temaManual: "", nomeCrianca: "", idade: "", observacoes: "", dataPostagem: "" }; }
 }
 
 function sincronizarComArquivo(idPedido, dadosDoArquivo) {
@@ -155,6 +156,7 @@ function sincronizarComArquivo(idPedido, dadosDoArquivo) {
       nomeCrianca: dadosDoArquivo.nomeCrianca || "",
       idade: dadosDoArquivo.idade || "",
       observacoes: dadosDoArquivo.observacoes || "",
+      dataPostagem: dadosDoArquivo.dataPostagem || "",
     });
   }
 }
@@ -262,6 +264,11 @@ function renderizarPedidos(pedidos) {
           ${edicao.idade ? `<strong>Idade:</strong> ${escapeHtml(edicao.idade)}<br>` : ""}
           ${edicao.observacoes ? `<strong>Obs:</strong> ${escapeHtml(edicao.observacoes)}` : ""}
         </div>` : "";
+    const campoDataPostagem = `
+      <div class="campo-data-postagem" style="display:${normalizarTexto(statusPedidoAtual) === "POSTADO" ? "block" : "none"};margin:10px 0;">
+        <label style="font-size:.75rem;font-weight:bold;color:var(--ink-soft);">DATA DA POSTAGEM</label>
+        <input type="date" class="data-postagem-input" data-id="${escapeHtml(p.idPedido)}" value="${escapeHtml(edicao.dataPostagem || "")}" style="width:100%;margin-top:4px;">
+      </div>`;
 
     return `
       <div class="tag" style="border-top: 4px solid ${statusPrazo.cor}; background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
@@ -293,6 +300,7 @@ function renderizarPedidos(pedidos) {
                  
           <button class="btn-editar" data-id="${escapeHtml(p.idPedido)}" type="button" style="padding:8px 15px; background:var(--teal); color:white; border:none; border-radius:5px; cursor:pointer;">✎ Detalhes</button>
         </div>
+        ${campoDataPostagem}
         ${blocoInfoCrianca}
       </div>
     `;
@@ -508,7 +516,7 @@ async function carregarDadosDoBanco(statusDesejado = abaAtual) {
       const dataCompra = row[6] ? new Date(row[6]) : null;
       const prazos = calcularProgramacaoEnvio(dataCompra);
       salvarStatusPedido(String(row[0] ?? ""), row[12] ?? "");
-      salvarEdicaoPedido(String(row[0] ?? ""), { temaManual: row[2] ?? "", nomeCrianca: row[13] ?? "", idade: row[14] ?? "", observacoes: row[15] ?? "" });
+      salvarEdicaoPedido(String(row[0] ?? ""), { temaManual: row[2] ?? "", nomeCrianca: row[13] ?? "", idade: row[14] ?? "", observacoes: row[15] ?? "", dataPostagem: row[16] ?? "" });
 
       return {
         idPedido: String(row[0] ?? ""),
@@ -589,7 +597,7 @@ document.getElementById("ppFileInput").addEventListener("change", async function
     });
     const producoesImportadas = pedidosProcessados.map(pedido => {
       const edicao = carregarEdicaoPedido(pedido.idPedido);
-      return { pedido: pedido.idPedido, etapa: carregarStatusPedido(pedido.idPedido) || "AGUARDANDO", crianca: edicao.nomeCrianca || "", idade: edicao.idade || "", observacoes: edicao.observacoes || "" };
+      return { pedido: pedido.idPedido, etapa: carregarStatusPedido(pedido.idPedido) || "AGUARDANDO", crianca: edicao.nomeCrianca || "", idade: edicao.idade || "", observacoes: edicao.observacoes || "", dataPostagem: edicao.dataPostagem || "" };
     });
 
     const response = await fetch(URL_API, {
@@ -617,9 +625,20 @@ document.getElementById("ppOrdersBox").addEventListener("change", async function
     const idPedido = evento.target.dataset.id;
     const novoStatus = evento.target.value.trim();
     const edicaoAtual = carregarEdicaoPedido(idPedido);
+    const statusNormalizado = normalizarTexto(novoStatus);
+
+    if (statusNormalizado === "POSTADO" && !edicaoAtual.dataPostagem) {
+      salvarStatusPedido(idPedido, novoStatus);
+      const cardPostado = evento.target.closest(".tag");
+      const campoPostagem = cardPostado ? cardPostado.querySelector(".campo-data-postagem") : null;
+      if (campoPostagem) campoPostagem.style.display = "block";
+      const inputPostagem = campoPostagem ? campoPostagem.querySelector(".data-postagem-input") : null;
+      if (inputPostagem) inputPostagem.focus();
+      return;
+    }
 
     try {
-      const resultadoProducao = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedido, etapa: novoStatus, crianca: edicaoAtual.nomeCrianca, idade: edicaoAtual.idade, observacoes: edicaoAtual.observacoes, usuario: obterUserLogado() } });
+      const resultadoProducao = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedido, etapa: novoStatus, crianca: edicaoAtual.nomeCrianca, idade: edicaoAtual.idade, observacoes: edicaoAtual.observacoes, dataPostagem: edicaoAtual.dataPostagem || "", usuario: obterUserLogado() } });
       if (resultadoProducao.status !== "sucesso") throw new Error(resultadoProducao.mensagem || "Não foi possível salvar o status.");
       salvarStatusPedido(idPedido, novoStatus);
     } catch (erro) {
@@ -628,7 +647,6 @@ document.getElementById("ppOrdersBox").addEventListener("change", async function
       return;
     }
 
-    const statusNormalizado = normalizarTexto(novoStatus);
     if (abaAtual === "PRODUÇÃO" && (statusNormalizado === "FEITO" || statusNormalizado === "POSTADO")) {
       const card = evento.target.closest(".tag");
       if (card) {
@@ -665,6 +683,24 @@ document.getElementById("ppOrdersBox").addEventListener("change", async function
     }
   }
 
+  if (evento.target.classList.contains("data-postagem-input")) {
+    const idPedido = evento.target.dataset.id;
+    const dataPostagem = evento.target.value;
+    if (!dataPostagem) return;
+    const edicao = carregarEdicaoPedido(idPedido);
+    const etapa = carregarStatusPedido(idPedido) || "POSTADO";
+    try {
+      const resultado = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedido, etapa: "POSTADO", crianca: edicao.nomeCrianca, idade: edicao.idade, observacoes: edicao.observacoes, dataPostagem, usuario: obterUserLogado() } });
+      if (resultado.status !== "sucesso") throw new Error(resultado.mensagem || "Não foi possível salvar a postagem.");
+      edicao.dataPostagem = dataPostagem;
+      salvarEdicaoPedido(idPedido, edicao);
+      salvarStatusPedido(idPedido, etapa);
+      const finalizacao = await chamarApi({ acao: "atualizar_status_banco", idPedido, novoStatusSistema: "FINALIZADO" });
+      if (finalizacao.status !== "sucesso") throw new Error(finalizacao.mensagem || "Não foi possível finalizar o pedido.");
+      await carregarDadosDoBanco(abaAtual);
+    } catch (erro) { alert(erro.message); }
+  }
+
   if (evento.target.classList.contains("select-tema-card")) {
     const select=evento.target, idPedido=select.dataset.id, tema=select.value, status=select.parentElement.querySelector(".tema-save-status");
     select.disabled=true; status.textContent="Salvando...";
@@ -677,7 +713,8 @@ document.getElementById("ppOrdersBox").addEventListener("change", async function
   }
 });
 
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
+  if (typeof carregarParametros === "function") await carregarParametros(false);
   definirEstadoAbas();
   carregarTemas();
   carregarEtapasProducao();
@@ -727,7 +764,8 @@ document.getElementById("ppBtnSalvarModal").addEventListener("click", async func
   };
 
   try {
-    const resultado = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedidoEmEdicao, etapa: carregarStatusPedido(idPedidoEmEdicao), crianca: dadosAtualizados.nomeCrianca, idade: dadosAtualizados.idade, observacoes: dadosAtualizados.observacoes, usuario: obterUserLogado() } });
+    dadosAtualizados.dataPostagem = carregarEdicaoPedido(idPedidoEmEdicao).dataPostagem || "";
+    const resultado = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedidoEmEdicao, etapa: carregarStatusPedido(idPedidoEmEdicao), crianca: dadosAtualizados.nomeCrianca, idade: dadosAtualizados.idade, observacoes: dadosAtualizados.observacoes, dataPostagem: dadosAtualizados.dataPostagem, usuario: obterUserLogado() } });
     if (resultado.status !== "sucesso") throw new Error(resultado.mensagem || "Não foi possível salvar os detalhes.");
     if (dadosAtualizados.temaManual) await apiTemas({ acao: "atualizar_tema_pedido", idPedido: idPedidoEmEdicao, tema: dadosAtualizados.temaManual, usuario: obterUserLogado() });
     salvarEdicaoPedido(idPedidoEmEdicao, dadosAtualizados);
