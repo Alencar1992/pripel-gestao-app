@@ -391,6 +391,7 @@
             <div class="card" id="tela-precificacao" style="display: none;">
                 <h1>Calculadora de Precificação</h1>
                 <form id="formPrecificacao" class="form-grid">
+                    <div class="form-group full-width"><label>Produto cadastrado:</label><select id="calcProduto"><option value="">Cálculo manual</option></select></div>
                     <div class="form-group">
                         <label>Custo dos Materiais (R$):</label>
                         <input type="text" inputmode="numeric" id="calcCustoMaterial" placeholder="0,00">
@@ -502,6 +503,7 @@
                     </div>
                     </div>
 
+                    <datalist id="ppEtapasList"></datalist>
                     <div id="ppOrdersBox" class="orders"></div>
 
                     <div id="ppEmptyState" class="empty-state">
@@ -531,7 +533,7 @@
                     <div id="ppModalOverlay" class="modal-overlay" style="display: none;">
                         <div class="modal-box">
                             <h3>Editar pedido</h3>
-                            <div class="modal-sub">Essas informações ficam salvas neste navegador.</div>
+                            <div class="modal-sub">As informações e todas as alterações ficam registradas no banco.</div>
 
                             <label for="ppInputTema">Tema da Festa</label>
                             <input type="text" id="ppInputTema" placeholder="Ex: Safari Verde">
@@ -545,6 +547,8 @@
                             <label for="ppInputObservacoes">Outras observações</label>
                             <textarea id="ppInputObservacoes" placeholder="Ex: retirar acento do nome, entregar até 14h..."></textarea>
 
+                            <div style="margin-top:16px;"><strong>Histórico do pedido</strong><div id="ppHistoricoPedido" style="max-height:150px;overflow:auto;margin-top:8px;font-size:.78rem;color:var(--ink-soft);">Carregando...</div></div>
+
                             <div class="modal-actions">
                                 <button type="button" class="btn-cancelar" id="ppBtnCancelarModal">Cancelar</button>
                                 <button type="button" class="btn-salvar" id="ppBtnSalvarModal">Salvar</button>
@@ -555,16 +559,29 @@
             </div>
 
             <div class="card" id="tela-parametros" style="display: none;">
-                <h1 style="text-align:center; color: var(--cor-destaque);">Parâmetros em Construção 🚧</h1>
+                <h1>Etapas da Produção</h1>
+                <p style="color:var(--texto-mutado);margin-bottom:20px;">Configure as etapas disponíveis no status dos pedidos.</p>
+                <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;"><div class="form-group" style="flex:1;min-width:220px;"><label>Nova etapa:</label><input type="text" id="novaEtapaProducao" placeholder="Ex: Impressão"></div><button type="button" id="btnAdicionarEtapa" style="width:auto;">➕ Adicionar etapa</button></div>
+                <p id="mensagemEtapasProducao"></p>
+                <div id="listaEtapasProducao" style="display:grid;gap:8px;margin-top:20px;"></div>
             </div>
             
             <div class="card" id="tela-custos" style="display: none;">
-                <h1 style="text-align:center; color: var(--cor-destaque);">Custos Base em Construção 🚧</h1>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;"><h1 id="tituloFormProduto">Produtos e Custos</h1><button type="button" id="btnAtualizarProdutos" style="width:auto;">🔄 Atualizar</button></div>
+                <form id="formProduto" class="form-grid">
+                    <div class="form-group"><label>Nome do produto:</label><input type="text" id="produtoNome" required></div>
+                    <div class="form-group"><label>Matéria-prima:</label><input type="text" id="produtoMateriaPrima" inputmode="numeric" placeholder="0,00" required></div>
+                    <div class="form-group"><label>Custos extras:</label><input type="text" id="produtoCustosExtras" inputmode="numeric" placeholder="0,00"></div>
+                    <div class="form-group"><label>Margem desejada (%):</label><input type="number" id="produtoMargem" min="0" step="0.01" required></div>
+                    <div class="form-group full-width"><div style="display:flex;gap:10px;"><button type="button" id="btnCancelarEdicaoProduto" class="btn-secundario" style="display:none;width:auto;">Cancelar edição</button><button type="submit" id="btnSalvarProduto" style="width:auto;">Salvar produto</button></div><p id="mensagemProduto"></p></div>
+                </form>
+                <div class="form-group" style="margin:22px 0;"><label>Pesquisar produtos:</label><input type="search" id="pesquisaProdutos" placeholder="Digite o nome do produto..."></div>
+                <div class="table-responsive"><table class="tabela-extrato"><thead><tr><th>Produto</th><th style="text-align:right;">Matéria-prima</th><th style="text-align:right;">Extras</th><th style="text-align:right;">Margem</th><th style="text-align:center;">Ações</th></tr></thead><tbody id="corpoTabelaProdutos"><tr><td colspan="5" style="text-align:center;padding:35px;">Carregando produtos...</td></tr></tbody></table></div>
             </div>
 
         </main>
     </div>
-    <script src="script.js?v=20260718-3"></script>
-    <script src="painelPedidos.js?v=20260718-1"></script>
+    <script src="script.js?v=20260718-4"></script>
+    <script src="painelPedidos.js?v=20260718-2"></script>
 </body>
 </html>
