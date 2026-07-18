@@ -143,6 +143,8 @@ function trocarTelaApp(telaAtivaId) {
     if (telaAtivaId === 'venda') carregarVendas();
     if (telaAtivaId === 'despesa') carregarDespesas();
     if (telaAtivaId === 'cronograma' && typeof carregarDadosDoBanco === 'function') carregarDadosDoBanco('PRODUÇÃO');
+    if (telaAtivaId === 'custos' || telaAtivaId === 'precificacao') carregarProdutos();
+    if (telaAtivaId === 'parametros' && typeof carregarEtapasProducao === 'function') carregarEtapasProducao();
 }
 
 Object.keys(menusApp).forEach(key => { 
@@ -545,6 +547,139 @@ document.getElementById('btnLimparFiltrosDespesa').addEventListener('click', () 
 // =======================================================
 // 5. CALCULADORA DE PRECIFICAÇÃO (REGRAS SHOPEE)
 // =======================================================
+let produtosCarregados = [];
+let produtoEmEdicao = null;
+
+function limparFormularioProduto() {
+    produtoEmEdicao = null;
+    document.getElementById('formProduto').reset();
+    document.getElementById('tituloFormProduto').textContent = 'Produtos e Custos';
+    document.getElementById('btnSalvarProduto').textContent = 'Salvar produto';
+    document.getElementById('btnCancelarEdicaoProduto').style.display = 'none';
+    document.getElementById('mensagemProduto').textContent = '';
+}
+
+function preencherProdutosPrecificacao() {
+    const select = document.getElementById('calcProduto');
+    const selecionado = select.value;
+    select.replaceChildren();
+    const manual = document.createElement('option');
+    manual.value = '';
+    manual.textContent = 'Cálculo manual';
+    select.appendChild(manual);
+    produtosCarregados.forEach(produto => {
+        const option = document.createElement('option');
+        option.value = produto.id;
+        option.textContent = produto.nome;
+        select.appendChild(option);
+    });
+    if (produtosCarregados.some(p => p.id === selecionado)) select.value = selecionado;
+}
+
+function renderizarProdutos() {
+    const termo = document.getElementById('pesquisaProdutos').value.trim().toLowerCase();
+    const tbody = document.getElementById('corpoTabelaProdutos');
+    const produtos = produtosCarregados.filter(p => p.nome.toLowerCase().includes(termo));
+    tbody.replaceChildren();
+    if (!produtos.length) {
+        const tr = document.createElement('tr');
+        const td = adicionarCelula(tr, 'Nenhum produto encontrado.');
+        td.colSpan = 5;
+        td.style.cssText = 'text-align:center;padding:35px;color:var(--texto-mutado);';
+        tbody.appendChild(tr);
+        return;
+    }
+    produtos.forEach(produto => {
+        const tr = document.createElement('tr');
+        adicionarCelula(tr, produto.nome);
+        const materia = adicionarCelula(tr, formatarMoeda(produto.materiaPrima)); materia.style.textAlign = 'right';
+        const extras = adicionarCelula(tr, formatarMoeda(produto.custosExtras)); extras.style.textAlign = 'right';
+        const margem = adicionarCelula(tr, `${Number(produto.margem).toLocaleString('pt-BR')}%`); margem.style.textAlign = 'right';
+        const acoes = adicionarCelula(tr, ''); acoes.style.textAlign = 'center';
+        acoes.appendChild(criarBotaoAcao('🧮', 'Usar na Precificação', 'var(--cor-sucesso)', () => usarProdutoNaPrecificacao(produto.id)));
+        acoes.appendChild(criarBotaoAcao('✏️', 'Editar produto', '#6c5ce7', () => editarProduto(produto.id)));
+        acoes.appendChild(criarBotaoAcao('🗑️', 'Excluir produto', 'var(--cor-alerta)', () => excluirProduto(produto.id)));
+        tbody.appendChild(tr);
+    });
+}
+
+async function carregarProdutos() {
+    try {
+        const resultado = await chamarApi({ acao: 'listar_produtos' });
+        if (resultado.status !== 'sucesso' || !Array.isArray(resultado.produtos)) throw new Error(resultado.mensagem || 'Não foi possível carregar os produtos.');
+        produtosCarregados = resultado.produtos;
+        preencherProdutosPrecificacao();
+        renderizarProdutos();
+    } catch (erro) {
+        const tbody = document.getElementById('corpoTabelaProdutos');
+        tbody.replaceChildren();
+        const tr = document.createElement('tr');
+        const td = adicionarCelula(tr, `❌ ${erro.message}`); td.colSpan = 5; td.style.cssText = 'text-align:center;padding:35px;color:var(--cor-alerta);';
+        tbody.appendChild(tr);
+    }
+}
+
+document.getElementById('formProduto').addEventListener('submit', async evento => {
+    evento.preventDefault();
+    const botao = document.getElementById('btnSalvarProduto');
+    const mensagem = document.getElementById('mensagemProduto');
+    const produto = { id: produtoEmEdicao, nome: document.getElementById('produtoNome').value.trim(), materiaPrima: Number(limparMoedaParaEnvio(document.getElementById('produtoMateriaPrima').value)) || 0, custosExtras: Number(limparMoedaParaEnvio(document.getElementById('produtoCustosExtras').value)) || 0, margem: Number(document.getElementById('produtoMargem').value) || 0, usuario: obterUserLogado() };
+    botao.disabled = true;
+    mensagem.textContent = '⏳ Salvando...';
+    try {
+        const resultado = await chamarApi({ acao: produtoEmEdicao ? 'editar_produto' : 'salvar_produto', produto });
+        if (resultado.status !== 'sucesso') throw new Error(resultado.mensagem || 'Não foi possível salvar o produto.');
+        limparFormularioProduto();
+        await carregarProdutos();
+    } catch (erro) { mensagem.style.color = 'var(--cor-alerta)'; mensagem.textContent = `❌ ${erro.message}`; }
+    finally { botao.disabled = false; }
+});
+
+function editarProduto(id) {
+    const produto = produtosCarregados.find(item => item.id === id);
+    if (!produto) return;
+    produtoEmEdicao = id;
+    document.getElementById('produtoNome').value = produto.nome;
+    document.getElementById('produtoMateriaPrima').value = Number(produto.materiaPrima).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    document.getElementById('produtoCustosExtras').value = Number(produto.custosExtras).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    document.getElementById('produtoMargem').value = produto.margem;
+    document.getElementById('tituloFormProduto').textContent = `Editar produto ${produto.nome}`;
+    document.getElementById('btnSalvarProduto').textContent = 'Atualizar produto';
+    document.getElementById('btnCancelarEdicaoProduto').style.display = 'inline-block';
+}
+
+async function excluirProduto(id) {
+    if (!confirm('Excluir definitivamente este produto?')) return;
+    try {
+        const resultado = await chamarApi({ acao: 'excluir_produto', id, usuario: obterUserLogado() });
+        if (resultado.status !== 'sucesso') throw new Error(resultado.mensagem || 'Não foi possível excluir.');
+        if (produtoEmEdicao === id) limparFormularioProduto();
+        await carregarProdutos();
+    } catch (erro) { alert(`Erro: ${erro.message}`); }
+}
+
+function usarProdutoNaPrecificacao(id) {
+    trocarTelaApp('precificacao');
+    document.getElementById('calcProduto').value = id;
+    aplicarProdutoNaPrecificacao();
+}
+
+function aplicarProdutoNaPrecificacao() {
+    const produto = produtosCarregados.find(item => item.id === document.getElementById('calcProduto').value);
+    if (!produto) return;
+    document.getElementById('calcCustoMaterial').value = Number(produto.materiaPrima).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    document.getElementById('calcCustoExtra').value = Number(produto.custosExtras).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    document.getElementById('calcMargem').value = produto.margem;
+    calcularPrecificacao();
+}
+
+document.getElementById('produtoMateriaPrima').addEventListener('input', aplicarMascaraMoeda);
+document.getElementById('produtoCustosExtras').addEventListener('input', aplicarMascaraMoeda);
+document.getElementById('pesquisaProdutos').addEventListener('input', renderizarProdutos);
+document.getElementById('btnAtualizarProdutos').addEventListener('click', carregarProdutos);
+document.getElementById('btnCancelarEdicaoProduto').addEventListener('click', limparFormularioProduto);
+document.getElementById('calcProduto').addEventListener('change', aplicarProdutoNaPrecificacao);
+
 document.getElementById('calcCustoMaterial').addEventListener('input', aplicarMascaraMoeda);
 document.getElementById('calcCustoExtra').addEventListener('input', aplicarMascaraMoeda);
 
