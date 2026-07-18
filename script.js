@@ -8,6 +8,35 @@ const textoBoasVindas = document.getElementById('textoBoasVindas');
 // Utilitário de formatação de Moeda
 const formatarMoeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
 
+async function chamarApi(payload) {
+    const response = await fetch(URL_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+    });
+
+    const texto = await response.text();
+    let resultado;
+    try {
+        resultado = JSON.parse(texto);
+    } catch (_) {
+        throw new Error('O servidor retornou uma resposta inválida. Verifique a implantação do backend.');
+    }
+
+    if (!response.ok || !resultado || typeof resultado !== 'object') {
+        throw new Error((resultado && resultado.mensagem) || 'Não foi possível comunicar com o servidor.');
+    }
+    return resultado;
+}
+
+function adicionarCelula(linha, texto, className) {
+    const celula = document.createElement('td');
+    celula.textContent = texto;
+    if (className) celula.className = className;
+    linha.appendChild(celula);
+    return celula;
+}
+
 // =======================================================
 // 1. DASHBOARD E FLUXO DE CAIXA
 // =======================================================
@@ -17,8 +46,7 @@ async function carregarDashboard() {
     document.querySelector('.valor.saldo').innerText = "Carregando...";
 
     try {
-        const response = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "resumo_dashboard" }) });
-        const resultado = await response.json();
+        const resultado = await chamarApi({ acao: "resumo_dashboard" });
 
         if (resultado.status === "sucesso") {
             document.querySelector('.valor.receita').innerText = formatarMoeda(resultado.entradas);
@@ -38,8 +66,7 @@ async function carregarFluxoCaixa() {
     tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px;">⏳ Buscando histórico no banco de dados...</td></tr>';
     
     try {
-        const response = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "buscar_fluxo" }) });
-        const resultado = await response.json();
+        const resultado = await chamarApi({ acao: "buscar_fluxo" });
         
         if (resultado.status === "sucesso") {
             tbody.innerHTML = ''; 
@@ -57,12 +84,16 @@ async function carregarFluxoCaixa() {
                 const valorClass = isEntrada ? "valor-entrada" : "valor-saida";
                 const sinal = isEntrada ? "+ " : "- ";
                 
-                tr.innerHTML = `
-                    <td style="color: var(--texto-mutado);">${item.dataF}</td>
-                    <td style="font-weight: 500;">${item.descricao}</td>
-                    <td><span class="badge-tipo ${badgeClass}">${item.tipo}</span></td>
-                    <td class="${valorClass}">${sinal}${formatarMoeda(item.valor)}</td>
-                `;
+                const dataCell = adicionarCelula(tr, item.dataF || '');
+                dataCell.style.color = 'var(--texto-mutado)';
+                const descricaoCell = adicionarCelula(tr, item.descricao || '');
+                descricaoCell.style.fontWeight = '500';
+                const tipoCell = adicionarCelula(tr, '');
+                const badge = document.createElement('span');
+                badge.className = `badge-tipo ${badgeClass}`;
+                badge.textContent = item.tipo || '';
+                tipoCell.appendChild(badge);
+                adicionarCelula(tr, `${sinal}${formatarMoeda(Number(item.valor) || 0)}`, valorClass);
                 tbody.appendChild(tr);
             });
         } else {
@@ -216,18 +247,13 @@ document.getElementById('formCadastro').addEventListener('submit', async (e) => 
     boxesLogin.statusBox.innerText = '⏳ Criando usuário...';
 
     try {
-        const response = await fetch(URL_API, {
-            method: 'POST',
-            body: JSON.stringify({
+        const resultado = await chamarApi({
                 acao: 'cadastrar',
                 nome: document.getElementById('cadNome').value.trim(),
                 usuario: document.getElementById('cadUser').value.trim(),
                 senha: document.getElementById('cadSenha').value
-            })
         });
-        const resultado = await response.json();
-
-        if (!response.ok || resultado.status !== 'sucesso') {
+        if (resultado.status !== 'sucesso') {
             throw new Error(resultado.mensagem || 'Não foi possível criar o usuário.');
         }
 
@@ -255,16 +281,11 @@ document.getElementById('formTrocaSenha').addEventListener('submit', async (e) =
     msgTrocaSenhaMatch.innerText = '⏳ Atualizando senha...';
 
     try {
-        const response = await fetch(URL_API, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({
+        const resultado = await chamarApi({
                 acao: 'alterar_senha',
                 usuario: document.getElementById('trocaUser').value.trim(),
                 novaSenha: novaSenhaInput.value
-            })
         });
-        const resultado = await response.json();
 
         if (resultado.status !== 'sucesso') {
             throw new Error(resultado.mensagem || 'Não foi possível alterar a senha.');
@@ -292,8 +313,7 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
     boxesLogin.statusBox.style.display = 'block'; boxesLogin.statusBox.style.color = "#FFD700"; boxesLogin.statusBox.innerText = "⏳ Conectando..."; 
     const userDigitado = document.getElementById('loginUser').value.trim();
     try { 
-        const response = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "login", usuario: userDigitado, senha: document.getElementById('loginSenha').value }) }); 
-        const resultado = await response.json();
+        const resultado = await chamarApi({ acao: "login", usuario: userDigitado, senha: document.getElementById('loginSenha').value });
         if (resultado.status === "sucesso") { 
             boxesLogin.statusBox.style.color = "#00C853"; boxesLogin.statusBox.innerText = "✅ Acesso Liberado!"; 
             sessionStorage.setItem('priPelUser', JSON.stringify({ nome: resultado.nomeCompleto, login: userDigitado })); 
@@ -340,8 +360,7 @@ document.getElementById('formVenda').addEventListener('submit', async (e) => {
     const dados = [ document.getElementById('data').value, document.getElementById('cliente').value, document.getElementById('categoriaProduto').value, document.getElementById('formaPagamento').value, custoLimpo, valorLimpo ]; 
     
     try { 
-        const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ planilha: "vendas", dados: dados, usuarioLogado: obterUserLogado() }) }); 
-        const resultado = await res.json(); 
+        const resultado = await chamarApi({ planilha: "vendas", dados: dados, usuarioLogado: obterUserLogado() });
         if (resultado.status === "sucesso") { msg.style.color = "var(--cor-sucesso)"; msg.innerText = "Salvo com sucesso!"; document.getElementById('formVenda').reset(); carregarDashboard(); } 
         else throw new Error(resultado.mensagem); 
     } catch (err) { msg.style.color = "var(--cor-alerta)"; msg.innerText = "Erro: " + err.message; } 
@@ -356,8 +375,7 @@ document.getElementById('formDespesa').addEventListener('submit', async (e) => {
     const dados = [ document.getElementById('dataDespesa').value, document.getElementById('categoriaDespesa').value, valorDespesaLimpo, document.getElementById('statusDespesa').value ]; 
     
     try { 
-        const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ planilha: "despesas", dados: dados, usuarioLogado: obterUserLogado() }) }); 
-        const resultado = await res.json(); 
+        const resultado = await chamarApi({ planilha: "despesas", dados: dados, usuarioLogado: obterUserLogado() });
         if (resultado.status === "sucesso") { msg.style.color = "var(--cor-sucesso)"; msg.innerText = "Salvo com sucesso!"; document.getElementById('formDespesa').reset(); carregarDashboard(); } 
         else throw new Error(resultado.mensagem); 
     } catch (err) { msg.style.color = "var(--cor-alerta)"; msg.innerText = "Erro: " + err.message; } 
