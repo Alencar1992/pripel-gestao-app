@@ -141,6 +141,7 @@ function trocarTelaApp(telaAtivaId) {
     // Auto-carrega fluxo de caixa ao entrar na tela
     if (telaAtivaId === 'fluxo') carregarFluxoCaixa();
     if (telaAtivaId === 'venda') carregarVendas();
+    if (telaAtivaId === 'despesa') carregarDespesas();
     if (telaAtivaId === 'cronograma' && typeof carregarDadosDoBanco === 'function') carregarDadosDoBanco('PRODUÇÃO');
 }
 
@@ -369,19 +370,176 @@ document.getElementById('formVenda').addEventListener('submit', async (e) => {
     finally { btn.disabled = false; setTimeout(() => msg.innerText = "", 4000); } 
 });
 
-document.getElementById('formDespesa').addEventListener('submit', async (e) => { 
-    e.preventDefault(); const btn = document.getElementById('btnEnviarDespesa'); const msg = document.getElementById('mensagemDespesa'); 
-    btn.disabled = true; msg.style.color = "var(--texto-claro)"; msg.innerText = "Enviando..."; 
-    
-    const valorDespesaLimpo = limparMoedaParaEnvio(document.getElementById('valorDespesa').value);
-    const dados = [ document.getElementById('dataDespesa').value, document.getElementById('categoriaDespesa').value, valorDespesaLimpo, document.getElementById('statusDespesa').value ]; 
-    
-    try { 
-        const resultado = await chamarApi({ planilha: "despesas", dados: dados, usuarioLogado: obterUserLogado() });
-        if (resultado.status === "sucesso") { msg.style.color = "var(--cor-sucesso)"; msg.innerText = "Salvo com sucesso!"; document.getElementById('formDespesa').reset(); carregarDashboard(); } 
-        else throw new Error(resultado.mensagem); 
-    } catch (err) { msg.style.color = "var(--cor-alerta)"; msg.innerText = "Erro: " + err.message; } 
-    finally { btn.disabled = false; setTimeout(() => msg.innerText = "", 4000); } 
+let despesasCarregadas = [];
+let despesaEmEdicao = null;
+
+function limparFormularioDespesa() {
+    despesaEmEdicao = null;
+    document.getElementById('formDespesa').reset();
+    document.getElementById('tituloFormDespesa').textContent = 'Registrar Nova Despesa';
+    document.getElementById('btnEnviarDespesa').textContent = 'Salvar Despesa';
+    document.getElementById('btnCancelarEdicaoDespesa').style.display = 'none';
+    document.getElementById('mensagemDespesa').textContent = '';
+}
+
+document.getElementById('formDespesa').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnEnviarDespesa');
+    const msg = document.getElementById('mensagemDespesa');
+    btn.disabled = true;
+    msg.style.color = 'var(--texto-claro)';
+    msg.textContent = '⏳ Salvando...';
+    const despesa = {
+        id: despesaEmEdicao,
+        vencimento: document.getElementById('dataDespesa').value,
+        categoria: document.getElementById('categoriaDespesa').value.trim(),
+        valor: Number(limparMoedaParaEnvio(document.getElementById('valorDespesa').value)) || 0,
+        status: document.getElementById('statusDespesa').value,
+        observacao: document.getElementById('observacaoDespesa').value.trim(),
+        usuario: obterUserLogado()
+    };
+    try {
+        const resultado = await chamarApi({ acao: despesaEmEdicao ? 'editar_despesa' : 'salvar_despesa', despesa });
+        if (resultado.status !== 'sucesso') throw new Error(resultado.mensagem || 'Não foi possível salvar a despesa.');
+        msg.style.color = 'var(--cor-sucesso)';
+        msg.textContent = `✅ ${resultado.mensagem}`;
+        limparFormularioDespesa();
+        await Promise.all([carregarDespesas(), carregarDashboard()]);
+    } catch (erro) {
+        msg.style.color = 'var(--cor-alerta)';
+        msg.textContent = `❌ ${erro.message}`;
+    } finally {
+        btn.disabled = false;
+    }
+});
+
+function preencherCategoriasDespesas(categorias) {
+    const datalist = document.getElementById('listaCategoriasDespesa');
+    const filtro = document.getElementById('filtroCategoriaDespesa');
+    const selecionada = filtro.value;
+    datalist.replaceChildren();
+    filtro.replaceChildren();
+    const todas = document.createElement('option');
+    todas.value = '';
+    todas.textContent = 'Todas';
+    filtro.appendChild(todas);
+    categorias.forEach(categoria => {
+        const sugestao = document.createElement('option');
+        sugestao.value = categoria;
+        datalist.appendChild(sugestao);
+        const opcao = document.createElement('option');
+        opcao.value = categoria;
+        opcao.textContent = categoria;
+        filtro.appendChild(opcao);
+    });
+    filtro.value = categorias.includes(selecionada) ? selecionada : '';
+}
+
+function despesasFiltradas() {
+    const pesquisa = document.getElementById('pesquisaDespesas').value.trim().toLowerCase();
+    const categoria = document.getElementById('filtroCategoriaDespesa').value;
+    const status = document.getElementById('filtroStatusDespesa').value;
+    const inicio = document.getElementById('filtroDespesaInicio').value;
+    const fim = document.getElementById('filtroDespesaFim').value;
+    return despesasCarregadas.filter(despesa => {
+        const texto = `${despesa.categoria} ${despesa.observacao} ${despesa.status}`.toLowerCase();
+        return (!pesquisa || texto.includes(pesquisa)) && (!categoria || despesa.categoria === categoria) && (!status || despesa.status === status) && (!inicio || despesa.vencimento >= inicio) && (!fim || despesa.vencimento <= fim);
+    });
+}
+
+function renderizarDespesas() {
+    const tbody = document.getElementById('corpoTabelaDespesas');
+    const despesas = despesasFiltradas();
+    tbody.replaceChildren();
+    const total = despesas.reduce((s, d) => s + Number(d.valor || 0), 0);
+    const pendente = despesas.filter(d => d.status === 'Pendente').reduce((s, d) => s + Number(d.valor || 0), 0);
+    const pago = despesas.filter(d => d.status === 'Pago').reduce((s, d) => s + Number(d.valor || 0), 0);
+    document.getElementById('totalDespesasFiltrado').textContent = formatarMoeda(total);
+    document.getElementById('totalDespesasPendentes').textContent = formatarMoeda(pendente);
+    document.getElementById('totalDespesasPagas').textContent = formatarMoeda(pago);
+    if (!despesas.length) {
+        const tr = document.createElement('tr');
+        const td = adicionarCelula(tr, 'Nenhuma despesa encontrada.');
+        td.colSpan = 6;
+        td.style.cssText = 'text-align:center;padding:35px;color:var(--texto-mutado);';
+        tbody.appendChild(tr);
+        return;
+    }
+    despesas.forEach(despesa => {
+        const tr = document.createElement('tr');
+        adicionarCelula(tr, despesa.vencimentoF || despesa.vencimento);
+        adicionarCelula(tr, despesa.categoria);
+        adicionarCelula(tr, despesa.status);
+        adicionarCelula(tr, despesa.observacao || '—');
+        const valor = adicionarCelula(tr, formatarMoeda(Number(despesa.valor) || 0));
+        valor.style.textAlign = 'right';
+        const acoes = adicionarCelula(tr, '');
+        acoes.style.textAlign = 'center';
+        acoes.appendChild(criarBotaoAcao('✏️', 'Editar despesa', '#6c5ce7', () => editarDespesa(despesa.id)));
+        if (despesa.status !== 'Pago') acoes.appendChild(criarBotaoAcao('✅', 'Marcar como paga', 'var(--cor-sucesso)', () => quitarDespesa(despesa.id)));
+        acoes.appendChild(criarBotaoAcao('🗑️', 'Excluir despesa', 'var(--cor-alerta)', () => excluirDespesa(despesa.id)));
+        tbody.appendChild(tr);
+    });
+}
+
+async function carregarDespesas() {
+    const tbody = document.getElementById('corpoTabelaDespesas');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:35px;">⏳ Carregando despesas...</td></tr>';
+    try {
+        const resultado = await chamarApi({ acao: 'listar_despesas' });
+        if (resultado.status !== 'sucesso' || !Array.isArray(resultado.despesas)) throw new Error(resultado.mensagem || 'Resposta inválida.');
+        despesasCarregadas = resultado.despesas;
+        preencherCategoriasDespesas(resultado.categorias || []);
+        renderizarDespesas();
+    } catch (erro) {
+        tbody.replaceChildren();
+        const tr = document.createElement('tr');
+        const td = adicionarCelula(tr, `❌ ${erro.message}`);
+        td.colSpan = 6;
+        td.style.cssText = 'text-align:center;padding:35px;color:var(--cor-alerta);';
+        tbody.appendChild(tr);
+    }
+}
+
+function editarDespesa(id) {
+    const despesa = despesasCarregadas.find(item => item.id === id);
+    if (!despesa) return;
+    despesaEmEdicao = id;
+    document.getElementById('dataDespesa').value = despesa.vencimento;
+    document.getElementById('categoriaDespesa').value = despesa.categoria;
+    document.getElementById('valorDespesa').value = Number(despesa.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    document.getElementById('statusDespesa').value = despesa.status;
+    document.getElementById('observacaoDespesa').value = despesa.observacao || '';
+    document.getElementById('tituloFormDespesa').textContent = `Editar despesa ${id}`;
+    document.getElementById('btnEnviarDespesa').textContent = 'Atualizar Despesa';
+    document.getElementById('btnCancelarEdicaoDespesa').style.display = 'inline-block';
+    document.getElementById('dataDespesa').focus();
+}
+
+async function quitarDespesa(id) {
+    try {
+        const resultado = await chamarApi({ acao: 'quitar_despesa', id, usuario: obterUserLogado() });
+        if (resultado.status !== 'sucesso') throw new Error(resultado.mensagem || 'Não foi possível quitar a despesa.');
+        await Promise.all([carregarDespesas(), carregarDashboard()]);
+    } catch (erro) { alert(`Erro: ${erro.message}`); }
+}
+
+async function excluirDespesa(id) {
+    if (!confirm(`Excluir definitivamente a despesa ${id}?`)) return;
+    try {
+        const resultado = await chamarApi({ acao: 'excluir_despesa', id, usuario: obterUserLogado() });
+        if (resultado.status !== 'sucesso') throw new Error(resultado.mensagem || 'Não foi possível excluir a despesa.');
+        if (despesaEmEdicao === id) limparFormularioDespesa();
+        await Promise.all([carregarDespesas(), carregarDashboard()]);
+    } catch (erro) { alert(`Erro: ${erro.message}`); }
+}
+
+['pesquisaDespesas', 'filtroCategoriaDespesa', 'filtroDespesaInicio', 'filtroDespesaFim', 'filtroStatusDespesa'].forEach(id => document.getElementById(id).addEventListener('input', renderizarDespesas));
+document.getElementById('btnAtualizarDespesas').addEventListener('click', carregarDespesas);
+document.getElementById('btnCancelarEdicaoDespesa').addEventListener('click', limparFormularioDespesa);
+document.getElementById('btnLimparFiltrosDespesa').addEventListener('click', () => {
+    ['pesquisaDespesas', 'filtroCategoriaDespesa', 'filtroDespesaInicio', 'filtroDespesaFim', 'filtroStatusDespesa'].forEach(id => document.getElementById(id).value = '');
+    renderizarDespesas();
 });
 
 // =======================================================
