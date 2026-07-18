@@ -498,17 +498,21 @@
                     <!-- Busca Geral -->
                     <input type="text" id="ppSearchInput" placeholder="Busca geral (ID do pedido ou Nome do Comprador)..." style="width: 100%;">
     
-                     <!-- Filtros Específicos -->
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 200px;">
-                    <label style="font-size: 0.75rem; font-weight: bold; color: var(--ink-soft); margin-bottom: 4px; display: block;">Filtro por Tema:</label>
-                    <input type="text" id="ppFilterTema" list="ppTemasFiltroList" autocomplete="off" placeholder="Digite ou selecione um tema..." style="width:100%;padding-right:34px;">
-                    <datalist id="ppTemasFiltroList"></datalist>
-                    </div>
-                    <div style="flex: 1; min-width: 200px;">
-                    <label style="font-size: 0.75rem; font-weight: bold; color: var(--ink-soft); margin-bottom: 4px; display: block;">Filtro por Status:</label>
-                    <input type="text" id="ppFilterStatus" placeholder="Ex: Impresso, Feito..." style="width: 100%;">
-                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+                      <div style="min-width:150px;">
+                        <label for="ppFilterTipo" style="font-size:.75rem;font-weight:bold;color:var(--ink-soft);margin-bottom:4px;display:block;">Filtrar por</label>
+                        <select id="ppFilterTipo" style="width:100%;"><option value="tema">Tema</option><option value="status">Status</option></select>
+                      </div>
+                      <div style="flex:1;min-width:220px;">
+                        <label for="ppFilterValor" style="font-size:.75rem;font-weight:bold;color:var(--ink-soft);margin-bottom:4px;display:block;">Valor do filtro</label>
+                        <input type="text" id="ppFilterValor" list="ppFiltroValoresList" autocomplete="off" placeholder="Digite ou selecione..." style="width:100%;">
+                        <datalist id="ppFiltroValoresList"></datalist>
+                        <datalist id="ppTemasFiltroList"></datalist>
+                      </div>
+                      <div style="display:flex;gap:6px;">
+                        <button type="button" id="ppBtnVistaCards" class="btn" style="width:auto;margin:0;padding:9px 12px;">▦ Cards</button>
+                        <button type="button" id="ppBtnVistaLista" class="btn" style="width:auto;margin:0;padding:9px 12px;background:var(--card-bg);color:var(--ink-soft);border:1px solid var(--border);">☷ Lista</button>
+                      </div>
                     </div>
                     </div>
 
@@ -602,6 +606,6 @@
         </main>
     </div>
     <script src="script.js?v=20260718-5"></script>
-    <script src="painelPedidos.js?v=20260718-3"></script>
+    <script src="painelPedidos.js?v=20260718-4"></script>
 </body>
 </html>
