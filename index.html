@@ -447,7 +447,16 @@
             </div>
 
             <div class="card" id="tela-resumo" style="display: none;">
-                <h1 style="text-align:center; color: var(--cor-destaque);">Resumo Financeiro em Construção 🚧</h1>
+                <div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;"><div><h1>Resumo Mensal</h1><p style="color:var(--texto-mutado);">Resultado financeiro e comparação com o mês anterior.</p></div><div class="form-group"><label>Mês de referência:</label><input type="month" id="mesResumo"><button type="button" id="btnAtualizarResumo">Atualizar resumo</button></div></div>
+                <p id="mensagemResumo"></p>
+                <div class="dashboard-cards" style="margin-top:24px;">
+                    <div class="info-card"><h3>Receitas confirmadas</h3><p class="valor receita" id="resumoReceitas">R$ 0,00</p></div>
+                    <div class="info-card"><h3>Despesas pagas</h3><p class="valor despesa" id="resumoDespesas">R$ 0,00</p></div>
+                    <div class="info-card"><h3>Custos dos produtos</h3><p class="valor" id="resumoCustos">R$ 0,00</p></div>
+                    <div class="info-card"><h3>Lucro real</h3><p class="valor saldo" id="resumoLucro">R$ 0,00</p></div>
+                </div>
+                <div class="table-responsive" style="margin-top:28px;"><table class="tabela-extrato"><thead><tr><th>Indicador</th><th style="text-align:right;">Mês selecionado</th><th style="text-align:right;">Mês anterior</th><th style="text-align:right;">Variação</th></tr></thead><tbody id="corpoComparativoResumo"></tbody></table></div>
+                <div style="margin-top:28px;"><h3>Despesas por categoria</h3><div id="resumoCategorias" style="display:grid;gap:8px;margin-top:12px;"></div></div>
             </div>
 
             <!-- TELA: CRONOGRAMA DE PRODUÇÃO -->
@@ -559,7 +568,18 @@
             </div>
 
             <div class="card" id="tela-parametros" style="display: none;">
-                <h1>Etapas da Produção</h1>
+                <h1>Parâmetros do Sistema</h1>
+                <form id="formParametros" class="form-grid">
+                    <div class="form-group"><label>Prazo de produção (dias):</label><input type="number" id="paramPrazoProducao" min="1" step="1"></div>
+                    <div class="form-group"><label>Taxa padrão link/maquininha (%):</label><input type="number" id="paramTaxaLink" min="0" step="0.01"></div>
+                    <div class="form-group"><label>Taxa Shopee padrão (%):</label><input type="number" id="paramTaxaShopee" min="0" max="99" step="0.01"></div>
+                    <div class="form-group"><label>Taxa Shopee abaixo de R$ 80 (%):</label><input type="number" id="paramTaxaShopeeBaixa" min="0" max="99" step="0.01"></div>
+                    <div class="form-group"><label>Taxa fixa Shopee CPF (R$):</label><input type="number" id="paramTaxaFixaCpf" min="0" step="0.01"></div>
+                    <div class="form-group full-width"><label>Categorias de despesas (uma por linha):</label><textarea id="paramCategoriasDespesa" rows="6"></textarea></div>
+                    <div class="form-group full-width"><button type="submit" id="btnSalvarParametros" style="width:auto;">💾 Salvar parâmetros</button><p id="mensagemParametros"></p></div>
+                </form>
+                <div style="margin:28px 0;padding:18px;background:var(--bg-fundo);border-radius:10px;"><h3>Backup do banco</h3><p style="color:var(--texto-mutado);margin:8px 0 14px;">Cria cópias ocultas e datadas das abas principais sem apagar backups anteriores.</p><button type="button" id="btnCriarBackup" style="width:auto;">🛡️ Criar backup agora</button><p id="mensagemBackup"></p></div>
+                <h2>Etapas da Produção</h2>
                 <p style="color:var(--texto-mutado);margin-bottom:20px;">Configure as etapas disponíveis no status dos pedidos.</p>
                 <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;"><div class="form-group" style="flex:1;min-width:220px;"><label>Nova etapa:</label><input type="text" id="novaEtapaProducao" placeholder="Ex: Impressão"></div><button type="button" id="btnAdicionarEtapa" style="width:auto;">➕ Adicionar etapa</button></div>
                 <p id="mensagemEtapasProducao"></p>
@@ -581,7 +601,7 @@
 
         </main>
     </div>
-    <script src="script.js?v=20260718-4"></script>
-    <script src="painelPedidos.js?v=20260718-2"></script>
+    <script src="script.js?v=20260718-5"></script>
+    <script src="painelPedidos.js?v=20260718-3"></script>
 </body>
 </html>
