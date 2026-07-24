@@ -62,7 +62,9 @@ assert.ok(!pedidos.includes('letraParaIndice'), 'A importação não pode conver
   'NOME DO PRODUTO', 'NOME DA VARIAÇÃO'
 ].forEach(titulo => assert.ok(pedidos.includes(titulo), `Cabeçalho obrigatório ausente: ${titulo}`));
 assert.match(pedidos, /const dtCompraValor = pegar\("horaPagamentoPedido"\) \|\| pegar\("dataCriacaoPedido"\)/, 'Prazo não usa o título da hora do pagamento.');
-assert.match(pedidos, /split\(\/\[ T\]\//, 'Conversor não aceita data acompanhada de horário.');
+assert.ok(pedidos.includes('Formato principal do CSV: AAAA-MM-DD HH:mm'), 'Conversor não documenta o formato de data limite do CSV.');
+assert.ok(pedidos.includes('data.getFullYear() !== Number(ano)'), 'Conversor não valida datas inexistentes.');
+assert.ok(pedidos.includes('.replace(/\\u00A0/g, " ")'), 'Conversor não trata espaços especiais do CSV.');
 assert.match(pedidos, /const dataCompra = converterParaData\(row\[6\]\)/, 'Data devolvida pelo banco não usa o conversor normalizado.');
 
 assert.match(css, /@media\s*\(max-width:\s*768px\)/, 'Regra responsiva para tablet/celular ausente.');
