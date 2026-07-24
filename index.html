@@ -116,6 +116,7 @@
         <symbol id="ico-config" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
         <symbol id="ico-parametros" viewBox="0 0 24 24"><path d="M4 6h8M16 6h4M4 12h3M11 12h9M4 18h10M18 18h2"/><circle cx="14" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></symbol>
         <symbol id="ico-custos" viewBox="0 0 24 24"><path d="M12 2v20M17 6.5C17 5.1 14.8 4 12 4S7 5.1 7 6.5 9.2 9 12 9s5 1.1 5 2.5S14.8 14 12 14s-5 1.1-5 2.5S9.2 19 12 19s5-1.1 5-2.5"/></symbol>
+        <symbol id="ico-atendimento" viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4V4Z"/><path d="M8 8h8M8 12h5"/></symbol>
         <symbol id="ico-sair" viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3M14 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"/></symbol>
     </svg>
 
@@ -149,6 +150,7 @@
                         <ul class="submenu" style="display: none;">
                             <li><a href="#" id="menu-parametros" title="Parâmetros"><svg class="menu-icon"><use href="#ico-parametros"/></svg><span class="menu-label">Parâmetros</span></a></li>
                             <li><a href="#" id="menu-custos" title="Custos Base"><svg class="menu-icon"><use href="#ico-custos"/></svg><span class="menu-label">Custos Base</span></a></li>
+                            <li><a href="#" id="menu-atendimento" title="Atendimento de Chamados"><svg class="menu-icon"><use href="#ico-atendimento"/></svg><span class="menu-label">Atendimento</span></a></li>
                         </ul>
                     </li>
                 </ul>
@@ -620,7 +622,64 @@
                 <div class="table-responsive"><table class="tabela-extrato"><thead><tr><th>Produto</th><th style="text-align:right;">Matéria-prima</th><th style="text-align:right;">Extras</th><th style="text-align:right;">Margem</th><th style="text-align:center;">Ações</th></tr></thead><tbody id="corpoTabelaProdutos"><tr><td colspan="5" style="text-align:center;padding:35px;">Carregando produtos...</td></tr></tbody></table></div>
             </div>
 
+            <div class="card" id="tela-atendimento" style="display:none;">
+                <div class="atendimento-topo">
+                    <div><h1>Atendimento de Chamados</h1><p>Avalie, trate, envie para teste e conclua os tickets da Stellinha.</p></div>
+                    <button type="button" id="btnAtualizarChamados" style="width:auto;">↻ Atualizar</button>
+                </div>
+                <div class="atendimento-indicadores" id="indicadoresChamados"></div>
+                <div class="atendimento-filtros">
+                    <input type="search" id="pesquisaChamados" placeholder="Pesquisar protocolo, usuário, módulo ou descrição...">
+                    <select id="filtroStatusChamados">
+                        <option value="">Todos os status</option>
+                        <option value="ABERTO">Aberto</option>
+                        <option value="EM ANÁLISE">Em análise</option>
+                        <option value="EM TRATAMENTO">Em tratamento</option>
+                        <option value="AGUARDANDO TESTE">Aguardando teste</option>
+                        <option value="CONCLUÍDO">Concluído</option>
+                    </select>
+                </div>
+                <div class="table-responsive">
+                    <table class="tabela-extrato tabela-chamados">
+                        <thead><tr><th>Protocolo</th><th>Usuário</th><th>Módulo</th><th>Tipo</th><th>Urgência</th><th>Status</th><th>Atualizado</th><th>Ações</th></tr></thead>
+                        <tbody id="corpoTabelaChamados"><tr><td colspan="8">Carregando chamados...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="modalAtendimentoChamado" class="modal-atendimento-overlay" hidden>
+                <div class="modal-atendimento">
+                    <div class="modal-atendimento-head"><div><small id="chamadoProtocoloModal"></small><h2 id="chamadoTituloModal">Atender chamado</h2></div><button type="button" id="btnFecharAtendimento" aria-label="Fechar">×</button></div>
+                    <div id="chamadoDetalhesModal" class="chamado-detalhes"></div>
+                    <label for="chamadoParecer">Parecer interno / tratamento realizado</label>
+                    <textarea id="chamadoParecer" rows="4" placeholder="Descreva a análise e o ajuste realizado..."></textarea>
+                    <label for="chamadoMensagemCliente">Mensagem para o usuário testar</label>
+                    <textarea id="chamadoMensagemCliente" rows="3" placeholder="Ex.: Corrigimos o filtro. Atualize a página e faça o teste novamente."></textarea>
+                    <div id="mensagemAtendimentoChamado" class="mensagem-atendimento"></div>
+                    <div class="acoes-atendimento">
+                        <button type="button" data-status="EM ANÁLISE" class="btn-status-chamado">Em análise</button>
+                        <button type="button" data-status="EM TRATAMENTO" class="btn-status-chamado">Em tratamento</button>
+                        <button type="button" id="btnEnviarChamadoTeste" class="btn-enviar-teste">Enviar para teste</button>
+                        <button type="button" id="btnConcluirChamadoAdmin" class="btn-concluir-chamado">Concluir</button>
+                    </div>
+                </div>
+            </div>
+
         </main>
+    </div>
+
+    <div id="notificacaoTesteChamado" class="notificacao-teste-overlay" hidden>
+        <div class="notificacao-teste-card" role="dialog" aria-modal="true" aria-labelledby="tituloTesteChamado">
+            <div class="notificacao-teste-icone">!</div>
+            <p class="notificacao-teste-eyebrow">Chamado atendido</p>
+            <h2 id="tituloTesteChamado">Precisamos que você teste o ajuste</h2>
+            <p id="protocoloTesteChamado"></p>
+            <div id="mensagemTesteChamado" class="notificacao-teste-mensagem"></div>
+            <div class="notificacao-teste-acoes">
+                <button type="button" id="btnLembrarTesteDepois" class="btn-lembrar-teste">Lembrar em 60 minutos</button>
+                <button type="button" id="btnConfirmarTesteChamado" class="btn-confirmar-teste">Concluir chamado — testado</button>
+            </div>
+        </div>
     </div>
 
     <!-- Assistente virtual Stellinha -->
@@ -641,8 +700,9 @@
             <button type="submit" aria-label="Enviar pergunta">➤</button>
         </form>
     </section>
-    <script src="script.js?v=20260724-6"></script>
+    <script src="script.js?v=20260724-7"></script>
     <script src="painelPedidos.js?v=20260724-9"></script>
-    <script src="stellinha.js?v=20260724-4"></script>
+    <script src="stellinha.js?v=20260724-5"></script>
+    <script src="chamados.js?v=20260724-1"></script>
 </body>
 </html>
