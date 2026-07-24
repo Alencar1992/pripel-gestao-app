@@ -24,6 +24,10 @@ new Function(pedidos);
   'listar_produtos', 'salvar_produto', 'listar_despesas', 'listar_vendas'
 ].forEach(acao => assert.ok(script.includes(acao), `Ação ausente em script.js: ${acao}`));
 
+assert.ok(script.includes('definirMenuRecolhido(true)'), 'Menu não recolhe automaticamente após navegar.');
+assert.match(html, /class="menu-icon"/, 'Ícones vetoriais do menu ausentes.');
+assert.match(css, /\.sidebar\.recolhida\s*\{[^}]*width:\s*76px/s, 'Modo compacto do menu lateral ausente.');
+
 [
   'salvar_producao', 'buscar_historico_producao', 'listar_etapas',
   'data-postagem-input', 'POSTADO', 'tema-topo-input', 'filtro-prazo-card'
