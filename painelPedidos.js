@@ -57,18 +57,36 @@ function encontrarIndiceColuna(cabecalho, nomesPossiveis) {
 }
 
 function converterParaData(valor) {
-  if (!valor) return null;
-  if (valor instanceof Date) return new Date(valor.getFullYear(), valor.getMonth(), valor.getDate());
+  if (valor === null || valor === undefined || valor === "") return null;
+  if (valor instanceof Date) {
+    if (Number.isNaN(valor.getTime())) return null;
+    return new Date(valor.getFullYear(), valor.getMonth(), valor.getDate());
+  }
   if (typeof valor === "number") {
+    if (!Number.isFinite(valor)) return null;
     const dataBase = new Date(Math.round((valor - 25569) * 86400 * 1000));
     return new Date(dataBase.getUTCFullYear(), dataBase.getUTCMonth(), dataBase.getUTCDate());
   }
   if (typeof valor === "string") {
-    const soData = valor.trim().split(" ")[0];
-    let m = soData.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    const texto = valor.trim().replace(/^["']|["']$/g, "");
+    if (!texto || texto === "-") return null;
+
+    // Algumas exportações trazem o número serial do Excel como texto.
+    if (/^\d{5}(?:[.,]\d+)?$/.test(texto)) {
+      return converterParaData(Number(texto.replace(",", ".")));
+    }
+
+    // Aceita data com horário: DD/MM/AAAA HH:mm, DD-MM-AAAA HH:mm e ISO.
+    const soData = texto.split(/[ T]/)[0];
+    let m = soData.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
     if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-    m = soData.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    m = soData.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
     if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+
+    const dataInterpretada = new Date(texto);
+    if (!Number.isNaN(dataInterpretada.getTime())) {
+      return new Date(dataInterpretada.getFullYear(), dataInterpretada.getMonth(), dataInterpretada.getDate());
+    }
   }
   return null;
 }
@@ -545,7 +563,7 @@ async function carregarDadosDoBanco(statusDesejado = abaAtual) {
     }
 
     pedidosProcessados = resultado.dados.map(row => {
-      const dataCompra = row[6] ? new Date(row[6]) : null;
+      const dataCompra = converterParaData(row[6]);
       const prazos = calcularProgramacaoEnvio(dataCompra);
       salvarStatusPedido(String(row[0] ?? ""), row[12] ?? "");
       salvarEdicaoPedido(String(row[0] ?? ""), { temaManual: row[2] ?? "", nomeCrianca: row[13] ?? "", idade: row[14] ?? "", observacoes: row[15] ?? "", dataPostagem: row[16] ?? "" });
@@ -650,7 +668,9 @@ document.getElementById("ppFileInput").addEventListener("change", async function
       throw new Error(resposta.mensagem || "Não foi possível salvar os pedidos.");
     }
 
-    statusBox.textContent = `Sucesso! ${resposta.inseridos ?? dados.length} pedido(s) processado(s).`;
+    const inseridos = Number(resposta.inseridos || 0);
+    const atualizados = Number(resposta.atualizados || 0);
+    statusBox.textContent = `Sucesso! ${inseridos} novo(s) e ${atualizados} pedido(s) existente(s) atualizado(s).`;
     await selecionarAba("PRODUÇÃO");
   } catch (erro) {
     console.error("Erro ao importar planilha:", erro);
