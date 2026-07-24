@@ -15,7 +15,8 @@ new Function(pedidos);
 [
   'mesResumo', 'resumoLucro', 'formParametros', 'btnCriarBackup',
   'calcProduto', 'formProduto', 'ppEtapasList', 'ppHistoricoPedido',
-  'ppFilterTipo', 'ppFilterValor', 'ppBtnVistaCards', 'ppBtnVistaLista'
+  'ppFilterTipo', 'ppFilterValor', 'ppListaFiltroGerenciavel',
+  'ppBtnVistaCards', 'ppBtnVistaLista', 'btnTabAguardando'
 ].forEach(id => assert.match(html, new RegExp(`id=["']${id}["']`), `ID ausente: ${id}`));
 
 [
@@ -28,6 +29,10 @@ new Function(pedidos);
   'data-postagem-input', 'POSTADO', 'tema-topo-input', 'filtro-prazo-card'
 ].forEach(item => assert.ok(pedidos.includes(item), `Integração ausente em painelPedidos.js: ${item}`));
 
+assert.ok(!html.includes('id="ppBtnAbrirTema"'), 'Botão superior de novo tema ainda está presente.');
+assert.ok(pedidos.includes('statusEhAguardandoInicio'), 'Separação de pedidos aguardando início ausente.');
+assert.ok(pedidos.includes('data-filtro="atencao"'), 'Filtro de atenção entre 2 e 3 dias ausente.');
+assert.ok(pedidos.includes('filtro-opcao-excluir'), 'Exclusão de opções de filtro ausente.');
 assert.ok(!pedidos.includes('pegarPorLetra'), 'A importação não pode depender de letras fixas de coluna.');
 assert.ok(!pedidos.includes('letraParaIndice'), 'A importação não pode converter letras fixas em índices.');
 [
