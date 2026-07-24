@@ -841,8 +841,8 @@ document.getElementById("ppFileInput").addEventListener("change", async function
     let mensagemImportacao = `Sucesso! ${inseridos} novo(s) e ${atualizados} pedido(s) existente(s) atualizado(s).`;
     if (!backendAtualizado && datasLimiteReconhecidas > 0) {
       mensagemImportacao += " ATENÇÃO: o backend publicado está desatualizado e não confirmou a gravação da DATA LIMITE.";
-    } else {
-      mensagemImportacao += ` DATA LIMITE: ${Number(resposta.datasLimiteGravadas || 0)} gravada(s).`;
+    } else if (datasLimiteReconhecidas > 0 && Number(resposta.datasLimiteGravadas || 0) === 0) {
+      mensagemImportacao += " ATENÇÃO: a coluna Data prevista de envio foi encontrada, mas a data da Shopee não foi salva.";
     }
     if (datasLimiteNaoReconhecidas) mensagemImportacao += ` ${datasLimiteNaoReconhecidas} data(s) inválida(s) foram ignoradas sem interromper a importação.`;
     statusBox.textContent = mensagemImportacao;
