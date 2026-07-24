@@ -30,8 +30,12 @@ new Function(pedidos);
 
 assert.ok(!pedidos.includes('pegarPorLetra'), 'A importação não pode depender de letras fixas de coluna.');
 assert.ok(!pedidos.includes('letraParaIndice'), 'A importação não pode converter letras fixas em índices.');
-assert.match(pedidos, /dtCompra:\s*\[[\s\S]*?DATA DA COMPRA[\s\S]*?DATA DO PEDIDO/, 'Cabeçalhos da data da compra ausentes.');
-assert.match(pedidos, /const dtCompraValor = pegar\("dtCompra"\)/, 'Data da compra não está sendo obtida pelo título.');
+[
+  'ID DO PEDIDO', 'OPÇÃO DE ENVIO', 'DATA PREVISTA DE ENVIO',
+  'DATA DE CRIAÇÃO DO PEDIDO', 'HORA DO PAGAMENTO DO PEDIDO',
+  'NOME DO PRODUTO', 'NOME DA VARIAÇÃO'
+].forEach(titulo => assert.ok(pedidos.includes(titulo), `Cabeçalho obrigatório ausente: ${titulo}`));
+assert.match(pedidos, /const dtCompraValor = pegar\("horaPagamentoPedido"\) \|\| pegar\("dataCriacaoPedido"\)/, 'Prazo não usa o título da hora do pagamento.');
 
 assert.match(css, /@media\s*\(max-width:\s*768px\)/, 'Regra responsiva para tablet/celular ausente.');
 assert.match(css, /\.table-responsive\s*\{[^}]*overflow-x:\s*auto/s, 'Rolagem responsiva de tabelas ausente.');
