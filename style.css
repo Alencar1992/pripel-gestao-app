@@ -518,7 +518,7 @@ font-size: 0.9rem;
 
 .pp-scope .tabela-pedidos-lista table {
     width: 100%;
-    min-width: 1320px;
+    min-width: 1410px;
     border-collapse: collapse;
     table-layout: auto;
 }
@@ -573,6 +573,23 @@ font-size: 0.9rem;
     padding: 16px 16px 16px 22px;
     overflow: hidden;
     transition: box-shadow 0.2s ease;
+}
+
+.pp-scope .data-limite-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 15px;
+    padding: 9px 10px;
+    border-top: 1px solid var(--border);
+    border-radius: 0 0 5px 5px;
+    background: var(--paper-2);
+    font-size: .82rem;
+    color: var(--ink-soft);
+}
+
+.pp-scope .data-limite-line strong {
+    color: var(--ink);
 }
 
 .pp-scope .tag:hover {
