@@ -4,8 +4,14 @@
 const MAPA_COLUNAS = {
   idPedido:      ["ID DO PEDIDO"],
   dataPrevista:  ["DATA PREVISTA DE ENVIO"],
-  nomeProduto:   ["NOME DO PRODUTO"], // Coluna N
-  nomeVariacao:  ["NOME DA VARIACAO", "NOME DA VARIAÇÃO"], // Coluna P
+  dtCompra:      [
+    "DATA DA COMPRA", "DATA DE COMPRA", "DATA DO PEDIDO",
+    "DATA DE CRIAÇÃO", "DATA DE CRIACAO",
+    "DATA/HORA DO PEDIDO", "DATA E HORA DO PEDIDO",
+    "HORÁRIO DO PEDIDO", "HORARIO DO PEDIDO"
+  ],
+  nomeProduto:   ["NOME DO PRODUTO"],
+  nomeVariacao:  ["NOME DA VARIACAO", "NOME DA VARIAÇÃO"],
   quantidade:    ["QUANTIDADE"],
   numProdutos:   ["NUMERO DE PRODUTOS PEDIDOS", "NÚMERO DE PRODUTOS PEDIDOS"],
   comprador:     ["NOME DE USUARIO (COMPRADOR)", "NOME DE USUÁRIO (COMPRADOR)"],
@@ -70,20 +76,6 @@ function converterParaData(valor) {
   return null;
 }
 
-function letraParaIndice(letra) {
-  let coluna = 0;
-  for (let i = 0; i < letra.length; i++) {
-    coluna = coluna * 26 + (letra.toUpperCase().charCodeAt(i) - 64);
-  }
-  return coluna - 1;
-}
-
-function pegarPorLetra(linha, letra) {
-  const indice = letraParaIndice(letra);
-  const valor = linha[indice];
-  return valor === undefined ? "" : String(valor).trim();
-}
-
 /* ==============================================================
    LÓGICA DE NEGÓCIO (PRAZOS E STATUS)
    ============================================================== */
@@ -120,7 +112,7 @@ function formatarData(data) {
 }
 
 function diagnosticarColunas(indices) {
-  const nomesAmigaveis = { idPedido: "ID DO PEDIDO", dataPrevista: "DATA PREVISTA DE ENVIO", nomeProduto: "NOME DO PRODUTO (N)", nomeVariacao: "NOME DA VARIAÇÃO (P)", quantidade: "QUANTIDADE", numProdutos: "Nº PRODUTOS PEDIDOS", comprador: "COMPRADOR", endereco: "ENDEREÇO" };
+  const nomesAmigaveis = { idPedido: "ID DO PEDIDO", dataPrevista: "DATA PREVISTA DE ENVIO", dtCompra: "DATA DA COMPRA / DATA DO PEDIDO", nomeProduto: "NOME DO PRODUTO", nomeVariacao: "NOME DA VARIAÇÃO", quantidade: "QUANTIDADE", numProdutos: "Nº PRODUTOS PEDIDOS", comprador: "COMPRADOR", endereco: "ENDEREÇO" };
   const naoEncontradas = Object.keys(indices).filter(chave => indices[chave] === -1).map(chave => nomesAmigaveis[chave] || chave);
   if (naoEncontradas.length === 0) return `<span style="color:var(--cor-sucesso)">✓ Todas as colunas esperadas foram encontradas.</span>`;
   return `<span style="color:var(--cor-alerta)">⚠ Colunas não encontradas: ${naoEncontradas.join(", ")} — confira se o nome do cabeçalho bate.</span>`;
@@ -180,7 +172,7 @@ function processarPlanilha(linhas) {
     const pegar = (chave) => indices[chave] !== -1 ? linha[indices[chave]] : "";
     const pegarOpcional = (chave) => indicesOpcionais[chave] !== -1 ? linha[indicesOpcionais[chave]] : "";
 
-    const dtCompraValor = pegarPorLetra(linha, "L");
+    const dtCompraValor = pegar("dtCompra");
     const { prazo, diasRestantes } = calcularProgramacaoEnvio(dtCompraValor);
 
     const idPedidoValor = pegar("idPedido");
