@@ -622,7 +622,27 @@
 
         </main>
     </div>
+
+    <!-- Assistente virtual Stellinha -->
+    <button type="button" id="stellinhaLauncher" class="stellinha-launcher" aria-label="Abrir a Stellinha" aria-expanded="false">
+        <span class="stellinha-launcher-icon" aria-hidden="true">★</span>
+        <span>Stellinha</span>
+    </button>
+    <section id="stellinhaPanel" class="stellinha-panel" aria-label="Assistente Stellinha" aria-hidden="true">
+        <header class="stellinha-header">
+            <div class="stellinha-avatar" aria-hidden="true">★</div>
+            <div><strong>Stellinha</strong><small>Assistente PriPel</small></div>
+            <button type="button" id="stellinhaFechar" aria-label="Fechar a Stellinha">×</button>
+        </header>
+        <div id="stellinhaMensagens" class="stellinha-mensagens" aria-live="polite"></div>
+        <div id="stellinhaAcoes" class="stellinha-acoes"></div>
+        <form id="stellinhaFormPergunta" class="stellinha-entrada" hidden>
+            <input id="stellinhaPergunta" maxlength="300" autocomplete="off" placeholder="Digite sua pergunta...">
+            <button type="submit" aria-label="Enviar pergunta">➤</button>
+        </form>
+    </section>
     <script src="script.js?v=20260724-6"></script>
     <script src="painelPedidos.js?v=20260724-9"></script>
+    <script src="stellinha.js?v=20260724-1"></script>
 </body>
 </html>
