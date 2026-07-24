@@ -65,6 +65,8 @@ assert.match(pedidos, /const dtCompraValor = pegar\("horaPagamentoPedido"\) \|\|
 assert.ok(pedidos.includes('Formato principal do CSV: AAAA-MM-DD HH:mm'), 'Conversor não documenta o formato de data limite do CSV.');
 assert.ok(pedidos.includes('data.getFullYear() !== Number(ano)'), 'Conversor não valida datas inexistentes.');
 assert.ok(pedidos.includes('.replace(/\\u00A0/g, " ")'), 'Conversor não trata espaços especiais do CSV.');
+assert.ok(pedidos.includes('backend publicado está desatualizado'), 'Importação não alerta quando o backend antigo ignora a DATA LIMITE.');
+assert.ok(pedidos.includes('datasLimiteGravadas'), 'Importação não confirma quantas datas limite foram persistidas.');
 assert.match(pedidos, /const dataCompra = converterParaData\(row\[6\]\)/, 'Data devolvida pelo banco não usa o conversor normalizado.');
 
 assert.match(css, /@media\s*\(max-width:\s*768px\)/, 'Regra responsiva para tablet/celular ausente.');
