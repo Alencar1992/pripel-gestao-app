@@ -59,9 +59,19 @@ function encontrarIndiceColuna(cabecalho, nomesPossiveis) {
 
 function converterParaData(valor) {
   if (valor === null || valor === undefined || valor === "") return null;
+  const criarDataValida = (ano, mes, dia) => {
+    const data = new Date(Number(ano), Number(mes) - 1, Number(dia));
+    if (
+      Number.isNaN(data.getTime()) ||
+      data.getFullYear() !== Number(ano) ||
+      data.getMonth() !== Number(mes) - 1 ||
+      data.getDate() !== Number(dia)
+    ) return null;
+    return data;
+  };
   if (valor instanceof Date) {
     if (Number.isNaN(valor.getTime())) return null;
-    return new Date(valor.getFullYear(), valor.getMonth(), valor.getDate());
+    return criarDataValida(valor.getFullYear(), valor.getMonth() + 1, valor.getDate());
   }
   if (typeof valor === "number") {
     if (!Number.isFinite(valor)) return null;
@@ -69,7 +79,12 @@ function converterParaData(valor) {
     return new Date(dataBase.getUTCFullYear(), dataBase.getUTCMonth(), dataBase.getUTCDate());
   }
   if (typeof valor === "string") {
-    const texto = valor.trim().replace(/^["']|["']$/g, "");
+    const texto = valor
+      .replace(/^\uFEFF/, "")
+      .replace(/\u00A0/g, " ")
+      .trim()
+      .replace(/^["']|["']$/g, "")
+      .trim();
     if (!texto || texto === "-") return null;
 
     // Algumas exportações trazem o número serial do Excel como texto.
@@ -77,16 +92,18 @@ function converterParaData(valor) {
       return converterParaData(Number(texto.replace(",", ".")));
     }
 
-    // Aceita data com horário: DD/MM/AAAA HH:mm, DD-MM-AAAA HH:mm e ISO.
-    const soData = texto.split(/[ T]/)[0];
-    let m = soData.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
-    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-    m = soData.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
-    if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+    // Formato principal do CSV: AAAA-MM-DD HH:mm.
+    // Também aceita segundos, "T", barra, ISO com fuso e datas brasileiras.
+    let m = texto.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[ T]\d{1,2}:\d{2}(?::\d{2}(?:[.,]\d+)?)?(?:\s*(?:Z|[+-]\d{2}:?\d{2}))?)?$/i);
+    if (m) return criarDataValida(m[1], m[2], m[3]);
+    m = texto.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?$/);
+    if (m) return criarDataValida(m[3], m[2], m[1]);
 
+    // Última tentativa tolerante. Qualquer valor inválido retorna null e não
+    // interrompe a importação dos demais campos/pedidos.
     const dataInterpretada = new Date(texto);
     if (!Number.isNaN(dataInterpretada.getTime())) {
-      return new Date(dataInterpretada.getFullYear(), dataInterpretada.getMonth(), dataInterpretada.getDate());
+      return criarDataValida(dataInterpretada.getFullYear(), dataInterpretada.getMonth() + 1, dataInterpretada.getDate());
     }
   }
   return null;
