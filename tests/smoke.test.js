@@ -38,6 +38,10 @@ assert.ok(pedidos.includes('DATA LIMITE:'), 'Card não exibe o rótulo Data limi
 assert.ok(pedidos.includes('dataPrevista || p.prazoProducao'), 'Data prevista de envio não tem prioridade no card.');
 assert.ok(pedidos.includes('ⓘ Informações'), 'Botão Informações ausente.');
 assert.match(pedidos, /idade:\s*row\[14\]\s*\|\|\s*"0"/, 'Idade vazia não é normalizada para zero.');
+assert.ok(pedidos.includes('class="table-responsive tabela-pedidos-lista"'), 'Modo lista não usa tabela própria em largura total.');
+assert.ok(pedidos.includes('<th>Endereço</th>'), 'Modo lista não exibe o endereço.');
+assert.ok(pedidos.includes('<th>Data postagem</th>'), 'Modo lista não exibe a data de postagem.');
+assert.ok(css.includes('.pp-scope .orders.orders-lista'), 'Modo lista não remove a grade usada pelos cards.');
 assert.match(html, /id="ppBtnAbrirTema"[^>]*hidden/, 'Compatibilidade do botão removido deve permanecer invisível.');
 assert.ok(pedidos.includes('statusEhAguardandoInicio'), 'Separação de pedidos aguardando início ausente.');
 assert.ok(pedidos.includes('data-filtro="atencao"'), 'Filtro de atenção entre 2 e 3 dias ausente.');
