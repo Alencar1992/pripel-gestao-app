@@ -85,5 +85,11 @@ assert.ok(chamados.includes('confirmar_teste_chamado'), 'Confirmação do teste 
 assert.ok(chamados.includes('adiar_teste_chamado'), 'Adiamento do teste ausente.');
 assert.ok(chamados.includes('15000'), 'Repetição do pop-up a cada 15 segundos ausente.');
 assert.ok(chamados.includes('60 * 60 * 1000'), 'Lembrete de 60 minutos ausente.');
+assert.ok(chamados.includes('ehAdministrador() ? "Gerenciar" : "Visualizar"'), 'Ações de chamado não estão separadas por perfil.');
+assert.ok(chamados.includes('cancelar_chamado'), 'Cancelamento do próprio chamado ausente.');
+assert.match(html, /id="btnAbrirChamadoUsuario"/, 'Abertura de chamado para usuário ausente.');
+assert.match(html, /id="acoesAdminChamado"/, 'Controles exclusivos do administrador ausentes.');
+assert.match(html, /id="acoesUsuarioChamado"/, 'Controles restritos do usuário ausentes.');
+assert.ok(chamados.includes('chamadoSelecionado.status === "AGUARDANDO TESTE"'), 'Usuário pode finalizar chamado fora da etapa de teste.');
 
 console.log('Smoke test aprovado: sintaxe, módulos, controles e responsividade verificados.');
