@@ -67,6 +67,7 @@ assert.ok(pedidos.includes('data.getFullYear() !== Number(ano)'), 'Conversor nã
 assert.ok(pedidos.includes('.replace(/\\u00A0/g, " ")'), 'Conversor não trata espaços especiais do CSV.');
 assert.ok(pedidos.includes('backend publicado está desatualizado'), 'Importação não alerta quando o backend antigo ignora a DATA LIMITE.');
 assert.ok(pedidos.includes('datasLimiteGravadas'), 'Importação não confirma quantas datas limite foram persistidas.');
+assert.ok(!pedidos.includes('DATA LIMITE: ${Number(resposta.datasLimiteGravadas'), 'A interface não deve exibir quantidade de datas gravadas.');
 assert.match(pedidos, /const dataCompra = converterParaData\(row\[6\]\)/, 'Data devolvida pelo banco não usa o conversor normalizado.');
 
 assert.match(css, /@media\s*\(max-width:\s*768px\)/, 'Regra responsiva para tablet/celular ausente.');
