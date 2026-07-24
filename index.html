@@ -481,13 +481,10 @@
                         <div id="ppDiagnostico" style="font-size:0.82rem; margin-top:8px;"></div>
                     </div>
 
-                    <div style="max-width:1000px;margin:16px auto 0;padding:0 20px;display:flex;justify-content:flex-end;">
-                        <button type="button" id="ppBtnAbrirTema" class="btn" style="margin:0;width:auto;padding:8px 14px;font-size:.82rem;background:var(--card-bg);color:var(--teal);border:1px solid var(--border);">＋ Novo tema</button>
-                    </div>
-
-                    <!-- ABAS DE NAVEGAÇÃO (PRODUÇÃO / FINALIZADOS) -->
-                    <div class="tabs-pedidos" style="max-width: 1000px; margin: 20px auto 0; padding: 0 20px; display: flex; gap: 10px;">
-                        <button id="btnTabProducao" type="button" style="padding: 10px 20px; border: none; border-radius: 8px; background: var(--teal); color: white; font-weight: bold; cursor: pointer; transition: all 0.2s;">Em Produção</button>
+                    <!-- ABAS DE NAVEGAÇÃO DA PRODUÇÃO -->
+                    <div class="tabs-pedidos" style="max-width:1480px;margin:20px auto 0;padding:0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+                        <button id="btnTabAguardando" type="button" style="padding:10px 20px;border:none;border-radius:8px;background:var(--teal);color:white;font-weight:bold;cursor:pointer;">Aguardando início</button>
+                        <button id="btnTabProducao" type="button" style="padding:10px 20px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--ink-soft);font-weight:bold;cursor:pointer;">Pedidos em produção</button>
                         <button id="btnTabFinalizados" type="button" style="padding: 10px 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--ink-soft); font-weight: bold; cursor: pointer; transition: all 0.2s;">Finalizados</button>
                     </div>
 
@@ -503,9 +500,10 @@
                         <label for="ppFilterTipo" style="font-size:.75rem;font-weight:bold;color:var(--ink-soft);margin-bottom:4px;display:block;">Filtrar por</label>
                         <select id="ppFilterTipo" style="width:100%;"><option value="tema">Tema</option><option value="status">Status</option></select>
                       </div>
-                      <div style="flex:1;min-width:220px;">
+                      <div style="flex:1;min-width:220px;position:relative;">
                         <label for="ppFilterValor" style="font-size:.75rem;font-weight:bold;color:var(--ink-soft);margin-bottom:4px;display:block;">Valor do filtro</label>
-                        <input type="text" id="ppFilterValor" list="ppFiltroValoresList" autocomplete="off" placeholder="Digite ou selecione..." style="width:100%;">
+                        <input type="text" id="ppFilterValor" autocomplete="off" placeholder="Digite ou selecione..." style="width:100%;">
+                        <div id="ppListaFiltroGerenciavel" class="lista-filtro-gerenciavel" hidden></div>
                         <datalist id="ppFiltroValoresList"></datalist>
                         <datalist id="ppTemasFiltroList"></datalist>
                       </div>
@@ -606,6 +604,6 @@
         </main>
     </div>
     <script src="script.js?v=20260718-5"></script>
-    <script src="painelPedidos.js?v=20260724-4"></script>
+    <script src="painelPedidos.js?v=20260724-5"></script>
 </body>
 </html>
