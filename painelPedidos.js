@@ -24,7 +24,7 @@ const MAPA_COLUNAS_OPCIONAIS = {
 };
 
 let DIAS_PRODUCAO = 5;
-function atualizarPrazoProducao(dias) { DIAS_PRODUCAO = Math.max(1, Number(dias) || 5); if (pedidosProcessados.length) { pedidosProcessados.forEach(p => { const calculo = calcularProgramacaoEnvio(p.dtCompra); p.prazoProducao = calculo.prazo; p.diasRestantes = calculo.diasRestantes; }); atualizarTela(); } }
+function atualizarPrazoProducao(dias) { DIAS_PRODUCAO = Math.max(1, Number(dias) || 5); if (pedidosProcessados.length) { pedidosProcessados.forEach(p => { const calculo = p.dataPrevista ? calcularDiasAteDataLimite(p.dataPrevista) : calcularProgramacaoEnvio(p.dtCompra); p.prazoProducao = calculo.prazo; p.diasRestantes = calculo.diasRestantes; }); atualizarTela(); } }
 const OPCOES_STATUS_PEDIDO = ["PRODUÇÃO", "EMBALAGEM", "CANCELADO", "FEITO", "POSTADO"];
 
 /* ==============================================================
@@ -111,6 +111,14 @@ function calcularProgramacaoEnvio(dtCompra) {
   return { prazo, diasRestantes };
 }
 
+function calcularDiasAteDataLimite(dataLimite) {
+  const prazo = converterParaData(dataLimite);
+  if (!prazo) return { prazo: null, diasRestantes: null };
+  const hoje = new Date();
+  const hojeSemHora = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  return { prazo, diasRestantes: Math.round((prazo - hojeSemHora) / (1000 * 60 * 60 * 24)) };
+}
+
 function classificarStatus(diasRestantes) {
   if (diasRestantes === null) return { texto: "SEM DATA", cor: "var(--ink-soft)" };
   if (diasRestantes < 0)      return { texto: "ATRASADO", cor: "var(--cor-alerta)" };
@@ -159,8 +167,9 @@ function salvarEdicaoPedido(idPedido, dados) { try { localStorage.setItem("kitfe
 function carregarEdicaoPedido(idPedido) {
   try {
     const bruto = localStorage.getItem("kitfesta_edicao_" + idPedido);
-    return bruto ? JSON.parse(bruto) : { temaManual: "", nomeCrianca: "", idade: "", observacoes: "", dataPostagem: "" };
-  } catch(erro) { return { temaManual: "", nomeCrianca: "", idade: "", observacoes: "", dataPostagem: "" }; }
+    const dados = bruto ? JSON.parse(bruto) : {};
+    return { temaManual: dados.temaManual || "", nomeCrianca: dados.nomeCrianca || "", idade: dados.idade || "0", observacoes: dados.observacoes || "", dataPostagem: dados.dataPostagem || "" };
+  } catch(erro) { return { temaManual: "", nomeCrianca: "", idade: "0", observacoes: "", dataPostagem: "" }; }
 }
 
 function sincronizarComArquivo(idPedido, dadosDoArquivo) {
@@ -201,7 +210,8 @@ function processarPlanilha(linhas) {
     const pegarOpcional = (chave) => indicesOpcionais[chave] !== -1 ? linha[indicesOpcionais[chave]] : "";
 
     const dtCompraValor = pegar("horaPagamentoPedido") || pegar("dataCriacaoPedido");
-    const { prazo, diasRestantes } = calcularProgramacaoEnvio(dtCompraValor);
+    const dataLimite = converterParaData(pegar("dataPrevista"));
+    const { prazo, diasRestantes } = dataLimite ? calcularDiasAteDataLimite(dataLimite) : calcularProgramacaoEnvio(dtCompraValor);
 
     const idPedidoValor = pegar("idPedido");
 
@@ -216,7 +226,7 @@ function processarPlanilha(linhas) {
     return {
       idPedido: idPedidoValor,
       opcaoEnvio: pegar("opcaoEnvio"),
-      dataPrevista: pegar("dataPrevista"),
+      dataPrevista: dataLimite,
       dataCriacaoPedido: converterParaData(pegar("dataCriacaoPedido")),
       horaPagamentoPedido: pegar("horaPagamentoPedido"),
       dtCompra: converterParaData(dtCompraValor),
@@ -267,7 +277,7 @@ function renderizarPedidos(pedidos) {
   if (modoVisualizacaoPedidos === "lista") {
     box.innerHTML = `<div class="table-responsive"><table style="width:100%;border-collapse:collapse;"><thead><tr><th>Pedido</th><th>Tema</th><th>Comprador</th><th>Prazo</th><th>Status</th><th></th></tr></thead><tbody>${ordenados.map(p => {
       const edicao = carregarEdicaoPedido(p.idPedido), status = carregarStatusPedido(p.idPedido), tema = edicao.temaManual || p.nomeVariacao || "";
-      return `<tr class="tag"><td class="mono">#${escapeHtml(p.idPedido)}</td><td><input class="tema-topo-input" data-id="${escapeHtml(p.idPedido)}" list="ppTemasFiltroList" value="${escapeHtml(tema)}" style="min-width:170px;"></td><td>${escapeHtml(p.comprador) || "—"}</td><td>${formatarData(p.prazoProducao)}</td><td><input class="status-input" data-id="${escapeHtml(p.idPedido)}" list="ppEtapasList" value="${escapeHtml(status)}" placeholder="Digite o status..."><div class="campo-data-postagem" style="display:${normalizarTexto(status) === "POSTADO" ? "block" : "none"};"><input type="date" class="data-postagem-input" data-id="${escapeHtml(p.idPedido)}" value="${escapeHtml(edicao.dataPostagem || "")}"></div></td><td><button class="btn-editar" data-id="${escapeHtml(p.idPedido)}" type="button">Detalhes</button></td></tr>`;
+      return `<tr class="tag"><td class="mono">#${escapeHtml(p.idPedido)}</td><td><input class="tema-topo-input" data-id="${escapeHtml(p.idPedido)}" list="ppTemasFiltroList" value="${escapeHtml(tema)}" style="min-width:170px;"></td><td>${escapeHtml(p.comprador) || "—"}</td><td>${formatarData(p.dataPrevista || p.prazoProducao)}</td><td><input class="status-input" data-id="${escapeHtml(p.idPedido)}" list="ppEtapasList" value="${escapeHtml(status)}" placeholder="Digite o status..."><div class="campo-data-postagem" style="display:${normalizarTexto(status) === "POSTADO" ? "block" : "none"};"><input type="date" class="data-postagem-input" data-id="${escapeHtml(p.idPedido)}" value="${escapeHtml(edicao.dataPostagem || "")}"></div></td><td><button class="btn-editar" data-id="${escapeHtml(p.idPedido)}" type="button">Informações</button></td></tr>`;
     }).join("")}</tbody></table></div>`;
     return;
   }
@@ -311,7 +321,7 @@ function renderizarPedidos(pedidos) {
         </dl>
         <div style="font-size:.85rem;margin:-5px 0 15px;"><span style="display:block;color:var(--ink-soft);">Endereço</span><strong style="display:block;margin-top:3px;line-height:1.35;">${escapeHtml(p.endereco) || "—"}</strong></div>
         <div class="producao-line" style="background:var(--paper-2); padding:10px; border-radius:5px; margin-bottom:15px; display:flex; justify-content:space-between;">
-          <span>Prazo: <strong>${formatarData(p.prazoProducao)}</strong></span>
+          <span>DATA LIMITE: <strong>${formatarData(p.dataPrevista || p.prazoProducao)}</strong></span>
           <span style="color:${statusPrazo.cor}; font-weight:bold;">${diasTexto}</span>
         </div>
         <div class="status-row" style="display:flex; gap:10px;">
@@ -320,7 +330,7 @@ function renderizarPedidos(pedidos) {
                  value="${escapeHtml(statusPedidoAtual)}" placeholder="Digite o status..." 
                  style="flex:1; padding:8px; border:1px solid var(--border); border-radius:5px; background:var(--card-bg); color:var(--ink);">
                  
-          <button class="btn-editar" data-id="${escapeHtml(p.idPedido)}" type="button" style="padding:8px 15px; background:var(--teal); color:white; border:none; border-radius:5px; cursor:pointer;">✎ Detalhes</button>
+          <button class="btn-editar" data-id="${escapeHtml(p.idPedido)}" type="button" style="padding:8px 15px; background:var(--teal); color:white; border:none; border-radius:5px; cursor:pointer;">ⓘ Informações</button>
         </div>
         ${campoDataPostagem}
         ${blocoInfoCrianca}
@@ -502,6 +512,7 @@ function statusEhAguardandoInicio(status) {
 function renderizarListaFiltroGerenciavel() {
   const lista = document.getElementById("ppListaFiltroGerenciavel");
   const tipo = document.getElementById("ppFilterTipo").value;
+  if (tipo === "postagem") { lista.hidden = true; lista.replaceChildren(); return; }
   const busca = normalizarTexto(document.getElementById("ppFilterValor").value);
   const valores = tipo === "status" ? etapasProducao : temasCadastrados;
   lista.replaceChildren();
@@ -532,7 +543,7 @@ function renderizarListaFiltroGerenciavel() {
 
 function atualizarListaValoresFiltro() {
   const tipo = document.getElementById("ppFilterTipo").value;
-  const valores = tipo === "status" ? etapasProducao : temasCadastrados;
+  const valores = tipo === "status" ? etapasProducao : tipo === "tema" ? temasCadastrados : [];
   const lista = document.getElementById("ppFiltroValoresList");
   lista.replaceChildren();
   [...new Set(valores.filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR")).forEach(valor => {
@@ -542,7 +553,7 @@ function atualizarListaValoresFiltro() {
 }
 
 async function garantirValorCadastrado(tipo, valor) {
-  if (!valor) return;
+  if (!valor || tipo === "postagem") return;
   const colecao = tipo === "status" ? etapasProducao : temasCadastrados;
   if (colecao.some(item => normalizarTexto(item) === normalizarTexto(valor))) return;
   if (tipo === "status") {
@@ -562,6 +573,7 @@ function pedidosFiltradosAtuais(aplicarPrazo = true) {
   const termoGeral = normalizarTexto(document.getElementById("ppSearchInput").value);
   const tipoFiltro = document.getElementById("ppFilterTipo").value;
   const termoFiltro = normalizarTexto(document.getElementById("ppFilterValor").value);
+  const dataPostagemFiltro = document.getElementById("ppFilterValor").value;
 
   return pedidosProcessados.filter(pedido => {
     const status = normalizarTexto(carregarStatusPedido(pedido.idPedido));
@@ -578,7 +590,9 @@ function pedidosFiltradosAtuais(aplicarPrazo = true) {
       || normalizarTexto(pedido.idPedido).includes(termoGeral)
       || normalizarTexto(pedido.comprador).includes(termoGeral)
       || normalizarTexto(pedido.nomeVariacao).includes(termoGeral);
-    const correspondeFiltro = !termoFiltro || (tipoFiltro === "status" ? status : tema).includes(termoFiltro);
+    const correspondeFiltro = tipoFiltro === "postagem"
+      ? (!dataPostagemFiltro || String(edicao.dataPostagem || "").slice(0, 10) === dataPostagemFiltro)
+      : (!termoFiltro || (tipoFiltro === "status" ? status : tema).includes(termoFiltro));
     const correspondePrazo = !aplicarPrazo || filtroPrazoAtivo === "todos"
       || (filtroPrazoAtivo === "atrasados" && pedido.diasRestantes !== null && pedido.diasRestantes < 0)
       || (filtroPrazoAtivo === "urgentes" && pedido.diasRestantes !== null && pedido.diasRestantes >= 0 && pedido.diasRestantes <= 1)
@@ -611,9 +625,10 @@ async function carregarDadosDoBanco(statusDesejado = abaAtual) {
 
     pedidosProcessados = resultado.dados.map(row => {
       const dataCompra = converterParaData(row[6]);
-      const prazos = calcularProgramacaoEnvio(dataCompra);
+      const dataLimite = converterParaData(row[17]);
+      const prazos = dataLimite ? calcularDiasAteDataLimite(dataLimite) : calcularProgramacaoEnvio(dataCompra);
       salvarStatusPedido(String(row[0] ?? ""), row[12] ?? "");
-      salvarEdicaoPedido(String(row[0] ?? ""), { temaManual: row[2] ?? "", nomeCrianca: row[13] ?? "", idade: row[14] ?? "", observacoes: row[15] ?? "", dataPostagem: row[16] ?? "" });
+      salvarEdicaoPedido(String(row[0] ?? ""), { temaManual: row[2] ?? "", nomeCrianca: row[13] ?? "", idade: row[14] || "0", observacoes: row[15] ?? "", dataPostagem: row[16] ?? "" });
 
       return {
         idPedido: String(row[0] ?? ""),
@@ -623,6 +638,7 @@ async function carregarDadosDoBanco(statusDesejado = abaAtual) {
         quantidade: row[4] ?? "",
         endereco: row[5] ?? "",
         dtCompra: dataCompra,
+        dataPrevista: dataLimite,
         prazoProducao: prazos.prazo,
         diasRestantes: prazos.diasRestantes,
       };
@@ -659,7 +675,15 @@ document.getElementById("btnTabAguardando").addEventListener("click", () => sele
 document.getElementById("btnTabProducao").addEventListener("click", () => selecionarVisaoProducao("ANDAMENTO"));
 document.getElementById("btnTabFinalizados").addEventListener("click", () => selecionarAba("FINALIZADO"));
 document.getElementById("ppSearchInput").addEventListener("input", atualizarTela);
-document.getElementById("ppFilterTipo").addEventListener("change", () => { document.getElementById("ppFilterValor").value = ""; atualizarListaValoresFiltro(); renderizarListaFiltroGerenciavel(); atualizarTela(); });
+document.getElementById("ppFilterTipo").addEventListener("change", () => {
+  const inputFiltro = document.getElementById("ppFilterValor");
+  inputFiltro.value = "";
+  inputFiltro.type = document.getElementById("ppFilterTipo").value === "postagem" ? "date" : "text";
+  inputFiltro.placeholder = inputFiltro.type === "date" ? "" : "Digite ou selecione...";
+  atualizarListaValoresFiltro();
+  renderizarListaFiltroGerenciavel();
+  atualizarTela();
+});
 document.getElementById("ppFilterValor").addEventListener("focus", renderizarListaFiltroGerenciavel);
 document.getElementById("ppFilterValor").addEventListener("input", () => { renderizarListaFiltroGerenciavel(); atualizarTela(); });
 document.getElementById("ppFilterValor").addEventListener("change", async evento => {
@@ -757,10 +781,14 @@ document.getElementById("ppFileInput").addEventListener("change", async function
       const edicao = carregarEdicaoPedido(pedido.idPedido);
       return { pedido: pedido.idPedido, etapa: carregarStatusPedido(pedido.idPedido) || "AGUARDANDO", crianca: edicao.nomeCrianca || "", idade: edicao.idade || "", observacoes: edicao.observacoes || "", dataPostagem: edicao.dataPostagem || "" };
     });
+    const datasLimite = pedidosProcessados.map(pedido => ({
+      pedido: pedido.idPedido,
+      dataLimite: pedido.dataPrevista ? pedido.dataPrevista.toISOString() : "",
+    }));
 
     const response = await fetch(URL_API, {
       method: "POST",
-      body: JSON.stringify({ acao: "salvar_historico_lote", dados, producoes: producoesImportadas, usuario: obterUserLogado() }),
+      body: JSON.stringify({ acao: "salvar_historico_lote", dados, producoes: producoesImportadas, datasLimite, usuario: obterUserLogado() }),
     });
     const resposta = await response.json();
 
