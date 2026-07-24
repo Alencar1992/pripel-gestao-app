@@ -132,54 +132,17 @@
     }).filter(r => r.pontos > 0).sort((a, b) => b.pontos - a.pontos).slice(0, 2);
 
     if (!encontrados.length) {
-      consultarWeb(pergunta);
+      msg("Ainda estou aprendendo sobre esse assunto. Posso registrar sua dúvida como um chamado para o Lucas analisar e responder.");
+      botoes(["Abrir suporte técnico", "Tentar outra pergunta", "Voltar ao início"], opcao => {
+        msg(opcao, "user");
+        if (opcao === "Abrir suporte técnico") iniciarSuporte();
+        else if (opcao === "Voltar ao início") menuInicial();
+        else iniciarAjuda();
+      });
       return;
     }
     msg(encontrados.map(r => `${r.item.pergunta}\n${r.item.resposta}`).join("\n\n"));
     botoes(["Fazer outra pergunta", "Suporte técnico", "Voltar ao início"], tratarAtalhoAjuda);
-  }
-
-  function msgRespostaWeb(resposta, fontes) {
-    const div = document.createElement("div");
-    div.className = "stellinha-msg bot";
-    const texto = document.createElement("div");
-    texto.textContent = resposta;
-    div.appendChild(texto);
-    if (Array.isArray(fontes) && fontes.length) {
-      const titulo = document.createElement("strong");
-      titulo.textContent = "\n\nFontes consultadas:";
-      div.appendChild(titulo);
-      fontes.slice(0, 4).forEach(fonte => {
-        const linha = document.createElement("div");
-        const link = document.createElement("a");
-        link.href = fonte.url;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.textContent = fonte.titulo || fonte.url;
-        linha.appendChild(link);
-        div.appendChild(linha);
-      });
-    }
-    mensagens.appendChild(div);
-    mensagens.scrollTop = mensagens.scrollHeight;
-  }
-
-  async function consultarWeb(pergunta) {
-    acoes.replaceChildren();
-    msg("Ainda estou aprendendo sobre esse assunto. Vou pesquisar na rede e tentar encontrar uma possível resposta para você.");
-    try {
-      const resultado = await chamarApi({ acao: "consultar_web_stellinha", pergunta });
-      if (resultado.status !== "sucesso" || !resultado.resposta) throw new Error(resultado.mensagem || "Pesquisa indisponível.");
-      msgRespostaWeb(`Possível resposta:\n${resultado.resposta}`, resultado.fontes || []);
-    } catch (_) {
-      msg("Não consegui consultar a rede agora. Posso registrar sua dúvida como chamado para o Lucas.");
-    }
-    botoes(["Abrir suporte técnico", "Tentar outra pergunta", "Voltar ao início"], opcao => {
-      msg(opcao, "user");
-      if (opcao === "Abrir suporte técnico") iniciarSuporte();
-      else if (opcao === "Voltar ao início") menuInicial();
-      else iniciarAjuda();
-    });
   }
 
   function iniciarSuporte() {
