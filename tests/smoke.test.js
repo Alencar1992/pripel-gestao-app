@@ -29,7 +29,7 @@ new Function(pedidos);
   'data-postagem-input', 'POSTADO', 'tema-topo-input', 'filtro-prazo-card'
 ].forEach(item => assert.ok(pedidos.includes(item), `Integração ausente em painelPedidos.js: ${item}`));
 
-assert.ok(!html.includes('id="ppBtnAbrirTema"'), 'Botão superior de novo tema ainda está presente.');
+assert.match(html, /id="ppBtnAbrirTema"[^>]*hidden/, 'Compatibilidade do botão removido deve permanecer invisível.');
 assert.ok(pedidos.includes('statusEhAguardandoInicio'), 'Separação de pedidos aguardando início ausente.');
 assert.ok(pedidos.includes('data-filtro="atencao"'), 'Filtro de atenção entre 2 e 3 dias ausente.');
 assert.ok(pedidos.includes('filtro-opcao-excluir'), 'Exclusão de opções de filtro ausente.');
