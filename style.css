@@ -1080,3 +1080,90 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
         border-radius: 15px;
     }
 }
+
+/* Central de atendimento */
+.atendimento-topo { display:flex; justify-content:space-between; align-items:flex-start; gap:18px; margin-bottom:22px; }
+.atendimento-topo p { margin-top:7px; color:var(--texto-mutado); }
+.atendimento-indicadores { display:grid; grid-template-columns:repeat(5,minmax(120px,1fr)); gap:10px; margin-bottom:18px; }
+.atendimento-indicadores button {
+    min-height:74px; margin:0; padding:12px; display:grid; gap:3px; text-align:left;
+    border:1px solid var(--borda); border-left:4px solid var(--cor-destaque);
+    background:var(--bg-fundo); color:var(--texto-claro);
+}
+.atendimento-indicadores strong { font-size:1.35rem; }
+.atendimento-indicadores span { color:var(--texto-mutado); font-size:.72rem; }
+.atendimento-filtros { display:grid; grid-template-columns:1fr 230px; gap:10px; margin-bottom:15px; }
+.tabela-chamados { min-width:980px; }
+.btn-gerenciar-chamado { width:auto; min-height:36px; margin:0; padding:7px 11px; }
+.status-ticket { display:inline-block; padding:5px 8px; border-radius:999px; font-size:.7rem; font-weight:700; white-space:nowrap; }
+.status-aberto { background:rgba(255,179,0,.16); color:#ffc34d; }
+.status-em-analise,.status-em-tratamento { background:rgba(138,43,226,.18); color:#bc83ff; }
+.status-aguardando-teste { background:rgba(79,163,227,.18); color:#69baff; }
+.status-concluido { background:rgba(0,200,83,.16); color:#39db79; }
+
+.modal-atendimento-overlay {
+    position:fixed; inset:0; z-index:1700; padding:20px; overflow:auto;
+    display:grid; place-items:center; background:rgba(0,0,0,.78);
+}
+.modal-atendimento-overlay[hidden] { display:none; }
+.modal-atendimento {
+    width:min(820px,100%); max-height:calc(100vh - 40px); overflow:auto;
+    padding:24px; border:1px solid var(--borda); border-radius:16px;
+    background:var(--bg-painel); box-shadow:0 25px 60px rgba(0,0,0,.55);
+}
+.modal-atendimento-head { display:flex; justify-content:space-between; gap:15px; align-items:flex-start; margin-bottom:18px; }
+.modal-atendimento-head small { color:var(--cor-destaque); font-weight:700; }
+.modal-atendimento-head button { width:38px; min-height:38px; margin:0; padding:0; font-size:1.4rem; }
+.chamado-detalhes { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+.chamado-detalhes > div { padding:11px; display:grid; gap:4px; border-radius:8px; background:var(--bg-fundo); }
+.chamado-detalhes .full { grid-column:1/-1; }
+.chamado-detalhes span { color:var(--texto-mutado); font-size:.72rem; text-transform:uppercase; }
+.modal-atendimento > label { display:block; margin:12px 0 5px; color:var(--texto-mutado); font-size:.8rem; font-weight:700; }
+.modal-atendimento textarea { width:100%; }
+.acoes-atendimento { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+.acoes-atendimento button { width:auto; margin:0; }
+.btn-enviar-teste { background:#1677b8; }
+.btn-concluir-chamado { background:var(--cor-sucesso); }
+.mensagem-atendimento { min-height:22px; margin-top:9px; color:#ffc34d; font-weight:700; }
+
+/* Aviso insistente de teste solicitado */
+.notificacao-teste-overlay {
+    position:fixed; inset:0; z-index:2500; display:grid; place-items:center; padding:20px;
+    background:radial-gradient(circle at center,rgba(138,43,226,.28),rgba(0,0,0,.82));
+}
+.notificacao-teste-overlay[hidden] { display:none; }
+.notificacao-teste-card {
+    position:relative; width:min(560px,100%); padding:34px; text-align:center;
+    border:2px solid #a94cff; border-radius:22px; background:#17151f;
+    color:#fff; box-shadow:0 0 0 8px rgba(138,43,226,.13),0 30px 80px rgba(0,0,0,.65);
+}
+.notificacao-teste-card.explodir { animation:explodirAviso .58s cubic-bezier(.2,1.55,.4,1); }
+@keyframes explodirAviso {
+    0% { opacity:0; transform:scale(.12) rotate(-8deg); filter:brightness(3); }
+    55% { opacity:1; transform:scale(1.09) rotate(2deg); }
+    100% { transform:scale(1) rotate(0); filter:brightness(1); }
+}
+.notificacao-teste-icone {
+    width:62px; height:62px; margin:0 auto 13px; display:grid; place-items:center;
+    border-radius:50%; background:#8a2be2; font-size:2rem; font-weight:900;
+    box-shadow:0 0 28px rgba(169,76,255,.72);
+}
+.notificacao-teste-eyebrow { margin:0 0 5px; color:#cda6ff; font-weight:800; text-transform:uppercase; letter-spacing:.08em; font-size:.74rem; }
+.notificacao-teste-card h2 { margin:0 0 8px; font-size:clamp(1.35rem,4vw,2rem); }
+#protocoloTesteChamado { color:#cda6ff; font-family:'JetBrains Mono',monospace; }
+.notificacao-teste-mensagem { margin:18px 0; padding:14px; border-radius:10px; background:rgba(255,255,255,.06); line-height:1.5; }
+.notificacao-teste-acoes { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.notificacao-teste-acoes button { margin:0; }
+.btn-lembrar-teste { background:#44404f; }
+.btn-confirmar-teste { background:var(--cor-sucesso); }
+
+@media (max-width:800px) {
+    .atendimento-indicadores { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .atendimento-filtros { grid-template-columns:1fr; }
+    .chamado-detalhes { grid-template-columns:1fr; }
+    .chamado-detalhes .full { grid-column:auto; }
+}
+@media (max-width:520px) {
+    .notificacao-teste-card { padding:25px 18px; }
+    .notificacao-teste-acoes { grid-template-columns:1fr; }
+}
