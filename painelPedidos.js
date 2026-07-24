@@ -260,6 +260,7 @@ function renderizarEstatisticas(pedidos) {
 function renderizarPedidos(pedidos) {
   const box = document.getElementById("ppOrdersBox");
   const empty = document.getElementById("ppEmptyState");
+  box.classList.toggle("orders-lista", modoVisualizacaoPedidos === "lista");
 
   if (pedidos.length === 0) {
     box.innerHTML = "";
@@ -275,9 +276,20 @@ function renderizarPedidos(pedidos) {
   });
 
   if (modoVisualizacaoPedidos === "lista") {
-    box.innerHTML = `<div class="table-responsive"><table style="width:100%;border-collapse:collapse;"><thead><tr><th>Pedido</th><th>Tema</th><th>Comprador</th><th>Prazo</th><th>Status</th><th></th></tr></thead><tbody>${ordenados.map(p => {
+    box.innerHTML = `<div class="table-responsive tabela-pedidos-lista"><table><thead><tr><th>Pedido</th><th>Tema</th><th>Comprador</th><th>Quantidade</th><th>DT Compra</th><th>Endereço</th><th>Data limite</th><th>Status</th><th>Data postagem</th><th>Ações</th></tr></thead><tbody>${ordenados.map(p => {
       const edicao = carregarEdicaoPedido(p.idPedido), status = carregarStatusPedido(p.idPedido), tema = edicao.temaManual || p.nomeVariacao || "";
-      return `<tr class="tag"><td class="mono">#${escapeHtml(p.idPedido)}</td><td><input class="tema-topo-input" data-id="${escapeHtml(p.idPedido)}" list="ppTemasFiltroList" value="${escapeHtml(tema)}" style="min-width:170px;"></td><td>${escapeHtml(p.comprador) || "—"}</td><td>${formatarData(p.dataPrevista || p.prazoProducao)}</td><td><input class="status-input" data-id="${escapeHtml(p.idPedido)}" list="ppEtapasList" value="${escapeHtml(status)}" placeholder="Digite o status..."><div class="campo-data-postagem" style="display:${normalizarTexto(status) === "POSTADO" ? "block" : "none"};"><input type="date" class="data-postagem-input" data-id="${escapeHtml(p.idPedido)}" value="${escapeHtml(edicao.dataPostagem || "")}"></div></td><td><button class="btn-editar" data-id="${escapeHtml(p.idPedido)}" type="button">Informações</button></td></tr>`;
+      return `<tr>
+        <td class="mono pedido-lista-id">#${escapeHtml(p.idPedido)}</td>
+        <td><input class="tema-topo-input" data-id="${escapeHtml(p.idPedido)}" list="ppTemasFiltroList" value="${escapeHtml(tema)}" aria-label="Tema do pedido ${escapeHtml(p.idPedido)}"></td>
+        <td>${escapeHtml(p.comprador) || "—"}</td>
+        <td>${escapeHtml(p.quantidade) || "—"}</td>
+        <td>${formatarData(p.dtCompra)}</td>
+        <td class="endereco-lista">${escapeHtml(p.endereco) || "—"}</td>
+        <td>${formatarData(p.dataPrevista || p.prazoProducao)}</td>
+        <td><input class="status-input" data-id="${escapeHtml(p.idPedido)}" list="ppEtapasList" value="${escapeHtml(status)}" placeholder="Digite o status..." aria-label="Status do pedido ${escapeHtml(p.idPedido)}"></td>
+        <td><div class="campo-data-postagem" style="display:${normalizarTexto(status) === "POSTADO" ? "block" : "none"};"><input type="date" class="data-postagem-input" data-id="${escapeHtml(p.idPedido)}" value="${escapeHtml(edicao.dataPostagem || "")}" aria-label="Data de postagem do pedido ${escapeHtml(p.idPedido)}"></div>${normalizarTexto(status) === "POSTADO" ? "" : "—"}</td>
+        <td><button class="btn-editar" data-id="${escapeHtml(p.idPedido)}" type="button">Informações</button></td>
+      </tr>`;
     }).join("")}</tbody></table></div>`;
     return;
   }
