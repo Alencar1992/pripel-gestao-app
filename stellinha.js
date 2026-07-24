@@ -210,15 +210,15 @@
     }
   });
 
-  launcher.addEventListener("click", async () => {
+  launcher.addEventListener("click", () => {
     const abrir = !panel.classList.contains("aberta");
     panel.classList.toggle("aberta", abrir);
     panel.setAttribute("aria-hidden", String(!abrir));
     launcher.setAttribute("aria-expanded", String(abrir));
     if (abrir && !iniciou) {
       iniciou = true;
-      await carregarBaseExterna();
       menuInicial();
+      carregarBaseExterna();
     }
   });
   fechar.addEventListener("click", () => {
