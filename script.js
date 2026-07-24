@@ -123,12 +123,13 @@ document.addEventListener('DOMContentLoaded', () => {
         appContainer.style.display = 'flex';
         nomeUsuarioLogado.innerText = dadosUser.nome;
         textoBoasVindas.innerText = `Olá, ${dadosUser.nome.split(" ")[0]}! Aqui está o resumo.`;
+        if (typeof atualizarAcessoChamados === 'function') atualizarAcessoChamados();
         carregarDashboard(); 
     }
 });
 
-const menusApp = { dashboard: document.getElementById('menu-dashboard'), venda: document.getElementById('menu-venda'), despesa: document.getElementById('menu-despesa'), precificacao: document.getElementById('menu-precificacao'), resumo: document.getElementById('menu-resumo'), fluxo: document.getElementById('menu-fluxo'), cronograma: document.getElementById('menu-cronograma'), parametros: document.getElementById('menu-parametros'), custos: document.getElementById('menu-custos') };
-const telasApp = { dashboard: document.getElementById('tela-dashboard'), venda: document.getElementById('tela-venda'), despesa: document.getElementById('tela-despesa'), precificacao: document.getElementById('tela-precificacao'), resumo: document.getElementById('tela-resumo'), fluxo: document.getElementById('tela-fluxo'), cronograma: document.getElementById('tela-cronograma'), parametros: document.getElementById('tela-parametros'), custos: document.getElementById('tela-custos') };
+const menusApp = { dashboard: document.getElementById('menu-dashboard'), venda: document.getElementById('menu-venda'), despesa: document.getElementById('menu-despesa'), precificacao: document.getElementById('menu-precificacao'), resumo: document.getElementById('menu-resumo'), fluxo: document.getElementById('menu-fluxo'), cronograma: document.getElementById('menu-cronograma'), parametros: document.getElementById('menu-parametros'), custos: document.getElementById('menu-custos'), atendimento: document.getElementById('menu-atendimento') };
+const telasApp = { dashboard: document.getElementById('tela-dashboard'), venda: document.getElementById('tela-venda'), despesa: document.getElementById('tela-despesa'), precificacao: document.getElementById('tela-precificacao'), resumo: document.getElementById('tela-resumo'), fluxo: document.getElementById('tela-fluxo'), cronograma: document.getElementById('tela-cronograma'), parametros: document.getElementById('tela-parametros'), custos: document.getElementById('tela-custos'), atendimento: document.getElementById('tela-atendimento') };
 
 function definirMenuRecolhido(recolher) {
     const sidebar = document.querySelector('.sidebar');
@@ -157,6 +158,7 @@ function trocarTelaApp(telaAtivaId) {
     if (telaAtivaId === 'custos' || telaAtivaId === 'precificacao') carregarProdutos();
     if (telaAtivaId === 'resumo') carregarResumoMensal();
     if (telaAtivaId === 'parametros') { carregarParametros(); if (typeof carregarEtapasProducao === 'function') carregarEtapasProducao(); }
+    if (telaAtivaId === 'atendimento' && typeof carregarChamados === 'function') carregarChamados();
 
     // Mantém a tela limpa após a escolha de qualquer módulo.
     definirMenuRecolhido(true);
@@ -345,6 +347,7 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
                 nomeUsuarioLogado.innerText = resultado.nomeCompleto; 
                 textoBoasVindas.innerText = `Olá, ${resultado.nomeCompleto.split(" ")[0]}! Aqui está o resumo.`; 
                 document.getElementById('formLogin').reset(); boxesLogin.statusBox.style.display = 'none'; 
+                if (typeof atualizarAcessoChamados === 'function') atualizarAcessoChamados();
                 carregarDashboard(); 
             }, 1000); 
         } 
