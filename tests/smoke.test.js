@@ -7,10 +7,12 @@ const ler = arquivo => fs.readFileSync(path.join(raiz, arquivo), 'utf8');
 const html = ler('index.html');
 const script = ler('script.js');
 const pedidos = ler('painelPedidos.js');
+const stellinha = ler('stellinha.js');
 const css = ler('style.css');
 
 new Function(script);
 new Function(pedidos);
+new Function(stellinha);
 
 [
   'mesResumo', 'resumoLucro', 'formParametros', 'btnCriarBackup',
@@ -63,5 +65,12 @@ assert.match(pedidos, /const dataCompra = converterParaData\(row\[6\]\)/, 'Data 
 
 assert.match(css, /@media\s*\(max-width:\s*768px\)/, 'Regra responsiva para tablet/celular ausente.');
 assert.match(css, /\.table-responsive\s*\{[^}]*overflow-x:\s*auto/s, 'Rolagem responsiva de tabelas ausente.');
+assert.match(html, /id="stellinhaLauncher"/, 'Botão da Stellinha ausente.');
+assert.match(html, /id="stellinhaPanel"/, 'Painel da Stellinha ausente.');
+assert.ok(stellinha.includes('1. Ajuda') && stellinha.includes('2. Suporte técnico'), 'Direcionamento inicial da Stellinha incompleto.');
+assert.ok(stellinha.includes('listar_base_conhecimento'), 'Consulta à base externa da Stellinha ausente.');
+assert.ok(stellinha.includes('abrir_chamado'), 'Fluxo de abertura de chamado ausente.');
+assert.ok(stellinha.includes('Protocolo:'), 'Confirmação do protocolo de suporte ausente.');
+assert.match(css, /\.stellinha-panel\s*\{/, 'Estilos do painel da Stellinha ausentes.');
 
 console.log('Smoke test aprovado: sintaxe, módulos, controles e responsividade verificados.');
