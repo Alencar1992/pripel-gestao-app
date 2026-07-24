@@ -1084,6 +1084,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* Central de atendimento */
 .atendimento-topo { display:flex; justify-content:space-between; align-items:flex-start; gap:18px; margin-bottom:22px; }
 .atendimento-topo p { margin-top:7px; color:var(--texto-mutado); }
+.atendimento-topo-acoes { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+.atendimento-topo-acoes button { width:auto; margin:0; }
 .atendimento-indicadores { display:grid; grid-template-columns:repeat(5,minmax(120px,1fr)); gap:10px; margin-bottom:18px; }
 .atendimento-indicadores button {
     min-height:74px; margin:0; padding:12px; display:grid; gap:3px; text-align:left;
@@ -1100,6 +1102,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .status-em-analise,.status-em-tratamento { background:rgba(138,43,226,.18); color:#bc83ff; }
 .status-aguardando-teste { background:rgba(79,163,227,.18); color:#69baff; }
 .status-concluido { background:rgba(0,200,83,.16); color:#39db79; }
+.status-cancelado { background:rgba(255,71,87,.16); color:#ff7380; }
 
 .modal-atendimento-overlay {
     position:fixed; inset:0; z-index:1700; padding:20px; overflow:auto;
@@ -1118,12 +1121,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .chamado-detalhes > div { padding:11px; display:grid; gap:4px; border-radius:8px; background:var(--bg-fundo); }
 .chamado-detalhes .full { grid-column:1/-1; }
 .chamado-detalhes span { color:var(--texto-mutado); font-size:.72rem; text-transform:uppercase; }
-.modal-atendimento > label { display:block; margin:12px 0 5px; color:var(--texto-mutado); font-size:.8rem; font-weight:700; }
+.modal-atendimento > label, #camposAdminChamado label { display:block; margin:12px 0 5px; color:var(--texto-mutado); font-size:.8rem; font-weight:700; }
 .modal-atendimento textarea { width:100%; }
 .acoes-atendimento { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
 .acoes-atendimento button { width:auto; margin:0; }
 .btn-enviar-teste { background:#1677b8; }
 .btn-concluir-chamado { background:var(--cor-sucesso); }
+.btn-cancelar-chamado { background:#9f2632; }
 .mensagem-atendimento { min-height:22px; margin-top:9px; color:#ffc34d; font-weight:700; }
 
 /* Aviso insistente de teste solicitado */
