@@ -21,7 +21,13 @@
 
   window.atualizarAcessoChamados = function () {
     const menu = document.getElementById("menu-atendimento");
-    if (menu) menu.parentElement.style.display = ehAdministrador() ? "" : "none";
+    if (menu) menu.parentElement.style.display = usuarioAtual() ? "" : "none";
+    const admin = ehAdministrador();
+    document.getElementById("tituloTelaChamados").textContent = admin ? "Atendimento de Chamados" : "Meus Chamados";
+    document.getElementById("subtituloTelaChamados").textContent = admin
+      ? "Avalie, trate, envie para teste e conclua os tickets da Stellinha."
+      : "Abra chamados pela Stellinha e acompanhe, cancele ou finalize seus próprios atendimentos.";
+    document.getElementById("btnAbrirChamadoUsuario").hidden = admin;
     if (usuarioAtual()) consultarNotificacoesChamados();
   };
 
@@ -35,7 +41,7 @@
 
   function renderizarIndicadores() {
     const box = document.getElementById("indicadoresChamados");
-    const status = ["ABERTO", "EM ANÁLISE", "EM TRATAMENTO", "AGUARDANDO TESTE", "CONCLUÍDO"];
+    const status = ["ABERTO", "EM ANÁLISE", "EM TRATAMENTO", "AGUARDANDO TESTE", "CONCLUÍDO", "CANCELADO"];
     box.innerHTML = status.map(item => `<button type="button" data-filtro-status="${item}"><strong>${chamados.filter(c => c.status === item).length}</strong><span>${item}</span></button>`).join("");
   }
 
@@ -55,12 +61,11 @@
       <td>${escapar(c.tipo)}</td><td>${escapar(c.urgencia)}</td>
       <td><span class="${classeStatus(c.status)}">${escapar(c.status)}</span></td>
       <td>${escapar(c.atualizadoEm || c.abertoEm)}</td>
-      <td><button type="button" class="btn-gerenciar-chamado" data-protocolo="${escapar(c.protocolo)}">Gerenciar</button></td>
+      <td><button type="button" class="btn-gerenciar-chamado" data-protocolo="${escapar(c.protocolo)}">${ehAdministrador() ? "Gerenciar" : "Visualizar"}</button></td>
     </tr>`).join("");
   }
 
   window.carregarChamados = async function () {
-    if (!ehAdministrador()) return;
     corpo.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;">Carregando chamados...</td></tr>';
     try {
       const resultado = await chamarApi({ acao:"listar_chamados", usuario:usuarioAtual() });
@@ -80,6 +85,14 @@
     document.getElementById("chamadoTituloModal").textContent = `${chamadoSelecionado.modulo} — ${chamadoSelecionado.tipo}`;
     document.getElementById("chamadoParecer").value = chamadoSelecionado.parecer || "";
     document.getElementById("chamadoMensagemCliente").value = chamadoSelecionado.mensagemCliente || "";
+    const admin = ehAdministrador();
+    document.getElementById("camposAdminChamado").hidden = !admin;
+    document.getElementById("acoesAdminChamado").hidden = !admin;
+    document.getElementById("acoesUsuarioChamado").hidden = admin;
+    const podeCancelar = !["CONCLUÍDO", "CANCELADO"].includes(chamadoSelecionado.status);
+    const podeFinalizar = chamadoSelecionado.status === "AGUARDANDO TESTE";
+    document.getElementById("btnCancelarChamadoUsuario").hidden = !podeCancelar;
+    document.getElementById("btnFinalizarChamadoUsuario").hidden = !podeFinalizar;
     document.getElementById("mensagemAtendimentoChamado").textContent = "";
     document.getElementById("chamadoDetalhesModal").innerHTML = `
       <div><span>Usuário</span><strong>${escapar(chamadoSelecionado.usuario)}</strong></div>
@@ -87,8 +100,24 @@
       <div class="full"><span>Descrição</span><strong>${escapar(chamadoSelecionado.descricao)}</strong></div>
       <div class="full"><span>Passos realizados</span><strong>${escapar(chamadoSelecionado.passos)}</strong></div>
       <div><span>Esperado</span><strong>${escapar(chamadoSelecionado.esperado)}</strong></div>
-      <div><span>Encontrado</span><strong>${escapar(chamadoSelecionado.encontrado)}</strong></div>`;
+      <div><span>Encontrado</span><strong>${escapar(chamadoSelecionado.encontrado)}</strong></div>
+      ${chamadoSelecionado.mensagemCliente ? `<div class="full"><span>Retorno para teste</span><strong>${escapar(chamadoSelecionado.mensagemCliente)}</strong></div>` : ""}`;
     modal.hidden = false;
+  }
+
+  async function acaoUsuarioChamado(acao) {
+    if (!chamadoSelecionado || ehAdministrador()) return;
+    const mensagemBox = document.getElementById("mensagemAtendimentoChamado");
+    mensagemBox.textContent = "Salvando...";
+    try {
+      const resultado = await chamarApi({ acao, usuario:usuarioAtual(), protocolo:chamadoSelecionado.protocolo });
+      if (resultado.status !== "sucesso") throw new Error(resultado.mensagem);
+      mensagemBox.textContent = resultado.mensagem;
+      await carregarChamados();
+      setTimeout(() => { modal.hidden = true; }, 700);
+    } catch (erro) {
+      mensagemBox.textContent = erro.message;
+    }
   }
 
   async function atualizarChamado(status, enviarTeste) {
@@ -141,6 +170,9 @@
   }
 
   document.getElementById("btnAtualizarChamados").addEventListener("click", carregarChamados);
+  document.getElementById("btnAbrirChamadoUsuario").addEventListener("click", () => {
+    document.getElementById("stellinhaLauncher")?.click();
+  });
   document.getElementById("pesquisaChamados").addEventListener("input", renderizarChamados);
   document.getElementById("filtroStatusChamados").addEventListener("change", renderizarChamados);
   document.getElementById("indicadoresChamados").addEventListener("click", e => {
@@ -158,6 +190,8 @@
   document.querySelectorAll(".btn-status-chamado").forEach(btn => btn.addEventListener("click", () => atualizarChamado(btn.dataset.status, false)));
   document.getElementById("btnEnviarChamadoTeste").addEventListener("click", () => atualizarChamado("AGUARDANDO TESTE", true));
   document.getElementById("btnConcluirChamadoAdmin").addEventListener("click", () => atualizarChamado("CONCLUÍDO", false));
+  document.getElementById("btnCancelarChamadoUsuario").addEventListener("click", () => acaoUsuarioChamado("cancelar_chamado"));
+  document.getElementById("btnFinalizarChamadoUsuario").addEventListener("click", () => acaoUsuarioChamado("confirmar_teste_chamado"));
 
   overlayTeste.addEventListener("click", e => {
     if (!e.target.closest("#btnLembrarTesteDepois") && !e.target.closest("#btnConfirmarTesteChamado")) ocultarComRepeticaoCurta();
