@@ -8,11 +8,13 @@ const html = ler('index.html');
 const script = ler('script.js');
 const pedidos = ler('painelPedidos.js');
 const stellinha = ler('stellinha.js');
+const chamados = ler('chamados.js');
 const css = ler('style.css');
 
 new Function(script);
 new Function(pedidos);
 new Function(stellinha);
+new Function(chamados);
 
 [
   'mesResumo', 'resumoLucro', 'formParametros', 'btnCriarBackup',
@@ -72,9 +74,16 @@ assert.ok(stellinha.includes('listar_base_conhecimento'), 'Consulta à base exte
 assert.ok(stellinha.includes('abrir_chamado'), 'Fluxo de abertura de chamado ausente.');
 assert.ok(stellinha.includes('Protocolo:'), 'Confirmação do protocolo de suporte ausente.');
 assert.ok(stellinha.includes('Ainda estou aprendendo sobre esse assunto'), 'Mensagem de aprendizado da Stellinha ausente.');
-assert.ok(stellinha.includes('consultar_web_stellinha'), 'Pesquisa externa da Stellinha ausente.');
+assert.ok(!stellinha.includes('consultar_web_stellinha'), 'Stellinha não deve depender de API externa.');
 assert.ok(stellinha.includes('Como localizar um backup criado?'), 'Orientação para localizar backups ausente.');
 assert.ok(stellinha.includes('PALAVRAS_COMUNS'), 'Busca da Stellinha não ignora palavras genéricas.');
 assert.match(css, /\.stellinha-panel\s*\{/, 'Estilos do painel da Stellinha ausentes.');
+assert.match(html, /id="tela-atendimento"/, 'Central de atendimento ausente.');
+assert.match(html, /id="notificacaoTesteChamado"/, 'Pop-up de teste do chamado ausente.');
+assert.ok(chamados.includes('AGUARDANDO TESTE'), 'Fluxo de envio para teste ausente.');
+assert.ok(chamados.includes('confirmar_teste_chamado'), 'Confirmação do teste do usuário ausente.');
+assert.ok(chamados.includes('adiar_teste_chamado'), 'Adiamento do teste ausente.');
+assert.ok(chamados.includes('15000'), 'Repetição do pop-up a cada 15 segundos ausente.');
+assert.ok(chamados.includes('60 * 60 * 1000'), 'Lembrete de 60 minutos ausente.');
 
 console.log('Smoke test aprovado: sintaxe, módulos, controles e responsividade verificados.');
