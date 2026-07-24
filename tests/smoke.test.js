@@ -71,6 +71,9 @@ assert.ok(stellinha.includes('1. Ajuda') && stellinha.includes('2. Suporte técn
 assert.ok(stellinha.includes('listar_base_conhecimento'), 'Consulta à base externa da Stellinha ausente.');
 assert.ok(stellinha.includes('abrir_chamado'), 'Fluxo de abertura de chamado ausente.');
 assert.ok(stellinha.includes('Protocolo:'), 'Confirmação do protocolo de suporte ausente.');
+assert.ok(stellinha.includes('Ainda estou aprendendo sobre esse assunto'), 'Mensagem de aprendizado da Stellinha ausente.');
+assert.ok(stellinha.includes('consultar_web_stellinha'), 'Pesquisa externa da Stellinha ausente.');
+assert.ok(stellinha.includes('Como localizar um backup criado?'), 'Orientação para localizar backups ausente.');
 assert.match(css, /\.stellinha-panel\s*\{/, 'Estilos do painel da Stellinha ausentes.');
 
 console.log('Smoke test aprovado: sintaxe, módulos, controles e responsividade verificados.');
