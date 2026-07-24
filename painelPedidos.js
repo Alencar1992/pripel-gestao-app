@@ -41,6 +41,7 @@ let temaEmEdicao = "";
 let etapasProducao = [];
 let modoVisualizacaoPedidos = "cards";
 let filtroPrazoAtivo = "todos";
+let visaoProducao = "AGUARDANDO";
 
 function normalizarTexto(txt) {
   return String(txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim().toUpperCase();
@@ -232,14 +233,16 @@ function renderizarEstatisticas(pedidos) {
   const total = pedidos.length;
   const atrasados = pedidos.filter(p => p.diasRestantes !== null && p.diasRestantes < 0).length;
   const urgentes = pedidos.filter(p => p.diasRestantes !== null && p.diasRestantes >= 0 && p.diasRestantes <= 1).length;
-  const noPrazo = pedidos.filter(p => p.diasRestantes !== null && p.diasRestantes > 1).length;
+  const atencao = pedidos.filter(p => p.diasRestantes !== null && p.diasRestantes >= 2 && p.diasRestantes <= 3).length;
+  const noPrazo = pedidos.filter(p => p.diasRestantes !== null && p.diasRestantes > 3).length;
 
   const box = document.getElementById("ppStatsBox");
   box.style.display = "grid";
   box.innerHTML = `
-    <button type="button" class="stat-card filtro-prazo-card" data-filtro="todos" style="cursor:pointer;${filtroPrazoAtivo === "todos" ? "outline:2px solid var(--teal);" : ""}"><div class="num">${total}</div><div class="label">Total (Em Produção)</div></button>
+    <button type="button" class="stat-card filtro-prazo-card" data-filtro="todos" style="cursor:pointer;${filtroPrazoAtivo === "todos" ? "outline:2px solid var(--teal);" : ""}"><div class="num">${total}</div><div class="label">Total da visão</div></button>
     <button type="button" class="stat-card filtro-prazo-card" data-filtro="atrasados" style="cursor:pointer;border-left:4px solid var(--cor-alerta);${filtroPrazoAtivo === "atrasados" ? "outline:2px solid var(--cor-alerta);" : ""}"><div class="num" style="color:var(--cor-alerta);">${atrasados}</div><div class="label">Atrasados</div></button>
     <button type="button" class="stat-card filtro-prazo-card" data-filtro="urgentes" style="cursor:pointer;border-left:4px solid var(--cor-destaque);${filtroPrazoAtivo === "urgentes" ? "outline:2px solid var(--cor-destaque);" : ""}"><div class="num" style="color:var(--cor-destaque);">${urgentes}</div><div class="label">Urgentes (0-1 dia)</div></button>
+    <button type="button" class="stat-card filtro-prazo-card" data-filtro="atencao" style="cursor:pointer;border-left:4px solid #f39c12;${filtroPrazoAtivo === "atencao" ? "outline:2px solid #f39c12;" : ""}"><div class="num" style="color:#f39c12;">${atencao}</div><div class="label">Atenção (2-3 dias)</div></button>
     <button type="button" class="stat-card filtro-prazo-card" data-filtro="noprazo" style="cursor:pointer;border-left:4px solid var(--cor-sucesso);${filtroPrazoAtivo === "noprazo" ? "outline:2px solid var(--cor-sucesso);" : ""}"><div class="num" style="color:var(--cor-sucesso);">${noPrazo}</div><div class="label">No prazo</div></button>
   `;
 }
@@ -474,17 +477,57 @@ async function excluirTema() {
 }
 
 function definirEstadoAbas() {
-  const producaoAtiva = abaAtual === "PRODUÇÃO";
+  const aguardandoAtiva = abaAtual === "PRODUÇÃO" && visaoProducao === "AGUARDANDO";
+  const producaoAtiva = abaAtual === "PRODUÇÃO" && visaoProducao === "ANDAMENTO";
+  const finalizadosAtiva = abaAtual === "FINALIZADO";
+  const btnAguardando = document.getElementById("btnTabAguardando");
   const btnProducao = document.getElementById("btnTabProducao");
   const btnFinalizados = document.getElementById("btnTabFinalizados");
 
+  btnAguardando.style.background = aguardandoAtiva ? "var(--teal)" : "var(--card-bg)";
+  btnAguardando.style.color = aguardandoAtiva ? "white" : "var(--ink-soft)";
+  btnAguardando.style.border = aguardandoAtiva ? "none" : "1px solid var(--border)";
   btnProducao.style.background = producaoAtiva ? "var(--teal)" : "var(--card-bg)";
   btnProducao.style.color = producaoAtiva ? "white" : "var(--ink-soft)";
   btnProducao.style.border = producaoAtiva ? "none" : "1px solid var(--border)";
+  btnFinalizados.style.background = finalizadosAtiva ? "var(--teal)" : "var(--card-bg)";
+  btnFinalizados.style.color = finalizadosAtiva ? "white" : "var(--ink-soft)";
+  btnFinalizados.style.border = finalizadosAtiva ? "none" : "1px solid var(--border)";
+}
 
-  btnFinalizados.style.background = producaoAtiva ? "var(--card-bg)" : "var(--teal)";
-  btnFinalizados.style.color = producaoAtiva ? "var(--ink-soft)" : "white";
-  btnFinalizados.style.border = producaoAtiva ? "1px solid var(--border)" : "none";
+function statusEhAguardandoInicio(status) {
+  return !status || ["AGUARDANDO", "A ENVIAR", "AGUARDANDO INICIO", "AGUARDANDO INÍCIO"].includes(status);
+}
+
+function renderizarListaFiltroGerenciavel() {
+  const lista = document.getElementById("ppListaFiltroGerenciavel");
+  const tipo = document.getElementById("ppFilterTipo").value;
+  const busca = normalizarTexto(document.getElementById("ppFilterValor").value);
+  const valores = tipo === "status" ? etapasProducao : temasCadastrados;
+  lista.replaceChildren();
+
+  [...new Set(valores.filter(Boolean))]
+    .filter(valor => !busca || normalizarTexto(valor).includes(busca))
+    .sort((a, b) => a.localeCompare(b, "pt-BR"))
+    .forEach(valor => {
+      const linha = document.createElement("div");
+      linha.className = "filtro-opcao-linha";
+      const selecionar = document.createElement("button");
+      selecionar.type = "button";
+      selecionar.className = "filtro-opcao-selecionar";
+      selecionar.dataset.valor = valor;
+      selecionar.textContent = valor;
+      const excluir = document.createElement("button");
+      excluir.type = "button";
+      excluir.className = "filtro-opcao-excluir";
+      excluir.dataset.valor = valor;
+      excluir.title = `Excluir ${valor}`;
+      excluir.setAttribute("aria-label", `Excluir ${valor}`);
+      excluir.textContent = "✕";
+      linha.append(selecionar, excluir);
+      lista.appendChild(linha);
+    });
+  lista.hidden = false;
 }
 
 function atualizarListaValoresFiltro() {
@@ -495,6 +538,7 @@ function atualizarListaValoresFiltro() {
   [...new Set(valores.filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR")).forEach(valor => {
     const option = document.createElement("option"); option.value = valor; lista.appendChild(option);
   });
+  if (!document.getElementById("ppListaFiltroGerenciavel").hidden) renderizarListaFiltroGerenciavel();
 }
 
 async function garantirValorCadastrado(tipo, valor) {
@@ -527,6 +571,8 @@ function pedidosFiltradosAtuais(aplicarPrazo = true) {
     if (abaAtual === "PRODUÇÃO" && (status === "FEITO" || status === "POSTADO")) {
       return false;
     }
+    if (abaAtual === "PRODUÇÃO" && visaoProducao === "AGUARDANDO" && !statusEhAguardandoInicio(status)) return false;
+    if (abaAtual === "PRODUÇÃO" && visaoProducao === "ANDAMENTO" && statusEhAguardandoInicio(status)) return false;
 
     const correspondeGeral = !termoGeral
       || normalizarTexto(pedido.idPedido).includes(termoGeral)
@@ -536,7 +582,8 @@ function pedidosFiltradosAtuais(aplicarPrazo = true) {
     const correspondePrazo = !aplicarPrazo || filtroPrazoAtivo === "todos"
       || (filtroPrazoAtivo === "atrasados" && pedido.diasRestantes !== null && pedido.diasRestantes < 0)
       || (filtroPrazoAtivo === "urgentes" && pedido.diasRestantes !== null && pedido.diasRestantes >= 0 && pedido.diasRestantes <= 1)
-      || (filtroPrazoAtivo === "noprazo" && pedido.diasRestantes !== null && pedido.diasRestantes > 1);
+      || (filtroPrazoAtivo === "atencao" && pedido.diasRestantes !== null && pedido.diasRestantes >= 2 && pedido.diasRestantes <= 3)
+      || (filtroPrazoAtivo === "noprazo" && pedido.diasRestantes !== null && pedido.diasRestantes > 3);
 
     return correspondeGeral && correspondeFiltro && correspondePrazo;
   });
@@ -595,20 +642,73 @@ async function selecionarAba(novaAba) {
   await carregarDadosDoBanco(novaAba);
 }
 
-document.getElementById("btnTabProducao").addEventListener("click", () => selecionarAba("PRODUÇÃO"));
+async function selecionarVisaoProducao(novaVisao) {
+  visaoProducao = novaVisao;
+  if (abaAtual !== "PRODUÇÃO") {
+    abaAtual = "PRODUÇÃO";
+    definirEstadoAbas();
+    await carregarDadosDoBanco("PRODUÇÃO");
+    return;
+  }
+  filtroPrazoAtivo = "todos";
+  definirEstadoAbas();
+  atualizarTela();
+}
+
+document.getElementById("btnTabAguardando").addEventListener("click", () => selecionarVisaoProducao("AGUARDANDO"));
+document.getElementById("btnTabProducao").addEventListener("click", () => selecionarVisaoProducao("ANDAMENTO"));
 document.getElementById("btnTabFinalizados").addEventListener("click", () => selecionarAba("FINALIZADO"));
 document.getElementById("ppSearchInput").addEventListener("input", atualizarTela);
-document.getElementById("ppFilterTipo").addEventListener("change", () => { document.getElementById("ppFilterValor").value = ""; atualizarListaValoresFiltro(); atualizarTela(); });
-document.getElementById("ppFilterValor").addEventListener("input", atualizarTela);
+document.getElementById("ppFilterTipo").addEventListener("change", () => { document.getElementById("ppFilterValor").value = ""; atualizarListaValoresFiltro(); renderizarListaFiltroGerenciavel(); atualizarTela(); });
+document.getElementById("ppFilterValor").addEventListener("focus", renderizarListaFiltroGerenciavel);
+document.getElementById("ppFilterValor").addEventListener("input", () => { renderizarListaFiltroGerenciavel(); atualizarTela(); });
 document.getElementById("ppFilterValor").addEventListener("change", async evento => {
   try { await garantirValorCadastrado(document.getElementById("ppFilterTipo").value, evento.target.value.trim()); }
   catch (erro) { alert(erro.message); }
   atualizarTela();
 });
+document.getElementById("ppListaFiltroGerenciavel").addEventListener("mousedown", evento => evento.preventDefault());
+document.getElementById("ppListaFiltroGerenciavel").addEventListener("click", async evento => {
+  const botaoSelecionar = evento.target.closest(".filtro-opcao-selecionar");
+  const botaoExcluir = evento.target.closest(".filtro-opcao-excluir");
+  const input = document.getElementById("ppFilterValor");
+
+  if (botaoSelecionar) {
+    input.value = botaoSelecionar.dataset.valor;
+    document.getElementById("ppListaFiltroGerenciavel").hidden = true;
+    atualizarTela();
+    return;
+  }
+  if (!botaoExcluir) return;
+
+  const tipo = document.getElementById("ppFilterTipo").value;
+  const valor = botaoExcluir.dataset.valor;
+  if (!confirm(`Excluir “${valor}” da lista de ${tipo === "status" ? "status" : "temas"}?`)) return;
+
+  try {
+    if (tipo === "status") {
+      const resultado = await chamarApi({ acao: "excluir_etapa", etapa: valor, usuario: obterUserLogado() });
+      if (resultado.status !== "sucesso") throw new Error(resultado.mensagem || "Não foi possível excluir o status.");
+      await carregarEtapasProducao();
+    } else {
+      await apiTemas({ acao: "excluir_tema", tema: valor, usuario: obterUserLogado() });
+      await carregarTemas();
+    }
+    if (normalizarTexto(input.value) === normalizarTexto(valor)) input.value = "";
+    renderizarListaFiltroGerenciavel();
+    atualizarTela();
+  } catch (erro) {
+    alert(erro.message);
+  }
+});
+document.addEventListener("click", evento => {
+  if (!evento.target.closest("#ppFilterValor") && !evento.target.closest("#ppListaFiltroGerenciavel")) {
+    document.getElementById("ppListaFiltroGerenciavel").hidden = true;
+  }
+});
 document.getElementById("ppBtnVistaCards").addEventListener("click", () => { modoVisualizacaoPedidos = "cards"; document.getElementById("ppBtnVistaCards").style.background = "var(--teal)"; document.getElementById("ppBtnVistaLista").style.background = "var(--card-bg)"; atualizarTela(); });
 document.getElementById("ppBtnVistaLista").addEventListener("click", () => { modoVisualizacaoPedidos = "lista"; document.getElementById("ppBtnVistaLista").style.background = "var(--teal)"; document.getElementById("ppBtnVistaLista").style.color = "white"; document.getElementById("ppBtnVistaCards").style.background = "var(--card-bg)"; atualizarTela(); });
 document.getElementById("ppStatsBox").addEventListener("click", evento => { const card = evento.target.closest(".filtro-prazo-card"); if (!card) return; filtroPrazoAtivo = card.dataset.filtro; atualizarTela(); });
-document.getElementById("ppBtnAbrirTema").addEventListener("click", () => abrirModalTema());
 document.getElementById("ppBtnCadastrarTema").addEventListener("click", cadastrarTema);
 document.getElementById("ppBtnExcluirTema").addEventListener("click", excluirTema);
 document.getElementById("ppBtnCancelarTema").addEventListener("click", fecharModalTema);
