@@ -16,6 +16,7 @@
     { modulo:"Cronograma", palavras:"filtro cards lista atrasado urgente atenção prazo tema status postagem", pergunta:"Como filtrar os pedidos?", resposta:"Use os cards de prazo ou o campo Filtrar por. É possível filtrar por tema, status ou data de postagem. Alterne entre Cards e Lista conforme a visualização desejada." },
     { modulo:"Parâmetros", palavras:"parâmetro prazo taxa categoria etapa produção configurar", pergunta:"O que posso configurar nos Parâmetros?", resposta:"Em Configurações → Parâmetros você define prazo de produção, taxas, categorias de despesas e etapas disponíveis para a produção." },
     { modulo:"Backup", palavras:"backup cópia segurança restaurar banco", pergunta:"Como criar um backup?", resposta:"Abra Configurações → Parâmetros e clique em Criar backup agora. O sistema cria cópias datadas das principais abas do banco sem apagar os backups anteriores." },
+    { modulo:"Backup", palavras:"localizar encontrar onde fica backup oculto planilha mostrar aba restaurar", pergunta:"Como localizar um backup criado?", resposta:"Os backups ficam na própria planilha do PriPel como abas ocultas, com nomes iniciados por “_auto_” e seguidos pela data, hora e nome da aba original. No Google Sheets, abra o menu Exibir → Planilhas ocultas e selecione a cópia desejada. Não edite a cópia antes de confirmar qual versão será restaurada." },
     { modulo:"Acesso", palavras:"login senha usuário cadastro alterar senha admin", pergunta:"Como acessar ou alterar a senha?", resposta:"Na tela inicial, use Cadastrar Usuário para criar uma conta ou Alterar Senha para definir uma nova senha. O administrador utiliza o acesso administrativo configurado pelo sistema." }
   ];
 
@@ -130,17 +131,54 @@
     }).filter(r => r.pontos > 0).sort((a, b) => b.pontos - a.pontos).slice(0, 2);
 
     if (!encontrados.length) {
-      msg("Ainda não encontrei uma orientação específica para essa pergunta. Posso transformar sua dúvida em um chamado para o Lucas.");
-      botoes(["Abrir suporte técnico", "Tentar outra pergunta", "Voltar ao início"], opcao => {
-        msg(opcao, "user");
-        if (opcao === "Abrir suporte técnico") iniciarSuporte();
-        else if (opcao === "Voltar ao início") menuInicial();
-        else iniciarAjuda();
-      });
+      consultarWeb(pergunta);
       return;
     }
     msg(encontrados.map(r => `${r.item.pergunta}\n${r.item.resposta}`).join("\n\n"));
     botoes(["Fazer outra pergunta", "Suporte técnico", "Voltar ao início"], tratarAtalhoAjuda);
+  }
+
+  function msgRespostaWeb(resposta, fontes) {
+    const div = document.createElement("div");
+    div.className = "stellinha-msg bot";
+    const texto = document.createElement("div");
+    texto.textContent = resposta;
+    div.appendChild(texto);
+    if (Array.isArray(fontes) && fontes.length) {
+      const titulo = document.createElement("strong");
+      titulo.textContent = "\n\nFontes consultadas:";
+      div.appendChild(titulo);
+      fontes.slice(0, 4).forEach(fonte => {
+        const linha = document.createElement("div");
+        const link = document.createElement("a");
+        link.href = fonte.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = fonte.titulo || fonte.url;
+        linha.appendChild(link);
+        div.appendChild(linha);
+      });
+    }
+    mensagens.appendChild(div);
+    mensagens.scrollTop = mensagens.scrollHeight;
+  }
+
+  async function consultarWeb(pergunta) {
+    acoes.replaceChildren();
+    msg("Ainda estou aprendendo sobre esse assunto. Vou pesquisar na rede e tentar encontrar uma possível resposta para você.");
+    try {
+      const resultado = await chamarApi({ acao: "consultar_web_stellinha", pergunta });
+      if (resultado.status !== "sucesso" || !resultado.resposta) throw new Error(resultado.mensagem || "Pesquisa indisponível.");
+      msgRespostaWeb(`Possível resposta:\n${resultado.resposta}`, resultado.fontes || []);
+    } catch (_) {
+      msg("Não consegui consultar a rede agora. Posso registrar sua dúvida como chamado para o Lucas.");
+    }
+    botoes(["Abrir suporte técnico", "Tentar outra pergunta", "Voltar ao início"], opcao => {
+      msg(opcao, "user");
+      if (opcao === "Abrir suporte técnico") iniciarSuporte();
+      else if (opcao === "Voltar ao início") menuInicial();
+      else iniciarAjuda();
+    });
   }
 
   function iniciarSuporte() {
