@@ -36,6 +36,8 @@ assert.ok(!pedidos.includes('letraParaIndice'), 'A importação não pode conver
   'NOME DO PRODUTO', 'NOME DA VARIAÇÃO'
 ].forEach(titulo => assert.ok(pedidos.includes(titulo), `Cabeçalho obrigatório ausente: ${titulo}`));
 assert.match(pedidos, /const dtCompraValor = pegar\("horaPagamentoPedido"\) \|\| pegar\("dataCriacaoPedido"\)/, 'Prazo não usa o título da hora do pagamento.');
+assert.match(pedidos, /split\(\/\[ T\]\//, 'Conversor não aceita data acompanhada de horário.');
+assert.match(pedidos, /const dataCompra = converterParaData\(row\[6\]\)/, 'Data devolvida pelo banco não usa o conversor normalizado.');
 
 assert.match(css, /@media\s*\(max-width:\s*768px\)/, 'Regra responsiva para tablet/celular ausente.');
 assert.match(css, /\.table-responsive\s*\{[^}]*overflow-x:\s*auto/s, 'Rolagem responsiva de tabelas ausente.');
