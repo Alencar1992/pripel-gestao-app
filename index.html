@@ -624,8 +624,11 @@
 
             <div class="card" id="tela-atendimento" style="display:none;">
                 <div class="atendimento-topo">
-                    <div><h1>Atendimento de Chamados</h1><p>Avalie, trate, envie para teste e conclua os tickets da Stellinha.</p></div>
-                    <button type="button" id="btnAtualizarChamados" style="width:auto;">↻ Atualizar</button>
+                    <div><h1 id="tituloTelaChamados">Atendimento de Chamados</h1><p id="subtituloTelaChamados">Acompanhe seus chamados enviados pela Stellinha.</p></div>
+                    <div class="atendimento-topo-acoes">
+                        <button type="button" id="btnAbrirChamadoUsuario" hidden>+ Abrir chamado</button>
+                        <button type="button" id="btnAtualizarChamados">↻ Atualizar</button>
+                    </div>
                 </div>
                 <div class="atendimento-indicadores" id="indicadoresChamados"></div>
                 <div class="atendimento-filtros">
@@ -637,6 +640,7 @@
                         <option value="EM TRATAMENTO">Em tratamento</option>
                         <option value="AGUARDANDO TESTE">Aguardando teste</option>
                         <option value="CONCLUÍDO">Concluído</option>
+                        <option value="CANCELADO">Cancelado</option>
                     </select>
                 </div>
                 <div class="table-responsive">
@@ -651,16 +655,22 @@
                 <div class="modal-atendimento">
                     <div class="modal-atendimento-head"><div><small id="chamadoProtocoloModal"></small><h2 id="chamadoTituloModal">Atender chamado</h2></div><button type="button" id="btnFecharAtendimento" aria-label="Fechar">×</button></div>
                     <div id="chamadoDetalhesModal" class="chamado-detalhes"></div>
-                    <label for="chamadoParecer">Parecer interno / tratamento realizado</label>
-                    <textarea id="chamadoParecer" rows="4" placeholder="Descreva a análise e o ajuste realizado..."></textarea>
-                    <label for="chamadoMensagemCliente">Mensagem para o usuário testar</label>
-                    <textarea id="chamadoMensagemCliente" rows="3" placeholder="Ex.: Corrigimos o filtro. Atualize a página e faça o teste novamente."></textarea>
+                    <div id="camposAdminChamado">
+                        <label for="chamadoParecer">Parecer interno / tratamento realizado</label>
+                        <textarea id="chamadoParecer" rows="4" placeholder="Descreva a análise e o ajuste realizado..."></textarea>
+                        <label for="chamadoMensagemCliente">Mensagem para o usuário testar</label>
+                        <textarea id="chamadoMensagemCliente" rows="3" placeholder="Ex.: Corrigimos o filtro. Atualize a página e faça o teste novamente."></textarea>
+                    </div>
                     <div id="mensagemAtendimentoChamado" class="mensagem-atendimento"></div>
-                    <div class="acoes-atendimento">
+                    <div class="acoes-atendimento" id="acoesAdminChamado">
                         <button type="button" data-status="EM ANÁLISE" class="btn-status-chamado">Em análise</button>
                         <button type="button" data-status="EM TRATAMENTO" class="btn-status-chamado">Em tratamento</button>
                         <button type="button" id="btnEnviarChamadoTeste" class="btn-enviar-teste">Enviar para teste</button>
                         <button type="button" id="btnConcluirChamadoAdmin" class="btn-concluir-chamado">Concluir</button>
+                    </div>
+                    <div class="acoes-atendimento" id="acoesUsuarioChamado" hidden>
+                        <button type="button" id="btnCancelarChamadoUsuario" class="btn-cancelar-chamado">Cancelar chamado</button>
+                        <button type="button" id="btnFinalizarChamadoUsuario" class="btn-concluir-chamado">Finalizar — testado</button>
                     </div>
                 </div>
             </div>
@@ -703,6 +713,6 @@
     <script src="script.js?v=20260724-7"></script>
     <script src="painelPedidos.js?v=20260724-9"></script>
     <script src="stellinha.js?v=20260724-5"></script>
-    <script src="chamados.js?v=20260724-1"></script>
+    <script src="chamados.js?v=20260724-2"></script>
 </body>
 </html>
