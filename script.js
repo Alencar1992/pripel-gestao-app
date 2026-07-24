@@ -130,6 +130,16 @@ document.addEventListener('DOMContentLoaded', () => {
 const menusApp = { dashboard: document.getElementById('menu-dashboard'), venda: document.getElementById('menu-venda'), despesa: document.getElementById('menu-despesa'), precificacao: document.getElementById('menu-precificacao'), resumo: document.getElementById('menu-resumo'), fluxo: document.getElementById('menu-fluxo'), cronograma: document.getElementById('menu-cronograma'), parametros: document.getElementById('menu-parametros'), custos: document.getElementById('menu-custos') };
 const telasApp = { dashboard: document.getElementById('tela-dashboard'), venda: document.getElementById('tela-venda'), despesa: document.getElementById('tela-despesa'), precificacao: document.getElementById('tela-precificacao'), resumo: document.getElementById('tela-resumo'), fluxo: document.getElementById('tela-fluxo'), cronograma: document.getElementById('tela-cronograma'), parametros: document.getElementById('tela-parametros'), custos: document.getElementById('tela-custos') };
 
+function definirMenuRecolhido(recolher) {
+    const sidebar = document.querySelector('.sidebar');
+    sidebar.classList.toggle('recolhida', recolher);
+    document.getElementById('btnToggleMenu').setAttribute('aria-expanded', String(!recolher));
+    if (recolher) {
+        document.querySelectorAll('.submenu').forEach(submenu => { submenu.style.display = 'none'; });
+        document.querySelectorAll('.seta').forEach(seta => seta.classList.remove('aberta'));
+    }
+}
+
 function trocarTelaApp(telaAtivaId) { 
     Object.values(telasApp).forEach(t => { if(t) t.style.display = 'none'; }); 
     document.querySelectorAll('.sidebar nav ul li').forEach(li => li.classList.remove('active')); 
@@ -147,6 +157,9 @@ function trocarTelaApp(telaAtivaId) {
     if (telaAtivaId === 'custos' || telaAtivaId === 'precificacao') carregarProdutos();
     if (telaAtivaId === 'resumo') carregarResumoMensal();
     if (telaAtivaId === 'parametros') { carregarParametros(); if (typeof carregarEtapasProducao === 'function') carregarEtapasProducao(); }
+
+    // Mantém a tela limpa após a escolha de qualquer módulo.
+    definirMenuRecolhido(true);
 }
 
 Object.keys(menusApp).forEach(key => { 
@@ -158,13 +171,16 @@ Object.keys(menusApp).forEach(key => {
     } 
 });
 
-document.getElementById('btnToggleMenu').addEventListener('click', () => { document.querySelector('.sidebar').classList.toggle('recolhida'); });
+document.getElementById('btnToggleMenu').addEventListener('click', () => {
+    definirMenuRecolhido(!document.querySelector('.sidebar').classList.contains('recolhida'));
+});
 document.getElementById('btnSair').addEventListener('click', (e) => { e.preventDefault(); sessionStorage.removeItem('priPelUser'); appContainer.style.display = 'none'; telaLogin.style.display = 'flex'; });
 
 const menuToggles = document.querySelectorAll('.menu-toggle'); 
 menuToggles.forEach(toggle => { 
     toggle.addEventListener('click', (e) => { 
         e.preventDefault(); 
+        if (document.querySelector('.sidebar').classList.contains('recolhida')) definirMenuRecolhido(false);
         const submenu = toggle.nextElementSibling; 
         const seta = toggle.querySelector('.seta'); 
         if (submenu.style.display === 'block') { submenu.style.display = 'none'; seta.classList.remove('aberta'); } 
