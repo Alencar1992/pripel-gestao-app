@@ -2,16 +2,13 @@
    CONFIGURAÇÃO GERAL E MAPAS DE COLUNAS
    ============================================================== */
 const MAPA_COLUNAS = {
-  idPedido:      ["ID DO PEDIDO"],
-  dataPrevista:  ["DATA PREVISTA DE ENVIO"],
-  dtCompra:      [
-    "DATA DA COMPRA", "DATA DE COMPRA", "DATA DO PEDIDO",
-    "DATA DE CRIAÇÃO", "DATA DE CRIACAO",
-    "DATA/HORA DO PEDIDO", "DATA E HORA DO PEDIDO",
-    "HORÁRIO DO PEDIDO", "HORARIO DO PEDIDO"
-  ],
-  nomeProduto:   ["NOME DO PRODUTO"],
-  nomeVariacao:  ["NOME DA VARIACAO", "NOME DA VARIAÇÃO"],
+  idPedido:             ["ID DO PEDIDO"],
+  opcaoEnvio:           ["OPÇÃO DE ENVIO", "OPCAO DE ENVIO"],
+  dataPrevista:         ["DATA PREVISTA DE ENVIO"],
+  dataCriacaoPedido:    ["DATA DE CRIAÇÃO DO PEDIDO", "DATA DE CRIACAO DO PEDIDO"],
+  horaPagamentoPedido:  ["HORA DO PAGAMENTO DO PEDIDO"],
+  nomeProduto:          ["NOME DO PRODUTO"],
+  nomeVariacao:         ["NOME DA VARIAÇÃO", "NOME DA VARIACAO"],
   quantidade:    ["QUANTIDADE"],
   numProdutos:   ["NUMERO DE PRODUTOS PEDIDOS", "NÚMERO DE PRODUTOS PEDIDOS"],
   comprador:     ["NOME DE USUARIO (COMPRADOR)", "NOME DE USUÁRIO (COMPRADOR)"],
@@ -112,7 +109,19 @@ function formatarData(data) {
 }
 
 function diagnosticarColunas(indices) {
-  const nomesAmigaveis = { idPedido: "ID DO PEDIDO", dataPrevista: "DATA PREVISTA DE ENVIO", dtCompra: "DATA DA COMPRA / DATA DO PEDIDO", nomeProduto: "NOME DO PRODUTO", nomeVariacao: "NOME DA VARIAÇÃO", quantidade: "QUANTIDADE", numProdutos: "Nº PRODUTOS PEDIDOS", comprador: "COMPRADOR", endereco: "ENDEREÇO" };
+  const nomesAmigaveis = {
+    idPedido: "ID DO PEDIDO",
+    opcaoEnvio: "OPÇÃO DE ENVIO",
+    dataPrevista: "DATA PREVISTA DE ENVIO",
+    dataCriacaoPedido: "DATA DE CRIAÇÃO DO PEDIDO",
+    horaPagamentoPedido: "HORA DO PAGAMENTO DO PEDIDO",
+    nomeProduto: "NOME DO PRODUTO",
+    nomeVariacao: "NOME DA VARIAÇÃO",
+    quantidade: "QUANTIDADE",
+    numProdutos: "Nº PRODUTOS PEDIDOS",
+    comprador: "COMPRADOR",
+    endereco: "ENDEREÇO"
+  };
   const naoEncontradas = Object.keys(indices).filter(chave => indices[chave] === -1).map(chave => nomesAmigaveis[chave] || chave);
   if (naoEncontradas.length === 0) return `<span style="color:var(--cor-sucesso)">✓ Todas as colunas esperadas foram encontradas.</span>`;
   return `<span style="color:var(--cor-alerta)">⚠ Colunas não encontradas: ${naoEncontradas.join(", ")} — confira se o nome do cabeçalho bate.</span>`;
@@ -172,7 +181,7 @@ function processarPlanilha(linhas) {
     const pegar = (chave) => indices[chave] !== -1 ? linha[indices[chave]] : "";
     const pegarOpcional = (chave) => indicesOpcionais[chave] !== -1 ? linha[indicesOpcionais[chave]] : "";
 
-    const dtCompraValor = pegar("dtCompra");
+    const dtCompraValor = pegar("horaPagamentoPedido") || pegar("dataCriacaoPedido");
     const { prazo, diasRestantes } = calcularProgramacaoEnvio(dtCompraValor);
 
     const idPedidoValor = pegar("idPedido");
@@ -186,7 +195,12 @@ function processarPlanilha(linhas) {
     });
 
     return {
-      idPedido: idPedidoValor, dataPrevista: pegar("dataPrevista"), dtCompra: converterParaData(dtCompraValor),
+      idPedido: idPedidoValor,
+      opcaoEnvio: pegar("opcaoEnvio"),
+      dataPrevista: pegar("dataPrevista"),
+      dataCriacaoPedido: converterParaData(pegar("dataCriacaoPedido")),
+      horaPagamentoPedido: pegar("horaPagamentoPedido"),
+      dtCompra: converterParaData(dtCompraValor),
       nomeProduto: pegar("nomeProduto"), nomeVariacao: pegar("nomeVariacao"), quantidade: pegar("quantidade"),
       numProdutos: pegar("numProdutos"), comprador: pegar("comprador"), endereco: pegar("endereco"),
       prazoProducao: prazo, diasRestantes: diasRestantes,
