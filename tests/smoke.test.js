@@ -33,6 +33,11 @@ assert.match(css, /\.sidebar\.recolhida\s*\{[^}]*width:\s*76px/s, 'Modo compacto
   'data-postagem-input', 'POSTADO', 'tema-topo-input', 'filtro-prazo-card'
 ].forEach(item => assert.ok(pedidos.includes(item), `Integração ausente em painelPedidos.js: ${item}`));
 
+assert.ok(html.includes('Data de postagem (PriPel)'), 'Filtro por data de postagem ausente.');
+assert.ok(pedidos.includes('DATA LIMITE:'), 'Card não exibe o rótulo Data limite.');
+assert.ok(pedidos.includes('dataPrevista || p.prazoProducao'), 'Data prevista de envio não tem prioridade no card.');
+assert.ok(pedidos.includes('ⓘ Informações'), 'Botão Informações ausente.');
+assert.match(pedidos, /idade:\s*row\[14\]\s*\|\|\s*"0"/, 'Idade vazia não é normalizada para zero.');
 assert.match(html, /id="ppBtnAbrirTema"[^>]*hidden/, 'Compatibilidade do botão removido deve permanecer invisível.');
 assert.ok(pedidos.includes('statusEhAguardandoInicio'), 'Separação de pedidos aguardando início ausente.');
 assert.ok(pedidos.includes('data-filtro="atencao"'), 'Filtro de atenção entre 2 e 3 dias ausente.');
