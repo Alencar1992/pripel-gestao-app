@@ -74,6 +74,7 @@ assert.ok(stellinha.includes('Protocolo:'), 'Confirmação do protocolo de supor
 assert.ok(stellinha.includes('Ainda estou aprendendo sobre esse assunto'), 'Mensagem de aprendizado da Stellinha ausente.');
 assert.ok(stellinha.includes('consultar_web_stellinha'), 'Pesquisa externa da Stellinha ausente.');
 assert.ok(stellinha.includes('Como localizar um backup criado?'), 'Orientação para localizar backups ausente.');
+assert.ok(stellinha.includes('PALAVRAS_COMUNS'), 'Busca da Stellinha não ignora palavras genéricas.');
 assert.match(css, /\.stellinha-panel\s*\{/, 'Estilos do painel da Stellinha ausentes.');
 
 console.log('Smoke test aprovado: sintaxe, módulos, controles e responsividade verificados.');
