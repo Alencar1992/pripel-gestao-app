@@ -21,6 +21,7 @@
   ];
 
   const MODULOS = [...new Set(BASE_LOCAL.map(item => item.modulo))];
+  const PALAVRAS_COMUNS = new Set(["a","ao","aos","as","como","com","da","das","de","do","dos","e","ela","ele","em","essa","esse","esta","este","eu","faz","fazer","foi","mais","na","nas","no","nos","o","os","ou","para","pela","pelo","por","qual","que","se","sem","ser","tem","uma","um","você"]);
   const launcher = document.getElementById("stellinhaLauncher");
   const panel = document.getElementById("stellinhaPanel");
   const fechar = document.getElementById("stellinhaFechar");
@@ -124,7 +125,7 @@
   }
 
   function responderPergunta(pergunta) {
-    const termos = normalizar(pergunta).split(/\s+/).filter(t => t.length > 2);
+    const termos = normalizar(pergunta).split(/\s+/).filter(t => t.length > 2 && !PALAVRAS_COMUNS.has(t));
     const encontrados = baseConhecimento.map(item => {
       const texto = normalizar(`${item.modulo} ${item.palavras || ""} ${item.pergunta} ${item.resposta}`);
       return { item, pontos: termos.reduce((soma, termo) => soma + (texto.includes(termo) ? 1 : 0), 0) };
