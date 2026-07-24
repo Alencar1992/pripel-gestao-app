@@ -1031,6 +1031,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .stellinha-msg.bot { align-self: flex-start; background: var(--bg-fundo); border: 1px solid var(--borda); }
 .stellinha-msg.user { align-self: flex-end; background: #6c5ce7; color: #fff; }
 .stellinha-msg strong { color: inherit; }
+.stellinha-msg a {
+    display: inline-block;
+    margin-top: 5px;
+    color: #b99cff;
+    text-decoration: underline;
+    overflow-wrap: anywhere;
+}
 
 .stellinha-acoes {
     max-height: 180px;
