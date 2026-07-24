@@ -34,12 +34,16 @@ assert.match(css, /\.sidebar\.recolhida\s*\{[^}]*width:\s*76px/s, 'Modo compacto
 ].forEach(item => assert.ok(pedidos.includes(item), `Integração ausente em painelPedidos.js: ${item}`));
 
 assert.ok(html.includes('Data de postagem (PriPel)'), 'Filtro por data de postagem ausente.');
-assert.ok(pedidos.includes('DATA LIMITE:'), 'Card não exibe o rótulo Data limite.');
-assert.ok(pedidos.includes('dataPrevista || p.prazoProducao'), 'Data prevista de envio não tem prioridade no card.');
+assert.ok(pedidos.includes('DATA LIMITE'), 'Card não exibe o rótulo Data limite.');
+assert.ok(pedidos.includes('PRAZO: <strong>${formatarData(p.prazoProducao)}'), 'Card não exibe o prazo calculado pela data da compra.');
+assert.ok(pedidos.includes('<strong>${formatarData(p.dataPrevista)}</strong>'), 'Card não exibe separadamente a data limite da planilha.');
+assert.ok(!pedidos.includes('dataPrevista || p.prazoProducao'), 'Prazo e data limite não podem ser tratados como a mesma informação.');
+assert.match(pedidos, /prazo\.setDate\(prazo\.getDate\(\) \+ DIAS_PRODUCAO\)/, 'Prazo não é calculado pela data da compra mais os dias de produção.');
 assert.ok(pedidos.includes('ⓘ Informações'), 'Botão Informações ausente.');
 assert.match(pedidos, /idade:\s*row\[14\]\s*\|\|\s*"0"/, 'Idade vazia não é normalizada para zero.');
 assert.ok(pedidos.includes('class="table-responsive tabela-pedidos-lista"'), 'Modo lista não usa tabela própria em largura total.');
 assert.ok(pedidos.includes('<th>Endereço</th>'), 'Modo lista não exibe o endereço.');
+assert.ok(pedidos.includes('<th>Prazo</th><th>Data limite</th>'), 'Modo lista não separa prazo e data limite.');
 assert.ok(pedidos.includes('<th>Data postagem</th>'), 'Modo lista não exibe a data de postagem.');
 assert.ok(css.includes('.pp-scope .orders.orders-lista'), 'Modo lista não remove a grade usada pelos cards.');
 assert.match(html, /id="ppBtnAbrirTema"[^>]*hidden/, 'Compatibilidade do botão removido deve permanecer invisível.');
