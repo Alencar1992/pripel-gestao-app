@@ -24,7 +24,7 @@ const MAPA_COLUNAS_OPCIONAIS = {
 };
 
 let DIAS_PRODUCAO = 5;
-function atualizarPrazoProducao(dias) { DIAS_PRODUCAO = Math.max(1, Number(dias) || 5); if (pedidosProcessados.length) { pedidosProcessados.forEach(p => { const calculo = p.dataPrevista ? calcularDiasAteDataLimite(p.dataPrevista) : calcularProgramacaoEnvio(p.dtCompra); p.prazoProducao = calculo.prazo; p.diasRestantes = calculo.diasRestantes; }); atualizarTela(); } }
+function atualizarPrazoProducao(dias) { DIAS_PRODUCAO = Math.max(1, Number(dias) || 5); if (pedidosProcessados.length) { pedidosProcessados.forEach(p => { const calculo = calcularProgramacaoEnvio(p.dtCompra); p.prazoProducao = calculo.prazo; p.diasRestantes = calculo.diasRestantes; }); atualizarTela(); } }
 const OPCOES_STATUS_PEDIDO = ["PRODUÇÃO", "EMBALAGEM", "CANCELADO", "FEITO", "POSTADO"];
 
 /* ==============================================================
@@ -211,7 +211,7 @@ function processarPlanilha(linhas) {
 
     const dtCompraValor = pegar("horaPagamentoPedido") || pegar("dataCriacaoPedido");
     const dataLimite = converterParaData(pegar("dataPrevista"));
-    const { prazo, diasRestantes } = dataLimite ? calcularDiasAteDataLimite(dataLimite) : calcularProgramacaoEnvio(dtCompraValor);
+    const { prazo, diasRestantes } = calcularProgramacaoEnvio(dtCompraValor);
 
     const idPedidoValor = pegar("idPedido");
 
@@ -276,7 +276,7 @@ function renderizarPedidos(pedidos) {
   });
 
   if (modoVisualizacaoPedidos === "lista") {
-    box.innerHTML = `<div class="table-responsive tabela-pedidos-lista"><table><thead><tr><th>Pedido</th><th>Tema</th><th>Comprador</th><th>Quantidade</th><th>DT Compra</th><th>Endereço</th><th>Data limite</th><th>Status</th><th>Data postagem</th><th>Ações</th></tr></thead><tbody>${ordenados.map(p => {
+    box.innerHTML = `<div class="table-responsive tabela-pedidos-lista"><table><thead><tr><th>Pedido</th><th>Tema</th><th>Comprador</th><th>Quantidade</th><th>DT Compra</th><th>Endereço</th><th>Prazo</th><th>Data limite</th><th>Status</th><th>Data postagem</th><th>Ações</th></tr></thead><tbody>${ordenados.map(p => {
       const edicao = carregarEdicaoPedido(p.idPedido), status = carregarStatusPedido(p.idPedido), tema = edicao.temaManual || p.nomeVariacao || "";
       return `<tr>
         <td class="mono pedido-lista-id">#${escapeHtml(p.idPedido)}</td>
@@ -285,7 +285,8 @@ function renderizarPedidos(pedidos) {
         <td>${escapeHtml(p.quantidade) || "—"}</td>
         <td>${formatarData(p.dtCompra)}</td>
         <td class="endereco-lista">${escapeHtml(p.endereco) || "—"}</td>
-        <td>${formatarData(p.dataPrevista || p.prazoProducao)}</td>
+        <td>${formatarData(p.prazoProducao)}</td>
+        <td>${formatarData(p.dataPrevista)}</td>
         <td><input class="status-input" data-id="${escapeHtml(p.idPedido)}" list="ppEtapasList" value="${escapeHtml(status)}" placeholder="Digite o status..." aria-label="Status do pedido ${escapeHtml(p.idPedido)}"></td>
         <td><div class="campo-data-postagem" style="display:${normalizarTexto(status) === "POSTADO" ? "block" : "none"};"><input type="date" class="data-postagem-input" data-id="${escapeHtml(p.idPedido)}" value="${escapeHtml(edicao.dataPostagem || "")}" aria-label="Data de postagem do pedido ${escapeHtml(p.idPedido)}"></div>${normalizarTexto(status) === "POSTADO" ? "" : "—"}</td>
         <td><button class="btn-editar" data-id="${escapeHtml(p.idPedido)}" type="button">Informações</button></td>
@@ -332,9 +333,13 @@ function renderizarPedidos(pedidos) {
           <dt style="color:var(--ink-soft);">DT Compra</dt><dd style="margin:0; font-weight:bold;">${formatarData(p.dtCompra)}</dd>
         </dl>
         <div style="font-size:.85rem;margin:-5px 0 15px;"><span style="display:block;color:var(--ink-soft);">Endereço</span><strong style="display:block;margin-top:3px;line-height:1.35;">${escapeHtml(p.endereco) || "—"}</strong></div>
-        <div class="producao-line" style="background:var(--paper-2); padding:10px; border-radius:5px; margin-bottom:15px; display:flex; justify-content:space-between;">
-          <span>DATA LIMITE: <strong>${formatarData(p.dataPrevista || p.prazoProducao)}</strong></span>
+        <div class="producao-line" style="background:var(--paper-2); padding:10px; border-radius:5px 5px 0 0; margin-bottom:0; display:flex; justify-content:space-between;">
+          <span>PRAZO: <strong>${formatarData(p.prazoProducao)}</strong></span>
           <span style="color:${statusPrazo.cor}; font-weight:bold;">${diasTexto}</span>
+        </div>
+        <div class="data-limite-line">
+          <span>DATA LIMITE</span>
+          <strong>${formatarData(p.dataPrevista)}</strong>
         </div>
         <div class="status-row" style="display:flex; gap:10px;">
           <!-- Substituído o Select por um Input Editável -->
@@ -638,7 +643,7 @@ async function carregarDadosDoBanco(statusDesejado = abaAtual) {
     pedidosProcessados = resultado.dados.map(row => {
       const dataCompra = converterParaData(row[6]);
       const dataLimite = converterParaData(row[17]);
-      const prazos = dataLimite ? calcularDiasAteDataLimite(dataLimite) : calcularProgramacaoEnvio(dataCompra);
+      const prazos = calcularProgramacaoEnvio(dataCompra);
       salvarStatusPedido(String(row[0] ?? ""), row[12] ?? "");
       salvarEdicaoPedido(String(row[0] ?? ""), { temaManual: row[2] ?? "", nomeCrianca: row[13] ?? "", idade: row[14] || "0", observacoes: row[15] ?? "", dataPostagem: row[16] ?? "" });
 
