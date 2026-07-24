@@ -227,7 +227,8 @@ function processarPlanilha(linhas) {
     const pegarOpcional = (chave) => indicesOpcionais[chave] !== -1 ? linha[indicesOpcionais[chave]] : "";
 
     const dtCompraValor = pegar("horaPagamentoPedido") || pegar("dataCriacaoPedido");
-    const dataLimite = converterParaData(pegar("dataPrevista"));
+    const dataPrevistaOriginal = pegar("dataPrevista");
+    const dataLimite = converterParaData(dataPrevistaOriginal);
     const { prazo, diasRestantes } = calcularProgramacaoEnvio(dtCompraValor);
 
     const idPedidoValor = pegar("idPedido");
@@ -244,6 +245,7 @@ function processarPlanilha(linhas) {
       idPedido: idPedidoValor,
       opcaoEnvio: pegar("opcaoEnvio"),
       dataPrevista: dataLimite,
+      dataPrevistaOriginal,
       dataCriacaoPedido: converterParaData(pegar("dataCriacaoPedido")),
       horaPagamentoPedido: pegar("horaPagamentoPedido"),
       dtCompra: converterParaData(dtCompraValor),
@@ -818,7 +820,10 @@ document.getElementById("ppFileInput").addEventListener("change", async function
     const datasLimite = pedidosProcessados.map(pedido => ({
       pedido: pedido.idPedido,
       dataLimite: pedido.dataPrevista ? pedido.dataPrevista.toISOString() : "",
+      valorOriginal: pedido.dataPrevistaOriginal ?? "",
     }));
+    const datasLimiteReconhecidas = datasLimite.filter(item => item.dataLimite).length;
+    const datasLimiteNaoReconhecidas = datasLimite.filter(item => String(item.valorOriginal || "").trim() && !item.dataLimite).length;
 
     const response = await fetch(URL_API, {
       method: "POST",
@@ -832,8 +837,17 @@ document.getElementById("ppFileInput").addEventListener("change", async function
 
     const inseridos = Number(resposta.inseridos || 0);
     const atualizados = Number(resposta.atualizados || 0);
-    statusBox.textContent = `Sucesso! ${inseridos} novo(s) e ${atualizados} pedido(s) existente(s) atualizado(s).`;
+    const backendAtualizado = resposta.backendVersao && Object.prototype.hasOwnProperty.call(resposta, "datasLimiteGravadas");
+    let mensagemImportacao = `Sucesso! ${inseridos} novo(s) e ${atualizados} pedido(s) existente(s) atualizado(s).`;
+    if (!backendAtualizado && datasLimiteReconhecidas > 0) {
+      mensagemImportacao += " ATENÇÃO: o backend publicado está desatualizado e não confirmou a gravação da DATA LIMITE.";
+    } else {
+      mensagemImportacao += ` DATA LIMITE: ${Number(resposta.datasLimiteGravadas || 0)} gravada(s).`;
+    }
+    if (datasLimiteNaoReconhecidas) mensagemImportacao += ` ${datasLimiteNaoReconhecidas} data(s) inválida(s) foram ignoradas sem interromper a importação.`;
+    statusBox.textContent = mensagemImportacao;
     await selecionarAba("PRODUÇÃO");
+    statusBox.textContent = mensagemImportacao;
   } catch (erro) {
     console.error("Erro ao importar planilha:", erro);
     statusBox.textContent = `Erro: ${erro.message || "Confira se o arquivo é CSV ou XLSX válido."}`;
