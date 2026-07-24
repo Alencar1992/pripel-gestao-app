@@ -505,6 +505,66 @@ font-size: 0.9rem;
     gap: 14px;
 }
 
+.pp-scope .orders.orders-lista {
+    display: block;
+    width: 100%;
+}
+
+.pp-scope .tabela-pedidos-lista {
+    width: 100%;
+    border-radius: 10px;
+    background: var(--card-bg);
+}
+
+.pp-scope .tabela-pedidos-lista table {
+    width: 100%;
+    min-width: 1320px;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+.pp-scope .tabela-pedidos-lista th,
+.pp-scope .tabela-pedidos-lista td {
+    padding: 11px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.pp-scope .tabela-pedidos-lista th {
+    color: var(--ink-soft);
+    background: var(--paper-2);
+    font-size: .76rem;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+
+.pp-scope .tabela-pedidos-lista tbody tr:hover {
+    background: rgba(138, 43, 226, .06);
+}
+
+.pp-scope .tabela-pedidos-lista input {
+    min-width: 145px;
+    width: 100%;
+    margin: 0;
+}
+
+.pp-scope .tabela-pedidos-lista .pedido-lista-id {
+    font-weight: 700;
+}
+
+.pp-scope .tabela-pedidos-lista .endereco-lista {
+    min-width: 240px;
+    max-width: 340px;
+    white-space: normal;
+    line-height: 1.35;
+}
+
+.pp-scope .tabela-pedidos-lista .btn-editar {
+    white-space: nowrap;
+}
+
 .pp-scope .tag {
     position: relative;
     background: var(--card-bg);
