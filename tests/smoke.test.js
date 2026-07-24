@@ -28,6 +28,11 @@ new Function(pedidos);
   'data-postagem-input', 'POSTADO', 'tema-topo-input', 'filtro-prazo-card'
 ].forEach(item => assert.ok(pedidos.includes(item), `Integração ausente em painelPedidos.js: ${item}`));
 
+assert.ok(!pedidos.includes('pegarPorLetra'), 'A importação não pode depender de letras fixas de coluna.');
+assert.ok(!pedidos.includes('letraParaIndice'), 'A importação não pode converter letras fixas em índices.');
+assert.match(pedidos, /dtCompra:\s*\[[\s\S]*?DATA DA COMPRA[\s\S]*?DATA DO PEDIDO/, 'Cabeçalhos da data da compra ausentes.');
+assert.match(pedidos, /const dtCompraValor = pegar\("dtCompra"\)/, 'Data da compra não está sendo obtida pelo título.');
+
 assert.match(css, /@media\s*\(max-width:\s*768px\)/, 'Regra responsiva para tablet/celular ausente.');
 assert.match(css, /\.table-responsive\s*\{[^}]*overflow-x:\s*auto/s, 'Rolagem responsiva de tabelas ausente.');
 
