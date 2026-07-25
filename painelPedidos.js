@@ -856,10 +856,43 @@ document.getElementById("ppFileInput").addEventListener("change", async function
   }
 });
 
-document.getElementById("ppOrdersBox").addEventListener("change", async function(evento) {
+const ppOrdersBox = document.getElementById("ppOrdersBox");
+
+// O datalist nativo oculta a opção quando o texto atual já é uma
+// correspondência exata. Ao clicar na seta, abre a lista completa sem exigir
+// que o usuário apague manualmente o status. Se nada for escolhido, restaura
+// o valor anterior.
+ppOrdersBox.addEventListener("pointerdown", function(evento) {
+  const input = evento.target.closest(".status-input");
+  if (!input || !input.value) return;
+  const areaSeta = input.getBoundingClientRect().right - 48;
+  if (evento.clientX < areaSeta) return;
+
+  input.dataset.statusAntesDaLista = input.value;
+  input.value = "";
+  input.focus({ preventScroll: true });
+  try {
+    if (typeof input.showPicker === "function") input.showPicker();
+  } catch (_) {}
+});
+
+ppOrdersBox.addEventListener("blur", function(evento) {
+  const input = evento.target.closest(".status-input");
+  if (!input || !input.dataset.statusAntesDaLista) return;
+  if (!input.value.trim()) input.value = input.dataset.statusAntesDaLista;
+  delete input.dataset.statusAntesDaLista;
+}, true);
+
+ppOrdersBox.addEventListener("change", async function(evento) {
   if (evento.target.classList.contains("status-input")) {
     const idPedido = evento.target.dataset.id;
     const novoStatus = evento.target.value.trim();
+    if (!novoStatus && evento.target.dataset.statusAntesDaLista) {
+      evento.target.value = evento.target.dataset.statusAntesDaLista;
+      delete evento.target.dataset.statusAntesDaLista;
+      return;
+    }
+    delete evento.target.dataset.statusAntesDaLista;
     const edicaoAtual = carregarEdicaoPedido(idPedido);
     const statusNormalizado = normalizarTexto(novoStatus);
 
