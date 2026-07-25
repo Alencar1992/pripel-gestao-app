@@ -46,6 +46,8 @@ assert.match(pedidos, /prazo\.setDate\(prazo\.getDate\(\) \+ DIAS_PRODUCAO\)/, '
 assert.ok(pedidos.includes('ⓘ Informações'), 'Botão Informações ausente.');
 assert.match(pedidos, /idade:\s*row\[14\]\s*\|\|\s*"0"/, 'Idade vazia não é normalizada para zero.');
 assert.ok((pedidos.match(/idade:[^,}\n]*\|\| "0"/g) || []).length >= 4, 'Nem todos os fluxos de produção usam idade padrão zero.');
+assert.ok(pedidos.includes('statusAntesDaLista'), 'Status preenchido não é preservado ao abrir a lista suspensa.');
+assert.ok(pedidos.includes('input.showPicker()'), 'A seta do status não abre programaticamente a lista completa.');
 assert.ok(pedidos.includes('class="table-responsive tabela-pedidos-lista"'), 'Modo lista não usa tabela própria em largura total.');
 assert.ok(pedidos.includes('<th>Endereço</th>'), 'Modo lista não exibe o endereço.');
 assert.ok(pedidos.includes('<th>Prazo</th><th>Data limite</th>'), 'Modo lista não separa prazo e data limite.');
