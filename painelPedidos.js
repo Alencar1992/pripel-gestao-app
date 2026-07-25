@@ -815,7 +815,7 @@ document.getElementById("ppFileInput").addEventListener("change", async function
     });
     const producoesImportadas = pedidosProcessados.map(pedido => {
       const edicao = carregarEdicaoPedido(pedido.idPedido);
-      return { pedido: pedido.idPedido, etapa: carregarStatusPedido(pedido.idPedido) || "AGUARDANDO", crianca: edicao.nomeCrianca || "", idade: edicao.idade || "", observacoes: edicao.observacoes || "", dataPostagem: edicao.dataPostagem || "" };
+      return { pedido: pedido.idPedido, etapa: carregarStatusPedido(pedido.idPedido) || "AGUARDANDO", crianca: edicao.nomeCrianca || "", idade: edicao.idade || "0", observacoes: edicao.observacoes || "", dataPostagem: edicao.dataPostagem || "" };
     });
     const datasLimite = pedidosProcessados.map(pedido => ({
       pedido: pedido.idPedido,
@@ -877,7 +877,7 @@ document.getElementById("ppOrdersBox").addEventListener("change", async function
     }
 
     try {
-      const resultadoProducao = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedido, etapa: novoStatus, crianca: edicaoAtual.nomeCrianca, idade: edicaoAtual.idade, observacoes: edicaoAtual.observacoes, dataPostagem: edicaoAtual.dataPostagem || "", usuario: obterUserLogado() } });
+      const resultadoProducao = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedido, etapa: novoStatus, crianca: edicaoAtual.nomeCrianca, idade: edicaoAtual.idade || "0", observacoes: edicaoAtual.observacoes, dataPostagem: edicaoAtual.dataPostagem || "", usuario: obterUserLogado() } });
       if (resultadoProducao.status !== "sucesso") throw new Error(resultadoProducao.mensagem || "Não foi possível salvar o status.");
       salvarStatusPedido(idPedido, novoStatus);
     } catch (erro) {
@@ -929,7 +929,7 @@ document.getElementById("ppOrdersBox").addEventListener("change", async function
     const edicao = carregarEdicaoPedido(idPedido);
     const etapa = carregarStatusPedido(idPedido) || "POSTADO";
     try {
-      const resultado = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedido, etapa: "POSTADO", crianca: edicao.nomeCrianca, idade: edicao.idade, observacoes: edicao.observacoes, dataPostagem, usuario: obterUserLogado() } });
+      const resultado = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedido, etapa: "POSTADO", crianca: edicao.nomeCrianca, idade: edicao.idade || "0", observacoes: edicao.observacoes, dataPostagem, usuario: obterUserLogado() } });
       if (resultado.status !== "sucesso") throw new Error(resultado.mensagem || "Não foi possível salvar a postagem.");
       edicao.dataPostagem = dataPostagem;
       salvarEdicaoPedido(idPedido, edicao);
@@ -996,7 +996,7 @@ document.getElementById("ppBtnSalvarModal").addEventListener("click", async func
   const dadosAtualizados = {
     temaManual: inputTema ? inputTema.value.trim() : "",
     nomeCrianca: document.getElementById("ppInputNomeCrianca").value.trim(),
-    idade: document.getElementById("ppInputIdade").value.trim(),
+    idade: document.getElementById("ppInputIdade").value.trim() || "0",
     observacoes: document.getElementById("ppInputObservacoes").value.trim(),
   };
 
