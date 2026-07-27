@@ -358,6 +358,54 @@
                     </div>
                 </form>
 
+                <section class="shopee-importacao" aria-labelledby="tituloImportacaoShopee">
+                    <div class="shopee-importacao-cabecalho">
+                        <div>
+                            <span class="shopee-eyebrow">Conciliação financeira</span>
+                            <h2 id="tituloImportacaoShopee">Resultado real da Shopee</h2>
+                            <p>Importe o relatório <strong>Income</strong> da Shopee. O sistema separa receita, taxas, valor liberado e custos internos.</p>
+                        </div>
+                        <label class="btn-arquivo-shopee" for="arquivoRelatorioShopee">
+                            <span>↑</span> Importar relatório
+                            <input type="file" id="arquivoRelatorioShopee" accept=".xlsx,.xls" hidden>
+                        </label>
+                    </div>
+                    <p id="mensagemImportacaoShopee" class="mensagem-importacao-shopee">Nenhum relatório analisado nesta sessão.</p>
+                    <div id="resultadoShopee" hidden>
+                        <div class="shopee-periodo">
+                            <div><small>Período analisado</small><strong id="shopeePeriodo">—</strong></div>
+                            <span id="shopeeDiagnostico" class="shopee-diagnostico">Aguardando análise</span>
+                        </div>
+                        <div class="shopee-metricas">
+                            <article><small>Receita bruta</small><strong id="shopeeReceita">R$ 0,00</strong></article>
+                            <article><small>Taxas Shopee</small><strong id="shopeeTaxas">R$ 0,00</strong></article>
+                            <article class="destaque"><small>Valor liberado</small><strong id="shopeeLiberado">R$ 0,00</strong></article>
+                            <article><small>Despesas internas pagas</small><strong id="shopeeDespesasInternas">R$ 0,00</strong></article>
+                            <article><small>Custos de produção identificados</small><strong id="shopeeCustos">R$ 0,00</strong></article>
+                            <article class="resultado"><small>Resultado após custos</small><strong id="shopeeResultado">R$ 0,00</strong></article>
+                        </div>
+                        <div id="alertaCustosShopee" class="shopee-alerta-custos"></div>
+                        <details class="shopee-detalhes">
+                            <summary>Ver composição do relatório</summary>
+                            <div class="table-responsive">
+                                <table class="tabela-extrato">
+                                    <thead><tr><th>Componente</th><th style="text-align:right;">Valor</th></tr></thead>
+                                    <tbody id="corpoComposicaoShopee"></tbody>
+                                </table>
+                            </div>
+                        </details>
+                    </div>
+                    <div class="shopee-historico">
+                        <h3>Importações recentes</h3>
+                        <div class="table-responsive">
+                            <table class="tabela-extrato">
+                                <thead><tr><th>Período</th><th>Arquivo</th><th style="text-align:right;">Receita</th><th style="text-align:right;">Liberado</th><th>Importado em</th></tr></thead>
+                                <tbody id="corpoHistoricoShopee"><tr><td colspan="5">Nenhum relatório salvo.</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
                 <div class="dashboard-cards" style="margin-top:28px;">
                     <div class="info-card"><h3>Total filtrado</h3><p class="valor" id="totalDespesasFiltrado">R$ 0,00</p></div>
                     <div class="info-card"><h3>Pendente</h3><p class="valor" id="totalDespesasPendentes">R$ 0,00</p></div>
@@ -710,7 +758,7 @@
             <button type="submit" aria-label="Enviar pergunta">➤</button>
         </form>
     </section>
-    <script src="script.js?v=20260724-7"></script>
+    <script src="script.js?v=20260727-1"></script>
     <script src="painelPedidos.js?v=20260725-2"></script>
     <script src="stellinha.js?v=20260724-5"></script>
     <script src="chamados.js?v=20260724-2"></script>
