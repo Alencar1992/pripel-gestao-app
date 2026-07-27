@@ -51,6 +51,8 @@ O GitHub Pages deve usar o branch `main` e a raiz do repositório. Depois de uma
 - `historico_producao`
 - `parametros`
 - `shopee_financeiro`
+- `plataformas_precificacao`
+- `catalogo_precificacao`
 
 Não altere a ordem das colunas manualmente. Novas categorias, etapas e taxas devem ser cadastradas pelo aplicativo.
 
@@ -70,6 +72,21 @@ O custo dos produtos é gravado na venda. Para registros antigos sem custo, o re
 4. Confira receita bruta, taxas da Shopee, valor liberado, despesas internas pagas e custos identificados.
 
 O sistema lê as abas `Summary` e `Renda` pelos títulos do relatório. O cálculo parte do valor efetivamente liberado e não desconta as taxas da Shopee novamente. Se algum produto do relatório ainda não estiver associado a um custo cadastrado, o resultado será marcado como **Análise parcial**, evitando indicar lucro incorreto.
+
+## Precificação multiplataforma
+
+A tela **Gestão Financeira > Precificação** possui:
+
+- carga inicial das planilhas Shopee CPF e CNPJ;
+- importação de `.xlsx`, `.xls` e `.csv`;
+- catálogo de produtos com custo, quantidade, preço base e promocional;
+- perfis CPF e CNPJ separados;
+- cadastro manual e edição de produtos/preços;
+- taxas editáveis por plataforma;
+- cadastro de novas plataformas;
+- cálculo por faixas da Shopee ou percentual padrão.
+
+As regras iniciais da Shopee foram reproduzidas das planilhas fornecidas: 20% + R$ 4 até R$ 79,99; 14% com taxas fixas de R$ 16, R$ 20 e R$ 26 nas faixas seguintes; adicional de R$ 3 para CPF. Mercado Livre, TikTok Shop e WhatsApp são criados com taxas zeradas para configuração pelo administrador, evitando utilizar percentuais desatualizados.
 
 ## Rotina de backup
 
