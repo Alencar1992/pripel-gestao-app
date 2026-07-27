@@ -155,7 +155,8 @@ function trocarTelaApp(telaAtivaId) {
     if (telaAtivaId === 'venda') carregarVendas();
     if (telaAtivaId === 'despesa') { carregarDespesas(); carregarRelatoriosShopee(); }
     if (telaAtivaId === 'cronograma' && typeof carregarDadosDoBanco === 'function') carregarDadosDoBanco('PRODUÇÃO');
-    if (telaAtivaId === 'custos' || telaAtivaId === 'precificacao') carregarProdutos();
+    if (telaAtivaId === 'custos') carregarProdutos();
+    if (telaAtivaId === 'precificacao') carregarCentralPrecificacao();
     if (telaAtivaId === 'resumo') carregarResumoMensal();
     if (telaAtivaId === 'parametros') { carregarParametros(); if (typeof carregarEtapasProducao === 'function') carregarEtapasProducao(); }
     if (telaAtivaId === 'atendimento' && typeof carregarChamados === 'function') carregarChamados();
@@ -1045,51 +1046,59 @@ document.getElementById('calcProduto').addEventListener('change', aplicarProduto
 document.getElementById('calcCustoMaterial').addEventListener('input', aplicarMascaraMoeda);
 document.getElementById('calcCustoExtra').addEventListener('input', aplicarMascaraMoeda);
 
-document.getElementById('calcCanal').addEventListener('change', (e) => {
-    const isShopee = e.target.value === 'shopee';
-    document.getElementById('boxShopee').style.display = isShopee ? 'block' : 'none';
-    document.getElementById('boxLink').style.display = isShopee ? 'none' : 'block';
+let plataformasPrecificacao = [];
+let catalogoPrecificacao = [];
+let importacaoPrecificacaoPendente = [];
+
+function numeroCampoPrecificacao(id) {
+    return Number(limparMoedaParaEnvio(document.getElementById(id).value)) || 0;
+}
+
+function plataformaSelecionada() {
+    return plataformasPrecificacao.find(item => item.id === document.getElementById('calcCanal').value) || null;
+}
+
+function atualizarVisibilidadeRegraShopee() {
+    const plataforma = plataformaSelecionada();
+    const shopee = plataforma?.tipo === 'shopee_faixas';
+    document.getElementById('boxShopee').style.display = shopee ? 'block' : 'none';
     calcularPrecificacao();
-});
+}
 
 function calcularPrecificacao() {
-    const matVal = parseFloat(limparMoedaParaEnvio(document.getElementById('calcCustoMaterial').value)) || 0;
-    const extVal = parseFloat(limparMoedaParaEnvio(document.getElementById('calcCustoExtra').value)) || 0;
-    const margem = parseFloat(document.getElementById('calcMargem').value) || 0;
-    
-    const canal = document.getElementById('calcCanal').value;
+    const matVal = numeroCampoPrecificacao('calcCustoMaterial');
+    const extVal = numeroCampoPrecificacao('calcCustoExtra');
+    const margem = Number(document.getElementById('calcMargem').value) || 0;
     const custoTotal = matVal + extVal;
-    
     const lucroBruto = custoTotal * (margem / 100);
-    const target = custoTotal + lucroBruto; 
-
-    let precoSugerido = 0;
+    const alvo = custoTotal + lucroBruto;
+    const plataforma = plataformaSelecionada();
+    let precoSugerido = alvo;
     let valorTaxa = 0;
-
-    if (canal === 'shopee') {
-        const isCPF = document.getElementById('calcShopeeTipo').value === 'cpf';
-        const taxaFixaCPF = isCPF ? Number(parametrosSistema.taxaFixaCpf || 0) : 0;
-        const taxaPadrao = Number(parametrosSistema.taxaShopee || 14) / 100;
-        const taxaBaixa = Number(parametrosSistema.taxaShopeeBaixa || 20) / 100;
-        
-        let p1 = (target + 4 + taxaFixaCPF) / (1 - taxaBaixa);
-        let p2 = (target + 16 + taxaFixaCPF) / (1 - taxaPadrao);
-        let p3 = (target + 20 + taxaFixaCPF) / (1 - taxaPadrao);
-        let p4 = (target + 26 + taxaFixaCPF) / (1 - taxaPadrao);
-
-        if (p1 < 80) { precoSugerido = p1; } 
-        else if (p2 >= 80 && p2 < 100) { precoSugerido = p2; } 
-        else if (p3 >= 100 && p3 < 200) { precoSugerido = p3; } 
-        else { precoSugerido = p4; }
-
-        if (precoSugerido < 80) valorTaxa = (precoSugerido * taxaBaixa) + 4 + taxaFixaCPF;
-        else if (precoSugerido < 100) valorTaxa = (precoSugerido * taxaPadrao) + 16 + taxaFixaCPF;
-        else if (precoSugerido < 200) valorTaxa = (precoSugerido * taxaPadrao) + 20 + taxaFixaCPF;
-        else valorTaxa = (precoSugerido * taxaPadrao) + 26 + taxaFixaCPF;
-    } else {
-        const taxaLink = parseFloat(document.getElementById('calcTaxaLink').value) || 0;
-        if (taxaLink < 100) { precoSugerido = target / (1 - (taxaLink / 100)); }
-        valorTaxa = precoSugerido * (taxaLink / 100);
+    if (plataforma) {
+        const pagamento = Number(plataforma.pagamento || 0);
+        const outras = Number(plataforma.outras || 0);
+        if (plataforma.tipo === 'shopee_faixas') {
+            const adicionalCpf = document.getElementById('calcShopeeTipo').value === 'cpf' ? Number(plataforma.adicionalCpf || 0) : 0;
+            const faixas = [
+                { minimo: 0, maximo: 79.99, percentual: Number(plataforma.comissaoBaixa || 0), fixa: Number(plataforma.fixa79 || 0) },
+                { minimo: 80, maximo: 99.99, percentual: Number(plataforma.comissao || 0), fixa: Number(plataforma.fixa99 || 0) },
+                { minimo: 100, maximo: 199.99, percentual: Number(plataforma.comissao || 0), fixa: Number(plataforma.fixa199 || 0) },
+                { minimo: 200, maximo: Infinity, percentual: Number(plataforma.comissao || 0), fixa: Number(plataforma.fixa499 || 0) }
+            ];
+            const candidatos = faixas.map(faixa => {
+                const taxaPercentual = (faixa.percentual + pagamento + outras) / 100;
+                return { ...faixa, preco: taxaPercentual < 1 ? (alvo + faixa.fixa + adicionalCpf) / (1 - taxaPercentual) : 0, taxaPercentual };
+            });
+            const escolhida = candidatos.find(faixa => faixa.preco >= faixa.minimo && faixa.preco <= faixa.maximo) || candidatos[candidatos.length - 1];
+            precoSugerido = escolhida.preco;
+            valorTaxa = precoSugerido * escolhida.taxaPercentual + escolhida.fixa + adicionalCpf;
+        } else {
+            const percentual = (Number(plataforma.comissao || 0) + pagamento + outras) / 100;
+            const fixa = Number(plataforma.taxaFixa || 0);
+            precoSugerido = percentual < 1 ? (alvo + fixa) / (1 - percentual) : 0;
+            valorTaxa = precoSugerido * percentual + fixa;
+        }
     }
 
     const lucroLiquido = precoSugerido - custoTotal - valorTaxa;
@@ -1100,13 +1109,258 @@ function calcularPrecificacao() {
     document.getElementById('calcLucroOut').innerText = formatarMoeda(lucroLiquido);
 }
 
-['calcCustoMaterial', 'calcCustoExtra', 'calcMargem', 'calcTaxaLink', 'calcShopeeTipo', 'calcCanal'].forEach(id => {
+['calcCustoMaterial', 'calcCustoExtra', 'calcMargem', 'calcShopeeTipo'].forEach(id => {
     document.getElementById(id).addEventListener('input', calcularPrecificacao);
 });
+document.getElementById('calcCanal').addEventListener('change', atualizarVisibilidadeRegraShopee);
 
 document.getElementById('btnLimparCalc').addEventListener('click', () => {
     document.getElementById('formPrecificacao').reset();
+    document.getElementById('calcPrecoCatalogo').value = '';
+    document.getElementById('calcPrecoAtual').textContent = '';
+    atualizarVisibilidadeRegraShopee();
     calcularPrecificacao(); 
+});
+
+function preencherSeletoresPlataforma() {
+    const ids = ['calcCanal', 'catalogoPlataforma'];
+    ids.forEach(id => {
+        const select = document.getElementById(id);
+        const anterior = select.value;
+        select.replaceChildren();
+        plataformasPrecificacao.forEach(item => {
+            const option = document.createElement('option'); option.value = item.id; option.textContent = item.nome; select.appendChild(option);
+        });
+        if (plataformasPrecificacao.some(item => item.id === anterior)) select.value = anterior;
+    });
+    const filtro = document.getElementById('filtroPlataformaCatalogo');
+    const filtroAnterior = filtro.value;
+    filtro.replaceChildren();
+    const todas = document.createElement('option'); todas.value = ''; todas.textContent = 'Todas as plataformas'; filtro.appendChild(todas);
+    plataformasPrecificacao.forEach(item => { const op = document.createElement('option'); op.value = item.id; op.textContent = item.nome; filtro.appendChild(op); });
+    filtro.value = plataformasPrecificacao.some(item => item.id === filtroAnterior) ? filtroAnterior : '';
+}
+
+function renderizarPlataformasPreco() {
+    const lista = document.getElementById('listaPlataformasPreco');
+    lista.replaceChildren();
+    plataformasPrecificacao.forEach(item => {
+        const card = document.createElement('button');
+        card.type = 'button'; card.className = 'plataforma-preco-card';
+        const titulo = document.createElement('strong'); titulo.textContent = item.nome;
+        const regra = document.createElement('small'); regra.textContent = item.tipo === 'shopee_faixas' ? 'Faixas progressivas Shopee' : `${Number(item.comissao || 0).toLocaleString('pt-BR')}% + ${formatarMoeda(item.taxaFixa || 0)}`;
+        card.append(titulo, regra);
+        card.addEventListener('click', () => editarPlataformaPreco(item.id));
+        lista.appendChild(card);
+    });
+}
+
+function preencherCatalogoNoCalculo() {
+    const select = document.getElementById('calcPrecoCatalogo');
+    const anterior = select.value;
+    select.replaceChildren();
+    const vazio = document.createElement('option'); vazio.value = ''; vazio.textContent = 'Selecione um preço importado...'; select.appendChild(vazio);
+    catalogoPrecificacao.forEach(item => {
+        const option = document.createElement('option'); option.value = item.id; option.textContent = `${item.produto} · ${item.plataformaNome}/${item.perfil}`; select.appendChild(option);
+    });
+    if (catalogoPrecificacao.some(item => item.id === anterior)) select.value = anterior;
+}
+
+function renderizarCatalogoPreco() {
+    const corpo = document.getElementById('corpoCatalogoPreco');
+    const termo = normalizarTextoFinanceiro(document.getElementById('pesquisaCatalogoPreco').value);
+    const plataforma = document.getElementById('filtroPlataformaCatalogo').value;
+    const itens = catalogoPrecificacao.filter(item => (!plataforma || item.plataformaId === plataforma) && (!termo || normalizarTextoFinanceiro(`${item.produto} ${item.sku} ${item.plataformaNome} ${item.perfil}`).includes(termo)));
+    corpo.replaceChildren();
+    if (!itens.length) { const tr = document.createElement('tr'); const td = adicionarCelula(tr, 'Nenhum preço encontrado.'); td.colSpan = 6; corpo.appendChild(tr); return; }
+    itens.forEach(item => {
+        const tr = document.createElement('tr');
+        const nome = adicionarCelula(tr, item.produto); if (item.sku) { const sku = document.createElement('small'); sku.textContent = `SKU ${item.sku}`; sku.style.display = 'block'; nome.appendChild(sku); }
+        adicionarCelula(tr, `${item.plataformaNome} / ${item.perfil}`);
+        let td = adicionarCelula(tr, formatarMoeda(item.custoTotal)); td.style.textAlign = 'right';
+        td = adicionarCelula(tr, formatarMoeda(item.precoBase)); td.style.textAlign = 'right';
+        td = adicionarCelula(tr, item.precoPromocional ? formatarMoeda(item.precoPromocional) : '—'); td.style.textAlign = 'right';
+        const acoes = adicionarCelula(tr, ''); acoes.style.textAlign = 'center';
+        acoes.appendChild(criarBotaoAcao('✏️', 'Editar preço', '#6c5ce7', () => editarPrecoCatalogo(item.id)));
+        acoes.appendChild(criarBotaoAcao('🗑️', 'Excluir preço', 'var(--cor-alerta)', () => excluirPrecoCatalogo(item.id)));
+        corpo.appendChild(tr);
+    });
+}
+
+async function carregarCentralPrecificacao() {
+    const mensagem = document.getElementById('mensagemImportacaoPrecificacao');
+    mensagem.textContent = '⏳ Carregando catálogo e taxas...';
+    try {
+        const [produtos, plataformas, catalogo] = await Promise.all([
+            carregarProdutos(),
+            chamarApi({ acao: 'listar_plataformas_precificacao' }),
+            chamarApi({ acao: 'listar_catalogo_precificacao' })
+        ]);
+        if (plataformas.status !== 'sucesso' || catalogo.status !== 'sucesso') throw new Error('Publique o backend atualizado para ativar a central de preços.');
+        plataformasPrecificacao = plataformas.plataformas || [];
+        catalogoPrecificacao = catalogo.catalogo || [];
+        preencherSeletoresPlataforma(); preencherCatalogoNoCalculo(); renderizarCatalogoPreco(); renderizarPlataformasPreco();
+        const shopee = plataformasPrecificacao.find(item => item.tipo === 'shopee_faixas');
+        if (shopee) document.getElementById('calcCanal').value = shopee.id;
+        editarPlataformaPreco(shopee?.id || plataformasPrecificacao[0]?.id, false);
+        atualizarVisibilidadeRegraShopee();
+        mensagem.textContent = '';
+        return produtos;
+    } catch (erro) {
+        mensagem.style.color = 'var(--cor-alerta)'; mensagem.textContent = `❌ ${erro.message}`;
+    }
+}
+
+document.getElementById('calcPrecoCatalogo').addEventListener('change', () => {
+    const item = catalogoPrecificacao.find(registro => registro.id === document.getElementById('calcPrecoCatalogo').value);
+    if (!item) { document.getElementById('calcPrecoAtual').textContent = ''; return; }
+    document.getElementById('calcCustoMaterial').value = Number(item.custoTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    document.getElementById('calcCustoExtra').value = '0,00';
+    document.getElementById('calcCanal').value = item.plataformaId;
+    document.getElementById('calcShopeeTipo').value = item.perfil === 'CPF' ? 'cpf' : 'cnpj';
+    const plataforma = plataformaSelecionada();
+    const taxa = calcularTaxaSobrePreco(item.precoBase, plataforma, item.perfil);
+    const lucro = item.precoBase - item.custoTotal - taxa;
+    document.getElementById('calcMargem').value = item.custoTotal > 0 ? ((lucro / item.custoTotal) * 100).toFixed(2) : 0;
+    document.getElementById('calcPrecoAtual').textContent = `Preço atual no catálogo: ${formatarMoeda(item.precoBase)}${item.precoPromocional ? ` · promocional ${formatarMoeda(item.precoPromocional)}` : ''}`;
+    atualizarVisibilidadeRegraShopee();
+});
+
+function calcularTaxaSobrePreco(preco, plataforma, perfil) {
+    if (!plataforma) return 0;
+    const extras = (Number(plataforma.pagamento || 0) + Number(plataforma.outras || 0)) / 100;
+    if (plataforma.tipo !== 'shopee_faixas') return preco * ((Number(plataforma.comissao || 0) / 100) + extras) + Number(plataforma.taxaFixa || 0);
+    const percentual = preco < 80 ? Number(plataforma.comissaoBaixa || 0) : Number(plataforma.comissao || 0);
+    const fixa = preco < 80 ? plataforma.fixa79 : preco < 100 ? plataforma.fixa99 : preco < 200 ? plataforma.fixa199 : plataforma.fixa499;
+    return preco * ((percentual / 100) + extras) + Number(fixa || 0) + (perfil === 'CPF' ? Number(plataforma.adicionalCpf || 0) : 0);
+}
+
+function limparFormularioCatalogo() {
+    document.getElementById('formPrecoCatalogo').reset();
+    document.getElementById('catalogoId').value = '';
+    document.getElementById('catalogoQuantidade').value = 1;
+    document.getElementById('formPrecoCatalogo').hidden = true;
+}
+
+document.getElementById('btnNovoPrecoCatalogo').addEventListener('click', () => { limparFormularioCatalogo(); document.getElementById('formPrecoCatalogo').hidden = false; document.getElementById('catalogoProduto').focus(); });
+document.getElementById('btnCancelarPrecoCatalogo').addEventListener('click', limparFormularioCatalogo);
+['catalogoCustoUnitario', 'catalogoPrecoBase', 'catalogoPrecoPromocional'].forEach(id => document.getElementById(id).addEventListener('input', aplicarMascaraMoeda));
+
+function editarPrecoCatalogo(id) {
+    const item = catalogoPrecificacao.find(registro => registro.id === id); if (!item) return;
+    document.getElementById('catalogoId').value = item.id; document.getElementById('catalogoSku').value = item.sku; document.getElementById('catalogoProduto').value = item.produto;
+    document.getElementById('catalogoQuantidade').value = item.quantidade; document.getElementById('catalogoCustoUnitario').value = Number(item.custoUnitario).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    document.getElementById('catalogoPlataforma').value = item.plataformaId; document.getElementById('catalogoPerfil').value = item.perfil;
+    document.getElementById('catalogoPrecoBase').value = Number(item.precoBase).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); document.getElementById('catalogoPrecoPromocional').value = item.precoPromocional ? Number(item.precoPromocional).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '';
+    document.getElementById('formPrecoCatalogo').hidden = false; document.getElementById('catalogoProduto').focus();
+}
+
+document.getElementById('formPrecoCatalogo').addEventListener('submit', async evento => {
+    evento.preventDefault();
+    const item = { id: document.getElementById('catalogoId').value, sku: document.getElementById('catalogoSku').value.trim(), produto: document.getElementById('catalogoProduto').value.trim(), quantidade: Number(document.getElementById('catalogoQuantidade').value) || 1, custoUnitario: numeroCampoPrecificacao('catalogoCustoUnitario'), plataformaId: document.getElementById('catalogoPlataforma').value, perfil: document.getElementById('catalogoPerfil').value, precoBase: numeroCampoPrecificacao('catalogoPrecoBase'), precoPromocional: numeroCampoPrecificacao('catalogoPrecoPromocional'), origem: 'Cadastro manual', usuario: obterUserLogado() };
+    try {
+        const resposta = await chamarApi({ acao: item.id ? 'editar_preco_catalogo' : 'salvar_preco_catalogo', item });
+        if (resposta.status !== 'sucesso') throw new Error(resposta.mensagem);
+        limparFormularioCatalogo(); await carregarCatalogoPrecificacao();
+    } catch (erro) { alert(`Erro: ${erro.message}`); }
+});
+
+async function excluirPrecoCatalogo(id) {
+    if (!confirm('Excluir este preço do catálogo?')) return;
+    const resposta = await chamarApi({ acao: 'excluir_preco_catalogo', id, usuario: obterUserLogado() });
+    if (resposta.status !== 'sucesso') return alert(resposta.mensagem || 'Não foi possível excluir.');
+    await carregarCatalogoPrecificacao();
+}
+
+async function carregarCatalogoPrecificacao() {
+    const resposta = await chamarApi({ acao: 'listar_catalogo_precificacao' });
+    if (resposta.status !== 'sucesso') throw new Error(resposta.mensagem);
+    catalogoPrecificacao = resposta.catalogo || []; preencherCatalogoNoCalculo(); renderizarCatalogoPreco();
+}
+
+document.getElementById('pesquisaCatalogoPreco').addEventListener('input', renderizarCatalogoPreco);
+document.getElementById('filtroPlataformaCatalogo').addEventListener('change', renderizarCatalogoPreco);
+
+function limparFormularioPlataforma() {
+    document.getElementById('formPlataformaPreco').reset(); document.getElementById('plataformaId').value = ''; document.getElementById('plataformaTipo').value = 'percentual'; atualizarCamposFaixas();
+}
+function atualizarCamposFaixas() { document.getElementById('camposFaixasShopee').hidden = document.getElementById('plataformaTipo').value !== 'shopee_faixas'; }
+document.getElementById('plataformaTipo').addEventListener('change', atualizarCamposFaixas);
+document.getElementById('btnNovaPlataformaPreco').addEventListener('click', () => { limparFormularioPlataforma(); document.getElementById('plataformaNome').focus(); });
+document.getElementById('btnCancelarPlataformaPreco').addEventListener('click', limparFormularioPlataforma);
+
+function editarPlataformaPreco(id, focar = true) {
+    const item = plataformasPrecificacao.find(registro => registro.id === id); if (!item) return limparFormularioPlataforma();
+    const campos = { plataformaId: item.id, plataformaNome: item.nome, plataformaTipo: item.tipo, plataformaComissao: item.comissao, plataformaTaxaFixa: item.taxaFixa, plataformaPagamento: item.pagamento, plataformaOutras: item.outras, plataformaComissaoBaixa: item.comissaoBaixa, plataformaFixa79: item.fixa79, plataformaFixa99: item.fixa99, plataformaFixa199: item.fixa199, plataformaFixa499: item.fixa499, plataformaAdicionalCpf: item.adicionalCpf };
+    Object.entries(campos).forEach(([idCampo, valor]) => { document.getElementById(idCampo).value = valor ?? 0; });
+    atualizarCamposFaixas(); if (focar) document.getElementById('plataformaNome').focus();
+}
+
+document.getElementById('formPlataformaPreco').addEventListener('submit', async evento => {
+    evento.preventDefault();
+    const plataforma = { id: document.getElementById('plataformaId').value, nome: document.getElementById('plataformaNome').value.trim(), tipo: document.getElementById('plataformaTipo').value, comissao: Number(document.getElementById('plataformaComissao').value) || 0, taxaFixa: Number(document.getElementById('plataformaTaxaFixa').value) || 0, pagamento: Number(document.getElementById('plataformaPagamento').value) || 0, outras: Number(document.getElementById('plataformaOutras').value) || 0, comissaoBaixa: Number(document.getElementById('plataformaComissaoBaixa').value) || 0, fixa79: Number(document.getElementById('plataformaFixa79').value) || 0, fixa99: Number(document.getElementById('plataformaFixa99').value) || 0, fixa199: Number(document.getElementById('plataformaFixa199').value) || 0, fixa499: Number(document.getElementById('plataformaFixa499').value) || 0, adicionalCpf: Number(document.getElementById('plataformaAdicionalCpf').value) || 0, usuario: obterUserLogado() };
+    const mensagem = document.getElementById('mensagemPlataformaPreco'); mensagem.textContent = '⏳ Salvando...';
+    try {
+        const resposta = await chamarApi({ acao: 'salvar_plataforma_precificacao', plataforma });
+        if (resposta.status !== 'sucesso') throw new Error(resposta.mensagem);
+        plataformasPrecificacao = resposta.plataformas || []; preencherSeletoresPlataforma(); renderizarPlataformasPreco(); mensagem.style.color = 'var(--cor-sucesso)'; mensagem.textContent = '✅ Plataforma e taxas atualizadas.';
+        document.getElementById('calcCanal').value = resposta.id; atualizarVisibilidadeRegraShopee();
+    } catch (erro) { mensagem.style.color = 'var(--cor-alerta)'; mensagem.textContent = `❌ ${erro.message}`; }
+});
+
+function extrairCatalogoDaPlanilha(workbook, nomeArquivo) {
+    const perfil = normalizarTextoFinanceiro(nomeArquivo).includes('cnpj') ? 'CNPJ' : normalizarTextoFinanceiro(nomeArquivo).includes('cpf') ? 'CPF' : 'GERAL';
+    const shopee = plataformasPrecificacao.find(item => item.tipo === 'shopee_faixas');
+    if (!shopee) throw new Error('Cadastre uma plataforma com regra de faixas Shopee antes de importar.');
+    const itens = [];
+    workbook.SheetNames.forEach(nomeAba => {
+        if (normalizarTextoFinanceiro(nomeAba).includes('materiais e insumos')) return;
+        const linhas = XLSX.utils.sheet_to_json(workbook.Sheets[nomeAba], { header: 1, raw: true, defval: '' });
+        const linhaCabecalho = linhas.findIndex(linha => linha.some(celula => normalizarTextoFinanceiro(celula) === 'produto'));
+        if (linhaCabecalho < 0) return;
+        const cabecalho = linhas[linhaCabecalho].map(normalizarTextoFinanceiro);
+        const indice = (...titulos) => titulos.map(normalizarTextoFinanceiro).map(titulo => cabecalho.indexOf(titulo)).find(posicao => posicao >= 0) ?? -1;
+        const col = { sku: indice('SKU (OPCIONAL)', 'SKU'), produto: indice('Produto', 'Nome do Produto'), qtd: indice('qtd kit', 'Quantidade'), custoUnit: indice('custo material por unid', 'Custo por unidade'), custoTotal: indice('Custo total'), preco: indice('Preço venda', 'Preço base'), promocional: indice('Preço promocional') };
+        linhas.slice(linhaCabecalho + 1).forEach(linha => {
+            const produto = String(linha[col.produto] || '').trim(); if (!produto) return;
+            const quantidade = Math.max(1, Math.floor(numeroFinanceiro(linha[col.qtd]) || 1));
+            const custoUnitario = numeroFinanceiro(linha[col.custoUnit]);
+            const custoTotal = col.custoTotal >= 0 ? numeroFinanceiro(linha[col.custoTotal]) : custoUnitario * quantidade;
+            const precoBase = numeroFinanceiro(linha[col.preco]);
+            if (!precoBase || (!custoUnitario && !custoTotal)) return;
+            itens.push({ sku: col.sku >= 0 ? String(linha[col.sku] || '').trim() : '', produto, quantidade, custoUnitario: custoUnitario || custoTotal / quantidade, plataformaId: shopee.id, perfil, precoBase, precoPromocional: col.promocional >= 0 ? numeroFinanceiro(linha[col.promocional]) : 0, origem: nomeArquivo, usuario: obterUserLogado() });
+        });
+    });
+    return itens;
+}
+
+document.getElementById('arquivoPrecificacao').addEventListener('change', async evento => {
+    const arquivo = evento.target.files?.[0]; if (!arquivo) return;
+    const mensagem = document.getElementById('mensagemImportacaoPrecificacao');
+    try {
+        mensagem.textContent = '⏳ Analisando arquivo...';
+        const workbook = XLSX.read(await arquivo.arrayBuffer(), { type: 'array', cellDates: true });
+        importacaoPrecificacaoPendente = extrairCatalogoDaPlanilha(workbook, arquivo.name);
+        if (!importacaoPrecificacaoPendente.length) throw new Error('Nenhum produto válido foi encontrado. Confira os títulos Produto, Custo e Preço venda.');
+        document.getElementById('resumoPreviewPrecificacao').textContent = `${importacaoPrecificacaoPendente.length} produto(s)/preço(s) encontrados`;
+        document.getElementById('previewImportacaoPrecificacao').hidden = false;
+        mensagem.style.color = 'var(--texto-mutado)'; mensagem.textContent = `Arquivo ${arquivo.name} pronto para importação.`;
+    } catch (erro) { importacaoPrecificacaoPendente = []; mensagem.style.color = 'var(--cor-alerta)'; mensagem.textContent = `❌ ${erro.message}`; }
+    finally { evento.target.value = ''; }
+});
+
+function cancelarImportacaoPrecificacao() { importacaoPrecificacaoPendente = []; document.getElementById('previewImportacaoPrecificacao').hidden = true; }
+document.getElementById('btnCancelarImportacaoPrecificacao').addEventListener('click', cancelarImportacaoPrecificacao);
+document.getElementById('btnConfirmarImportacaoPrecificacao').addEventListener('click', async () => {
+    if (!importacaoPrecificacaoPendente.length) return;
+    const btn = document.getElementById('btnConfirmarImportacaoPrecificacao'); const mensagem = document.getElementById('mensagemImportacaoPrecificacao'); btn.disabled = true;
+    try {
+        const resposta = await chamarApi({ acao: 'importar_catalogo_precificacao', itens: importacaoPrecificacaoPendente, usuario: obterUserLogado() });
+        if (resposta.status !== 'sucesso') throw new Error(resposta.mensagem);
+        mensagem.style.color = 'var(--cor-sucesso)'; mensagem.textContent = `✅ ${resposta.inseridos} inserido(s) e ${resposta.atualizados} atualizado(s).`;
+        cancelarImportacaoPrecificacao(); await carregarCatalogoPrecificacao();
+    } catch (erro) { mensagem.style.color = 'var(--cor-alerta)'; mensagem.textContent = `❌ ${erro.message}`; }
+    finally { btn.disabled = false; }
 });
 
 // =======================================================
