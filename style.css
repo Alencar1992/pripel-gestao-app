@@ -943,11 +943,44 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .shopee-historico { margin-top: 24px; }
 .shopee-historico h3 { margin-bottom: 10px; }
 
+/* Central de precificação */
+.precificacao-topo, .secao-cabecalho { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap; }
+.precificacao-topo p, .secao-cabecalho p { margin-top:6px; color:var(--texto-mutado); }
+.precificacao-eyebrow { color:var(--cor-destaque); font-size:.75rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+.btn-importar-precificacao { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:11px 16px; border-radius:10px; background:var(--cor-destaque); color:#fff; font-weight:800; cursor:pointer; }
+.mensagem-precificacao { min-height:22px; margin:12px 0; font-weight:650; }
+.preview-importacao-precificacao { margin:16px 0; padding:15px; display:flex; align-items:center; justify-content:space-between; gap:16px; border:1px solid rgba(138,43,226,.55); border-radius:12px; background:rgba(138,43,226,.08); }
+.preview-importacao-precificacao[hidden] { display:none; }
+.preview-importacao-precificacao > div { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.preview-importacao-precificacao span { color:var(--texto-mutado); }
+.preview-importacao-precificacao button, .secao-cabecalho button { width:auto; margin:0; }
+.titulo-secao-precificacao { margin:28px 0 16px; padding-bottom:10px; border-bottom:1px solid var(--borda); }
+#boxShopee { padding:16px; border:1px solid rgba(255,87,34,.6); border-radius:10px; background:rgba(255,87,34,.06); }
+.resultado-precificacao { margin-top:8px; padding:25px; text-align:center; border:1px dashed var(--cor-destaque); border-radius:14px; background:var(--bg-fundo); }
+.resultado-precificacao h3 { color:var(--texto-mutado); font-size:1rem; }
+#calcPrecoFinal { margin:8px 0; color:var(--cor-sucesso); font-family:"Fraunces",serif; font-size:clamp(2.4rem,7vw,3.5rem); font-weight:750; }
+.resultado-precificacao > div { display:flex; justify-content:center; gap:30px; margin-top:18px; flex-wrap:wrap; color:var(--texto-mutado); }
+#calcTaxaOut { color:var(--cor-alerta); }
+#calcLucroOut { color:var(--cor-destaque); }
+.calc-preco-atual { margin-top:13px; color:#f4b942; }
+.catalogo-precificacao, .plataformas-precificacao { margin-top:30px; padding-top:25px; border-top:1px solid var(--borda); }
+.form-catalogo-preco { margin:18px 0; padding:18px; border:1px solid var(--borda); border-radius:12px; background:rgba(255,255,255,.02); }
+.form-catalogo-preco[hidden] { display:none; }
+.filtros-catalogo-preco { display:grid; grid-template-columns:1fr 260px; gap:10px; margin:18px 0 12px; }
+.tabela-catalogo-preco { min-width:850px; }
+.grade-faixas-shopee { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:15px; padding:16px; border:1px solid rgba(255,87,34,.35); border-radius:10px; background:rgba(255,87,34,.04); }
+.grade-faixas-shopee[hidden] { display:none; }
+.lista-plataformas-preco { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; margin-top:18px; }
+.plataforma-preco-card { padding:14px; display:grid; gap:7px; border:1px solid var(--borda); border-left:3px solid var(--cor-destaque); border-radius:10px; background:var(--bg-fundo); cursor:pointer; }
+.plataforma-preco-card:hover { border-color:var(--cor-destaque); }
+.plataforma-preco-card small { color:var(--texto-mutado); }
+
 @media (max-width: 1024px) {
     .content { padding: 24px; }
     .card { padding: 32px; }
     .dashboard-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .shopee-metricas { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .grade-faixas-shopee { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 
 @media (max-width: 768px) {
@@ -964,6 +997,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     .shopee-importacao { padding: 18px 14px; }
     .shopee-importacao-cabecalho, .shopee-periodo { align-items: stretch; flex-direction: column; }
     .shopee-metricas { grid-template-columns: 1fr; }
+    .precificacao-topo, .secao-cabecalho, .preview-importacao-precificacao { flex-direction:column; align-items:stretch; }
+    .filtros-catalogo-preco, .grade-faixas-shopee { grid-template-columns:1fr; }
     #modalVenda .card { margin: 10px; width: calc(100% - 20px); }
     #venda-passo-1 > div:nth-child(2) { flex-direction: column; }
     .topbar { margin-bottom: 16px; }
