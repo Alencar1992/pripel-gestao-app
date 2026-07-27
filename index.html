@@ -455,61 +455,75 @@
 
             <!-- TELA: PRECIFICAÇÃO -->
             <div class="card" id="tela-precificacao" style="display: none;">
-                <h1>Calculadora de Precificação</h1>
+                <div class="precificacao-topo">
+                    <div><span class="precificacao-eyebrow">Central de preços</span><h1>Precificação Multiplataforma</h1><p>Calcule preços, gerencie taxas e importe seu catálogo em Excel ou CSV.</p></div>
+                    <label class="btn-importar-precificacao" for="arquivoPrecificacao">↑ Importar XLSX/CSV<input id="arquivoPrecificacao" type="file" accept=".xlsx,.xls,.csv" hidden></label>
+                </div>
+                <p id="mensagemImportacaoPrecificacao" class="mensagem-precificacao"></p>
+                <div id="previewImportacaoPrecificacao" class="preview-importacao-precificacao" hidden>
+                    <div><strong id="resumoPreviewPrecificacao">0 produtos encontrados</strong><span>Revise antes de gravar no catálogo.</span></div>
+                    <div><button type="button" id="btnCancelarImportacaoPrecificacao" class="btn-secundario">Cancelar</button><button type="button" id="btnConfirmarImportacaoPrecificacao">Confirmar importação</button></div>
+                </div>
+
+                <h2 class="titulo-secao-precificacao">Calculadora</h2>
                 <form id="formPrecificacao" class="form-grid">
-                    <div class="form-group full-width"><label>Produto cadastrado:</label><select id="calcProduto"><option value="">Cálculo manual</option></select></div>
-                    <div class="form-group">
-                        <label>Custo dos Materiais (R$):</label>
-                        <input type="text" inputmode="numeric" id="calcCustoMaterial" placeholder="0,00">
+                    <div class="form-group"><label>Produto de custos:</label><select id="calcProduto"><option value="">Cálculo manual</option></select></div>
+                    <div class="form-group"><label>Produto do catálogo:</label><select id="calcPrecoCatalogo"><option value="">Selecione um preço importado...</option></select></div>
+                    <div class="form-group"><label>Custo dos Materiais (R$):</label><input type="text" inputmode="numeric" id="calcCustoMaterial" placeholder="0,00"></div>
+                    <div class="form-group"><label>Custos Extras (Frete/Embalagem) (R$):</label><input type="text" inputmode="numeric" id="calcCustoExtra" placeholder="0,00"></div>
+                    <div class="form-group"><label>Margem de Lucro Desejada (%):</label><input type="number" id="calcMargem" placeholder="Ex: 50" min="0" step="0.01"></div>
+                    <div class="form-group"><label>Plataforma de venda:</label><select id="calcCanal"><option value="">Carregando plataformas...</option></select></div>
+                    <div class="form-group full-width" id="boxShopee"><label>Perfil da loja Shopee:</label><select id="calcShopeeTipo"><option value="cpf">Loja CPF (+ taxa fixa por item)</option><option value="cnpj">Loja CNPJ</option></select></div>
+                    <input type="hidden" id="calcTaxaLink" value="0">
+                    <div class="full-width resultado-precificacao">
+                        <h3>Preço de Venda Sugerido</h3><p id="calcPrecoFinal">R$ 0,00</p>
+                        <div><p>Custo: <strong id="calcCustoTotalOut">R$ 0,00</strong></p><p>Taxas: <strong id="calcTaxaOut">R$ 0,00</strong></p><p>Lucro líquido: <strong id="calcLucroOut">R$ 0,00</strong></p></div>
+                        <p id="calcPrecoAtual" class="calc-preco-atual"></p>
                     </div>
-                    <div class="form-group">
-                        <label>Custos Extras (Frete/Embalagem) (R$):</label>
-                        <input type="text" inputmode="numeric" id="calcCustoExtra" placeholder="0,00">
-                    </div>
-                    <div class="form-group">
-                        <label>Margem de Lucro Desejada (%):</label>
-                        <input type="number" id="calcMargem" placeholder="Ex: 50" min="0" step="1">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Onde você vai vender?</label>
-                        <select id="calcCanal">
-                            <option value="shopee">Shopee (Regra Escalonada)</option>
-                            <option value="link">Link de Pagamento / Maquininha</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group full-width" id="boxShopee" style="background: rgba(255, 87, 34, 0.05); padding: 20px; border-radius: 8px; border: 1px solid #FF5722;">
-                        <label style="color: #FF5722; font-weight: bold;">Tabela de Comissão Shopee:</label>
-                        <select id="calcShopeeTipo" style="margin-top: 10px; border-color: #FF5722;">
-                            <option value="cpf">Loja CPF (+ R$ 3,00 de taxa por pedido)</option>
-                            <option value="cnpj">Loja CNPJ (Sem taxa extra de R$ 3,00)</option>
-                        </select>
-                        <p style="font-size: 0.85rem; margin-top: 10px; color: var(--texto-mutado);">
-                            💡 O sistema vai cruzar o seu custo com a tabela oficial automaticamente para garantir o seu lucro.
-                        </p>
-                    </div>
-
-                    <div class="form-group full-width" id="boxLink" style="display: none; background: rgba(138, 43, 226, 0.05); padding: 20px; border-radius: 8px; border: 1px solid var(--cor-destaque);">
-                        <label style="color: var(--cor-destaque); font-weight: bold;">Taxa da Maquininha / Link (%):</label>
-                        <input type="number" id="calcTaxaLink" placeholder="Ex: 4.99" min="0" step="0.01" value="4.99" style="margin-top: 10px; border-color: var(--cor-destaque);">
-                    </div>
-                    
-                    <div class="full-width" style="margin-top: 20px; padding: 25px; background: var(--bg-fundo); border-radius: 12px; border: 1px dashed var(--cor-destaque); text-align: center;">
-                        <h3 style="color: var(--texto-mutado); font-size: 1.1rem; margin-bottom: 10px;">Preço de Venda Sugerido</h3>
-                        <p id="calcPrecoFinal" style="font-size: 3.5rem; font-weight: bold; color: var(--cor-sucesso);">R$ 0,00</p>
-                        
-                        <div style="display: flex; justify-content: center; gap: 30px; margin-top: 25px; font-size: 1rem; color: var(--texto-mutado); flex-wrap: wrap;">
-                            <p>Custo Fixo: <strong id="calcCustoTotalOut">R$ 0,00</strong></p>
-                            <p>Taxa Plataforma: <strong id="calcTaxaOut" style="color: var(--cor-alerta);">R$ 0,00</strong></p>
-                            <p>Seu Lucro Líquido: <strong id="calcLucroOut" style="color: var(--cor-destaque);">R$ 0,00</strong></p>
-                        </div>
-                    </div>
-
-                    <div class="form-group full-width botoes-acao">
-                        <button type="button" id="btnLimparCalc" class="btn-secundario">Limpar Valores</button>
-                    </div>
+                    <div class="form-group full-width botoes-acao"><button type="button" id="btnLimparCalc" class="btn-secundario">Limpar Valores</button></div>
                 </form>
+
+                <section class="catalogo-precificacao">
+                    <div class="secao-cabecalho"><div><h2>Catálogo de produtos e preços</h2><p>A carga inicial reúne as planilhas Shopee CPF e CNPJ sem misturar os perfis.</p></div><button type="button" id="btnNovoPrecoCatalogo">+ Adicionar produto/preço</button></div>
+                    <form id="formPrecoCatalogo" class="form-grid form-catalogo-preco" hidden>
+                        <input type="hidden" id="catalogoId">
+                        <div class="form-group"><label>SKU (opcional):</label><input id="catalogoSku"></div>
+                        <div class="form-group"><label>Produto:</label><input id="catalogoProduto" required></div>
+                        <div class="form-group"><label>Quantidade no kit:</label><input type="number" id="catalogoQuantidade" min="1" step="1" value="1" required></div>
+                        <div class="form-group"><label>Custo por unidade:</label><input id="catalogoCustoUnitario" inputmode="decimal" required></div>
+                        <div class="form-group"><label>Plataforma:</label><select id="catalogoPlataforma"></select></div>
+                        <div class="form-group"><label>Perfil:</label><select id="catalogoPerfil"><option value="GERAL">Geral</option><option value="CPF">CPF</option><option value="CNPJ">CNPJ</option></select></div>
+                        <div class="form-group"><label>Preço base:</label><input id="catalogoPrecoBase" inputmode="decimal" required></div>
+                        <div class="form-group"><label>Preço promocional:</label><input id="catalogoPrecoPromocional" inputmode="decimal"></div>
+                        <div class="form-group full-width botoes-acao"><button type="button" id="btnCancelarPrecoCatalogo" class="btn-secundario">Cancelar</button><button type="submit">Salvar no catálogo</button></div>
+                    </form>
+                    <div class="filtros-catalogo-preco"><input type="search" id="pesquisaCatalogoPreco" placeholder="Pesquisar produto, SKU ou plataforma..."><select id="filtroPlataformaCatalogo"><option value="">Todas as plataformas</option></select></div>
+                    <div class="table-responsive"><table class="tabela-extrato tabela-catalogo-preco"><thead><tr><th>Produto</th><th>Plataforma/perfil</th><th style="text-align:right">Custo total</th><th style="text-align:right">Preço base</th><th style="text-align:right">Promocional</th><th style="text-align:center">Ações</th></tr></thead><tbody id="corpoCatalogoPreco"><tr><td colspan="6">Carregando catálogo...</td></tr></tbody></table></div>
+                </section>
+
+                <section class="plataformas-precificacao">
+                    <div class="secao-cabecalho"><div><h2>Plataformas e taxas</h2><p>As taxas podem ser alteradas quando cada plataforma atualizar suas regras.</p></div><button type="button" id="btnNovaPlataformaPreco">+ Nova plataforma</button></div>
+                    <form id="formPlataformaPreco" class="form-grid">
+                        <input type="hidden" id="plataformaId">
+                        <div class="form-group"><label>Nome:</label><input id="plataformaNome" required></div>
+                        <div class="form-group"><label>Regra:</label><select id="plataformaTipo"><option value="percentual">Percentual padrão</option><option value="shopee_faixas">Faixas Shopee</option></select></div>
+                        <div class="form-group"><label>Comissão padrão (%):</label><input type="number" id="plataformaComissao" min="0" max="99" step="0.01"></div>
+                        <div class="form-group"><label>Taxa fixa padrão (R$):</label><input type="number" id="plataformaTaxaFixa" min="0" step="0.01"></div>
+                        <div class="form-group"><label>Taxa de pagamento (%):</label><input type="number" id="plataformaPagamento" min="0" max="99" step="0.01"></div>
+                        <div class="form-group"><label>Outras taxas (%):</label><input type="number" id="plataformaOutras" min="0" max="99" step="0.01"></div>
+                        <div id="camposFaixasShopee" class="full-width grade-faixas-shopee">
+                            <div class="form-group"><label>Comissão abaixo R$ 80 (%):</label><input type="number" id="plataformaComissaoBaixa" min="0" max="99" step="0.01"></div>
+                            <div class="form-group"><label>Fixa até R$ 79,99:</label><input type="number" id="plataformaFixa79" min="0" step="0.01"></div>
+                            <div class="form-group"><label>Fixa R$ 80–99,99:</label><input type="number" id="plataformaFixa99" min="0" step="0.01"></div>
+                            <div class="form-group"><label>Fixa R$ 100–199,99:</label><input type="number" id="plataformaFixa199" min="0" step="0.01"></div>
+                            <div class="form-group"><label>Fixa R$ 200–499,99:</label><input type="number" id="plataformaFixa499" min="0" step="0.01"></div>
+                            <div class="form-group"><label>Adicional CPF (R$):</label><input type="number" id="plataformaAdicionalCpf" min="0" step="0.01"></div>
+                        </div>
+                        <div class="form-group full-width botoes-acao"><button type="button" id="btnCancelarPlataformaPreco" class="btn-secundario">Limpar</button><button type="submit">Salvar plataforma e taxas</button></div>
+                        <p id="mensagemPlataformaPreco" class="full-width mensagem-precificacao"></p>
+                    </form>
+                    <div id="listaPlataformasPreco" class="lista-plataformas-preco"></div>
+                </section>
             </div>
 
             <div class="card" id="tela-resumo" style="display: none;">
@@ -758,7 +772,7 @@
             <button type="submit" aria-label="Enviar pergunta">➤</button>
         </form>
     </section>
-    <script src="script.js?v=20260727-1"></script>
+    <script src="script.js?v=20260727-2"></script>
     <script src="painelPedidos.js?v=20260725-2"></script>
     <script src="stellinha.js?v=20260724-5"></script>
     <script src="chamados.js?v=20260724-2"></script>
