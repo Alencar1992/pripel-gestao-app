@@ -28,6 +28,19 @@ new Function(chamados);
   'listar_produtos', 'salvar_produto', 'listar_despesas', 'listar_vendas'
 ].forEach(acao => assert.ok(script.includes(acao), `Ação ausente em script.js: ${acao}`));
 
+[
+  'arquivoRelatorioShopee', 'resultadoShopee', 'shopeeReceita',
+  'shopeeTaxas', 'shopeeLiberado', 'shopeeResultado', 'corpoHistoricoShopee'
+].forEach(id => assert.match(html, new RegExp(`id=["']${id}["']`), `Controle financeiro Shopee ausente: ${id}`));
+assert.ok(script.includes('analisarRelatorioShopee'), 'Leitor do relatório Income ausente.');
+assert.ok(script.includes("normalizarTextoFinanceiro(nome) === 'summary'"), 'Importação não localiza a aba Summary por título.');
+assert.ok(script.includes("normalizarTextoFinanceiro(nome) === 'renda'"), 'Importação não localiza a aba Renda por título.');
+assert.ok(script.includes("valorPorRotulo(resumo, '3. Quantidade Total Liberada')"), 'Valor efetivamente liberado não é coletado.');
+assert.ok(script.includes("acao: 'salvar_relatorio_shopee'"), 'Persistência do relatório Shopee ausente.');
+assert.ok(script.includes("acao: 'listar_relatorios_shopee'"), 'Histórico de relatórios Shopee ausente.');
+assert.ok(script.includes('resultado acima é parcial'), 'Interface não alerta quando faltam custos de produtos.');
+assert.match(css, /\.shopee-importacao\s*\{/, 'Estilos da conciliação Shopee ausentes.');
+
 assert.ok(script.includes('definirMenuRecolhido(true)'), 'Menu não recolhe automaticamente após navegar.');
 assert.match(html, /class="menu-icon"/, 'Ícones vetoriais do menu ausentes.');
 assert.match(css, /\.sidebar\.recolhida\s*\{[^}]*width:\s*76px/s, 'Modo compacto do menu lateral ausente.');
