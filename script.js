@@ -739,20 +739,25 @@ async function processarArquivoShopee(arquivo) {
         const custos = calcularCustosRelatorio(relatorio, produtos);
         const despesasInternas = despesasPagasNoPeriodo(relatorio.inicio, relatorio.fim);
         const analise = renderizarAnaliseShopee(relatorio, custos, despesasInternas);
-        const resposta = await chamarApi({
-            acao: 'salvar_relatorio_shopee',
-            relatorio: {
-                arquivo: relatorio.arquivo, inicio: relatorio.inicio, fim: relatorio.fim,
-                receita: relatorio.receita, taxasShopee: relatorio.taxasShopee, liberado: relatorio.liberado,
-                pedidos: relatorio.pedidos, custosIdentificados: custos.custo, despesasInternas,
-                resultado: analise.resultado, analiseCompleta: analise.completo,
-                componentes: relatorio.componentes, usuario: obterUserLogado()
-            }
-        });
-        if (resposta.status !== 'sucesso') throw new Error(resposta.mensagem || 'O relatório foi analisado, mas não pôde ser salvo.');
-        mensagem.style.color = 'var(--cor-sucesso)';
-        mensagem.textContent = `✅ Relatório conciliado e salvo. ${relatorio.pedidos} pedidos encontrados.`;
-        await carregarRelatoriosShopee();
+        try {
+            const resposta = await chamarApi({
+                acao: 'salvar_relatorio_shopee',
+                relatorio: {
+                    arquivo: relatorio.arquivo, inicio: relatorio.inicio, fim: relatorio.fim,
+                    receita: relatorio.receita, taxasShopee: relatorio.taxasShopee, liberado: relatorio.liberado,
+                    pedidos: relatorio.pedidos, custosIdentificados: custos.custo, despesasInternas,
+                    resultado: analise.resultado, analiseCompleta: analise.completo,
+                    componentes: relatorio.componentes, usuario: obterUserLogado()
+                }
+            });
+            if (resposta.status !== 'sucesso') throw new Error(resposta.mensagem || 'Persistência indisponível.');
+            mensagem.style.color = 'var(--cor-sucesso)';
+            mensagem.textContent = `✅ Relatório conciliado e salvo. ${relatorio.pedidos} pedidos encontrados.`;
+            await carregarRelatoriosShopee();
+        } catch (_) {
+            mensagem.style.color = '#f4b942';
+            mensagem.textContent = `⚠️ Análise concluída para ${relatorio.pedidos} pedidos. Publique a versão 19 do backend para salvar o histórico.`;
+        }
     } catch (erro) {
         mensagem.style.color = 'var(--cor-alerta)';
         mensagem.textContent = `❌ ${erro.message}`;
