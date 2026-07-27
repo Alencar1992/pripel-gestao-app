@@ -50,6 +50,7 @@ O GitHub Pages deve usar o branch `main` e a raiz do repositório. Depois de uma
 - `etapas_producao`
 - `historico_producao`
 - `parametros`
+- `shopee_financeiro`
 
 Não altere a ordem das colunas manualmente. Novas categorias, etapas e taxas devem ser cadastradas pelo aplicativo.
 
@@ -60,6 +61,15 @@ O resumo utiliza:
 `Receitas confirmadas - despesas pagas - custos dos produtos`
 
 O custo dos produtos é gravado na venda. Para registros antigos sem custo, o resumo tenta localizar o produto atual pelo nome e calcular matéria-prima mais custos extras.
+
+## Conciliação financeira da Shopee
+
+1. Baixe na Shopee o relatório de rendimento no formato Excel (`Income...xlsx`).
+2. Abra **Gestão Financeira > Despesas**.
+3. Em **Resultado real da Shopee**, clique em **Importar relatório**.
+4. Confira receita bruta, taxas da Shopee, valor liberado, despesas internas pagas e custos identificados.
+
+O sistema lê as abas `Summary` e `Renda` pelos títulos do relatório. O cálculo parte do valor efetivamente liberado e não desconta as taxas da Shopee novamente. Se algum produto do relatório ainda não estiver associado a um custo cadastrado, o resultado será marcado como **Análise parcial**, evitando indicar lucro incorreto.
 
 ## Rotina de backup
 
@@ -91,6 +101,7 @@ node tests/smoke.test.js
 11. Alterar taxas, prazo e categorias em Parâmetros.
 12. Criar um backup e verificar as abas ocultas.
 13. Repetir os fluxos em computador e celular.
+14. Importar um relatório `Income` e conferir os totais com a aba `Summary`.
 
 ## Diagnóstico
 
