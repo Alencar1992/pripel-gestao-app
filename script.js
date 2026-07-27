@@ -153,7 +153,7 @@ function trocarTelaApp(telaAtivaId) {
     // Auto-carrega fluxo de caixa ao entrar na tela
     if (telaAtivaId === 'fluxo') carregarFluxoCaixa();
     if (telaAtivaId === 'venda') carregarVendas();
-    if (telaAtivaId === 'despesa') carregarDespesas();
+    if (telaAtivaId === 'despesa') { carregarDespesas(); carregarRelatoriosShopee(); }
     if (telaAtivaId === 'cronograma' && typeof carregarDadosDoBanco === 'function') carregarDadosDoBanco('PRODUÇÃO');
     if (telaAtivaId === 'custos' || telaAtivaId === 'precificacao') carregarProdutos();
     if (telaAtivaId === 'resumo') carregarResumoMensal();
@@ -563,6 +563,229 @@ document.getElementById('btnCancelarEdicaoDespesa').addEventListener('click', li
 document.getElementById('btnLimparFiltrosDespesa').addEventListener('click', () => {
     ['pesquisaDespesas', 'filtroCategoriaDespesa', 'filtroDespesaInicio', 'filtroDespesaFim', 'filtroStatusDespesa'].forEach(id => document.getElementById(id).value = '');
     renderizarDespesas();
+});
+
+// =======================================================
+// CONCILIAÇÃO SHOPEE — RELATÓRIO INCOME
+// =======================================================
+function normalizarTextoFinanceiro(valor) {
+    return String(valor == null ? '' : valor)
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function numeroFinanceiro(valor) {
+    if (typeof valor === 'number' && Number.isFinite(valor)) return valor;
+    const texto = String(valor == null ? '' : valor).trim();
+    if (!texto) return 0;
+    const normalizado = texto.includes(',')
+        ? texto.replace(/\./g, '').replace(',', '.')
+        : texto.replace(/[^\d.-]/g, '');
+    const numero = Number(normalizado.replace(/[^\d.-]/g, ''));
+    return Number.isFinite(numero) ? numero : 0;
+}
+
+function dataRelatorioIso(valor) {
+    if (valor instanceof Date && !Number.isNaN(valor.getTime())) return valor.toISOString().slice(0, 10);
+    if (typeof valor === 'number' && window.XLSX && XLSX.SSF) {
+        const partes = XLSX.SSF.parse_date_code(valor);
+        if (partes) return `${partes.y}-${String(partes.m).padStart(2, '0')}-${String(partes.d).padStart(2, '0')}`;
+    }
+    const texto = String(valor || '').trim();
+    const iso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+    const br = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    return br ? `${br[3]}-${br[2]}-${br[1]}` : '';
+}
+
+function formatarDataFinanceira(valorIso) {
+    const partes = String(valorIso || '').split('-');
+    return partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : '—';
+}
+
+function valorPorRotulo(matriz, rotulo) {
+    const alvo = normalizarTextoFinanceiro(rotulo);
+    for (const linha of matriz) {
+        const indice = linha.findIndex(celula => normalizarTextoFinanceiro(celula) === alvo);
+        if (indice < 0) continue;
+        const numeros = linha.slice(indice + 1).filter(celula => celula !== '' && celula != null).map(numeroFinanceiro);
+        if (numeros.length) return numeros[numeros.length - 1];
+    }
+    return 0;
+}
+
+function analisarRelatorioShopee(workbook, nomeArquivo) {
+    const resumoNome = workbook.SheetNames.find(nome => normalizarTextoFinanceiro(nome) === 'summary');
+    const rendaNome = workbook.SheetNames.find(nome => normalizarTextoFinanceiro(nome) === 'renda');
+    if (!resumoNome || !rendaNome) throw new Error('Relatório incompatível. As abas Summary e Renda são obrigatórias.');
+    const resumo = XLSX.utils.sheet_to_json(workbook.Sheets[resumoNome], { header: 1, raw: true, defval: '' });
+    const renda = XLSX.utils.sheet_to_json(workbook.Sheets[rendaNome], { header: 1, raw: true, defval: '' });
+    const inicio = dataRelatorioIso(resumo.find(linha => normalizarTextoFinanceiro(linha[0]) === 'de')?.[1]);
+    const fim = dataRelatorioIso(resumo.find(linha => normalizarTextoFinanceiro(linha[0]) === 'para')?.[1]);
+    if (!inicio || !fim) throw new Error('Não foi possível identificar o período do relatório.');
+
+    const indiceCabecalho = renda.findIndex(linha => linha.some(celula => normalizarTextoFinanceiro(celula) === 'id do pedido'));
+    if (indiceCabecalho < 0) throw new Error('A aba Renda não contém o cabeçalho ID do pedido.');
+    const cabecalhos = renda[indiceCabecalho].map(normalizarTextoFinanceiro);
+    const coluna = titulo => cabecalhos.indexOf(normalizarTextoFinanceiro(titulo));
+    const colTipo = coluna('Ver');
+    const colPedido = coluna('ID do pedido');
+    const colProduto = coluna('Nome do produto');
+    const itens = renda.slice(indiceCabecalho + 1)
+        .filter(linha => normalizarTextoFinanceiro(linha[colTipo]) === 'sku')
+        .map(linha => ({ pedido: String(linha[colPedido] || '').trim(), produto: String(linha[colProduto] || '').trim() }))
+        .filter(item => item.pedido);
+    const pedidos = new Set(renda.slice(indiceCabecalho + 1)
+        .filter(linha => normalizarTextoFinanceiro(linha[colTipo]) === 'order')
+        .map(linha => String(linha[colPedido] || '').trim()).filter(Boolean));
+
+    const componentes = [
+        ['Preço original dos produtos', 'Preço original do produto'],
+        ['Promoções dos produtos', 'A promoção do seu produto'],
+        ['Cupons', 'Cupom'],
+        ['Taxa de comissão', 'Taxa de comissão líquida'],
+        ['Taxa de serviço', 'Taxa de serviço líquida'],
+        ['Comissão de afiliados', 'Taxa de comissão Afiliados do Vendedor'],
+        ['Acréscimo de pagamento', 'Acréscimo por Método de Pagamento (AMP)'],
+        ['Dedução de pagamento', 'Dedução de AMP']
+    ].map(([nome, rotulo]) => ({ nome, valor: valorPorRotulo(resumo, rotulo) }));
+    return {
+        arquivo: nomeArquivo,
+        inicio,
+        fim,
+        receita: valorPorRotulo(resumo, '1. Receita Total'),
+        taxasShopee: Math.abs(valorPorRotulo(resumo, '2. Despesas Totais')),
+        liberado: valorPorRotulo(resumo, '3. Quantidade Total Liberada'),
+        pedidos: pedidos.size,
+        itens,
+        componentes
+    };
+}
+
+async function obterProdutosParaAnalise() {
+    if (produtosCarregados.length) return produtosCarregados;
+    const resposta = await chamarApi({ acao: 'listar_produtos' });
+    if (resposta.status === 'sucesso' && Array.isArray(resposta.produtos)) produtosCarregados = resposta.produtos;
+    return produtosCarregados;
+}
+
+function calcularCustosRelatorio(relatorio, produtos) {
+    let custo = 0;
+    let identificados = 0;
+    const naoIdentificados = [];
+    relatorio.itens.forEach(item => {
+        const nomeItem = normalizarTextoFinanceiro(item.produto);
+        const produto = produtos.find(cadastrado => {
+            const nomeCadastrado = normalizarTextoFinanceiro(cadastrado.nome);
+            return nomeCadastrado && (nomeItem === nomeCadastrado || nomeItem.includes(nomeCadastrado) || nomeCadastrado.includes(nomeItem));
+        });
+        if (!produto) { naoIdentificados.push(item.produto || `Pedido ${item.pedido}`); return; }
+        custo += numeroFinanceiro(produto.materiaPrima) + numeroFinanceiro(produto.custosExtras);
+        identificados++;
+    });
+    return { custo, identificados, naoIdentificados };
+}
+
+function despesasPagasNoPeriodo(inicio, fim) {
+    return despesasCarregadas
+        .filter(item => item.status === 'Pago' && item.vencimento >= inicio && item.vencimento <= fim)
+        .reduce((soma, item) => soma + numeroFinanceiro(item.valor), 0);
+}
+
+function renderizarAnaliseShopee(relatorio, custos, despesasInternas) {
+    const resultado = relatorio.liberado - custos.custo - despesasInternas;
+    const completo = relatorio.itens.length > 0 && custos.identificados === relatorio.itens.length;
+    document.getElementById('resultadoShopee').hidden = false;
+    document.getElementById('shopeePeriodo').textContent = `${formatarDataFinanceira(relatorio.inicio)} a ${formatarDataFinanceira(relatorio.fim)} · ${relatorio.pedidos} pedidos`;
+    document.getElementById('shopeeReceita').textContent = formatarMoeda(relatorio.receita);
+    document.getElementById('shopeeTaxas').textContent = formatarMoeda(relatorio.taxasShopee);
+    document.getElementById('shopeeLiberado').textContent = formatarMoeda(relatorio.liberado);
+    document.getElementById('shopeeDespesasInternas').textContent = formatarMoeda(despesasInternas);
+    document.getElementById('shopeeCustos').textContent = formatarMoeda(custos.custo);
+    const saida = document.getElementById('shopeeResultado');
+    saida.textContent = formatarMoeda(resultado);
+    saida.style.color = resultado >= 0 ? 'var(--cor-sucesso)' : 'var(--cor-alerta)';
+    const diagnostico = document.getElementById('shopeeDiagnostico');
+    diagnostico.className = `shopee-diagnostico ${completo ? (resultado >= 0 ? 'lucro' : 'prejuizo') : 'incompleto'}`;
+    diagnostico.textContent = completo ? (resultado >= 0 ? 'LUCRO NO PERÍODO' : 'PREJUÍZO NO PERÍODO') : 'ANÁLISE PARCIAL';
+    const alerta = document.getElementById('alertaCustosShopee');
+    alerta.textContent = completo
+        ? 'Todos os itens do relatório foram associados aos custos cadastrados.'
+        : `${custos.naoIdentificados.length} de ${relatorio.itens.length} item(ns) ainda não possuem custo identificado. O resultado acima é parcial; cadastre os produtos em Produtos e Custos para obter o lucro real.`;
+    const corpo = document.getElementById('corpoComposicaoShopee');
+    corpo.replaceChildren();
+    [...relatorio.componentes,
+        { nome: 'Despesas internas pagas', valor: -despesasInternas },
+        { nome: 'Custos de produção identificados', valor: -custos.custo }
+    ].forEach(item => {
+        const tr = document.createElement('tr');
+        adicionarCelula(tr, item.nome);
+        const valor = adicionarCelula(tr, formatarMoeda(item.valor));
+        valor.style.textAlign = 'right';
+        corpo.appendChild(tr);
+    });
+    return { resultado, completo };
+}
+
+async function processarArquivoShopee(arquivo) {
+    const mensagem = document.getElementById('mensagemImportacaoShopee');
+    mensagem.style.color = 'var(--texto-mutado)';
+    mensagem.textContent = '⏳ Lendo e conciliando o relatório...';
+    try {
+        if (!window.XLSX) throw new Error('Leitor de planilhas indisponível. Atualize a página e tente novamente.');
+        const workbook = XLSX.read(await arquivo.arrayBuffer(), { type: 'array', cellDates: true });
+        const relatorio = analisarRelatorioShopee(workbook, arquivo.name);
+        const produtos = await obterProdutosParaAnalise();
+        const custos = calcularCustosRelatorio(relatorio, produtos);
+        const despesasInternas = despesasPagasNoPeriodo(relatorio.inicio, relatorio.fim);
+        const analise = renderizarAnaliseShopee(relatorio, custos, despesasInternas);
+        const resposta = await chamarApi({
+            acao: 'salvar_relatorio_shopee',
+            relatorio: {
+                arquivo: relatorio.arquivo, inicio: relatorio.inicio, fim: relatorio.fim,
+                receita: relatorio.receita, taxasShopee: relatorio.taxasShopee, liberado: relatorio.liberado,
+                pedidos: relatorio.pedidos, custosIdentificados: custos.custo, despesasInternas,
+                resultado: analise.resultado, analiseCompleta: analise.completo,
+                componentes: relatorio.componentes, usuario: obterUserLogado()
+            }
+        });
+        if (resposta.status !== 'sucesso') throw new Error(resposta.mensagem || 'O relatório foi analisado, mas não pôde ser salvo.');
+        mensagem.style.color = 'var(--cor-sucesso)';
+        mensagem.textContent = `✅ Relatório conciliado e salvo. ${relatorio.pedidos} pedidos encontrados.`;
+        await carregarRelatoriosShopee();
+    } catch (erro) {
+        mensagem.style.color = 'var(--cor-alerta)';
+        mensagem.textContent = `❌ ${erro.message}`;
+    }
+}
+
+async function carregarRelatoriosShopee() {
+    const corpo = document.getElementById('corpoHistoricoShopee');
+    try {
+        const resposta = await chamarApi({ acao: 'listar_relatorios_shopee' });
+        if (resposta.status !== 'sucesso' || !Array.isArray(resposta.relatorios)) throw new Error(resposta.mensagem || 'Histórico indisponível.');
+        corpo.replaceChildren();
+        if (!resposta.relatorios.length) {
+            const tr = document.createElement('tr'); const td = adicionarCelula(tr, 'Nenhum relatório salvo.'); td.colSpan = 5; corpo.appendChild(tr); return;
+        }
+        resposta.relatorios.forEach(item => {
+            const tr = document.createElement('tr');
+            adicionarCelula(tr, `${item.inicioF} a ${item.fimF}`);
+            adicionarCelula(tr, item.arquivo);
+            const receita = adicionarCelula(tr, formatarMoeda(item.receita)); receita.style.textAlign = 'right';
+            const liberado = adicionarCelula(tr, formatarMoeda(item.liberado)); liberado.style.textAlign = 'right';
+            adicionarCelula(tr, item.importadoEmF);
+            corpo.appendChild(tr);
+        });
+    } catch (erro) {
+        corpo.replaceChildren();
+        const tr = document.createElement('tr'); const td = adicionarCelula(tr, 'Publique a nova versão do backend para habilitar o histórico.'); td.colSpan = 5; corpo.appendChild(tr);
+    }
+}
+
+document.getElementById('arquivoRelatorioShopee').addEventListener('change', event => {
+    const arquivo = event.target.files?.[0];
+    if (arquivo) processarArquivoShopee(arquivo).finally(() => { event.target.value = ''; });
 });
 
 // =======================================================
