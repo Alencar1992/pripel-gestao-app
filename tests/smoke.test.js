@@ -41,6 +41,22 @@ assert.ok(script.includes("acao: 'listar_relatorios_shopee'"), 'Histórico de re
 assert.ok(script.includes('resultado acima é parcial'), 'Interface não alerta quando faltam custos de produtos.');
 assert.match(css, /\.shopee-importacao\s*\{/, 'Estilos da conciliação Shopee ausentes.');
 
+[
+  'arquivoPrecificacao', 'calcPrecoCatalogo', 'formPrecoCatalogo',
+  'corpoCatalogoPreco', 'formPlataformaPreco', 'listaPlataformasPreco',
+  'plataformaComissaoBaixa', 'plataformaFixa79', 'plataformaAdicionalCpf'
+].forEach(id => assert.match(html, new RegExp(`id=["']${id}["']`), `Controle de precificação ausente: ${id}`));
+[
+  'listar_plataformas_precificacao', 'salvar_plataforma_precificacao',
+  'listar_catalogo_precificacao', 'importar_catalogo_precificacao',
+  'salvar_preco_catalogo', 'editar_preco_catalogo', 'excluir_preco_catalogo'
+].forEach(acao => assert.ok(script.includes(acao), `Ação de precificação ausente: ${acao}`));
+assert.ok(script.includes("normalizarTextoFinanceiro(nomeAba).includes('materiais e insumos')"), 'Importador não ignora corretamente a aba de materiais.');
+assert.ok(script.includes("normalizarTextoFinanceiro(celula) === 'produto'"), 'Importador não localiza a coluna Produto pelo título.');
+assert.ok(script.includes("item.perfil === 'CPF'"), 'Calculadora não diferencia os perfis CPF e CNPJ.');
+assert.ok(script.includes("plataforma.tipo === 'shopee_faixas'"), 'Regra escalonada da Shopee ausente.');
+assert.match(css, /\.catalogo-precificacao\s*,\s*\.plataformas-precificacao/, 'Layout da central de preços ausente.');
+
 assert.ok(script.includes('definirMenuRecolhido(true)'), 'Menu não recolhe automaticamente após navegar.');
 assert.match(html, /class="menu-icon"/, 'Ícones vetoriais do menu ausentes.');
 assert.match(css, /\.sidebar\.recolhida\s*\{[^}]*width:\s*76px/s, 'Modo compacto do menu lateral ausente.');
