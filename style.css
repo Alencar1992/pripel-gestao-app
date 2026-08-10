@@ -1196,6 +1196,27 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .btn-cancelar-chamado { background:#9f2632; }
 .mensagem-atendimento { min-height:22px; margin-top:9px; color:#ffc34d; font-weight:700; }
 
+.stellinha-anexo-preview {
+    align-self:flex-start; width:100%; padding:9px; display:grid; gap:7px;
+    border:1px solid var(--borda); border-radius:12px; background:var(--bg-fundo);
+}
+.stellinha-anexo-preview img {
+    width:100%; max-height:190px; object-fit:contain; border-radius:8px; background:#0d0d10;
+}
+.stellinha-anexo-preview small { color:var(--texto-mutado); overflow-wrap:anywhere; }
+.chamado-anexo a:first-of-type {
+    margin-top:5px; display:grid; gap:7px; color:var(--texto-claro); text-decoration:none;
+}
+.chamado-anexo img {
+    width:min(100%,560px); max-height:420px; object-fit:contain;
+    border:1px solid var(--borda); border-radius:10px; background:#0d0d10;
+}
+.chamado-anexo small { color:var(--texto-mutado); }
+.chamado-anexo .btn-baixar-anexo {
+    width:max-content; margin-top:7px; padding:8px 12px;
+    border-radius:8px; background:var(--cor-destaque); color:#fff; font-weight:700; text-decoration:none;
+}
+
 /* Aviso insistente de teste solicitado */
 .notificacao-teste-overlay {
     position:fixed; inset:0; z-index:2500; display:grid; place-items:center; padding:20px;
