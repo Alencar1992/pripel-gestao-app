@@ -81,6 +81,103 @@
     input.value = "";
   }
 
+  function exibirImagemAnexo(dados, nome) {
+    if (!/^data:image\/(?:jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(String(dados || ""))) return;
+    const bloco = document.createElement("div");
+    bloco.className = "stellinha-anexo-preview";
+    const imagem = document.createElement("img");
+    imagem.src = dados;
+    imagem.alt = "Pré-visualização do anexo " + (nome || "");
+    bloco.appendChild(imagem);
+    const legenda = document.createElement("small");
+    legenda.textContent = nome || "Imagem anexada";
+    bloco.appendChild(legenda);
+    mensagens.appendChild(bloco);
+    mensagens.scrollTop = mensagens.scrollHeight;
+  }
+
+  function prepararImagemAnexo(arquivo) {
+    return new Promise((resolve, reject) => {
+      if (!arquivo || !/^image\/(?:jpeg|png|webp)$/i.test(arquivo.type)) {
+        reject(new Error("Selecione uma imagem JPG, PNG ou WEBP."));
+        return;
+      }
+      if (arquivo.size > 12 * 1024 * 1024) {
+        reject(new Error("A imagem pode ter no máximo 12 MB."));
+        return;
+      }
+      const leitor = new FileReader();
+      leitor.onerror = () => reject(new Error("Não foi possível ler a imagem."));
+      leitor.onload = () => {
+        const imagem = new Image();
+        imagem.onerror = () => reject(new Error("O arquivo selecionado não é uma imagem válida."));
+        imagem.onload = () => {
+          const canvas = document.createElement("canvas");
+          const contexto = canvas.getContext("2d");
+          for (let tentativa = 0; tentativa < 10; tentativa++) {
+            const limite = Math.round(1200 * Math.pow(0.84, tentativa));
+            const escala = Math.min(1, limite / Math.max(imagem.width, imagem.height));
+            canvas.width = Math.max(1, Math.round(imagem.width * escala));
+            canvas.height = Math.max(1, Math.round(imagem.height * escala));
+            contexto.clearRect(0, 0, canvas.width, canvas.height);
+            contexto.drawImage(imagem, 0, 0, canvas.width, canvas.height);
+            const qualidade = Math.max(0.42, 0.82 - tentativa * 0.055);
+            const dados = canvas.toDataURL("image/jpeg", qualidade);
+            if (dados.length <= 45000) {
+              resolve({ nome: arquivo.name.replace(/[^a-z0-9._-]/gi, "_"), tipo: "image/jpeg", dados });
+              return;
+            }
+          }
+          reject(new Error("Não foi possível reduzir a imagem. Escolha outra foto ou print."));
+        };
+        imagem.src = leitor.result;
+      };
+      leitor.readAsDataURL(arquivo);
+    });
+  }
+
+  function solicitarAnexoChamado() {
+    desabilitarPergunta();
+    msg("Deseja anexar uma foto ou print do erro? O anexo é opcional e ajuda o suporte a entender o problema.");
+    acoes.replaceChildren();
+
+    const selecionar = document.createElement("button");
+    selecionar.type = "button";
+    selecionar.className = "stellinha-acao-principal";
+    selecionar.textContent = "📎 Adicionar foto/print";
+
+    const continuar = document.createElement("button");
+    continuar.type = "button";
+    continuar.textContent = "Continuar sem imagem";
+
+    const arquivo = document.createElement("input");
+    arquivo.type = "file";
+    arquivo.accept = "image/png,image/jpeg,image/webp";
+    arquivo.hidden = true;
+
+    selecionar.addEventListener("click", () => arquivo.click());
+    continuar.addEventListener("click", confirmarChamado);
+    arquivo.addEventListener("change", async () => {
+      if (!arquivo.files || !arquivo.files[0]) return;
+      selecionar.disabled = true;
+      selecionar.textContent = "Preparando imagem...";
+      try {
+        const anexo = await prepararImagemAnexo(arquivo.files[0]);
+        chamado.anexoNome = anexo.nome;
+        chamado.anexoTipo = anexo.tipo;
+        chamado.anexoBase64 = anexo.dados;
+        msg("Foto/print anexado com sucesso.", "user");
+        confirmarChamado();
+      } catch (erro) {
+        msg(erro.message);
+        selecionar.disabled = false;
+        selecionar.textContent = "📎 Escolher outra imagem";
+      }
+    });
+
+    acoes.append(selecionar, continuar, arquivo);
+  }
+
   async function carregarBaseExterna() {
     try {
       const resultado = await chamarApi({ acao: "listar_base_conhecimento" });
@@ -155,7 +252,7 @@
 
   function perguntarSuporte() {
     const atual = perguntasSuporte[etapaSuporte];
-    if (!atual) return confirmarChamado();
+    if (!atual) return solicitarAnexoChamado();
     msg(atual[1]);
     if (atual[2]) {
       desabilitarPergunta();
@@ -174,11 +271,23 @@
 
   function confirmarChamado() {
     desabilitarPergunta();
-    const resumo = `Revise o chamado:\n\nMódulo: ${chamado.modulo}\nTipo: ${chamado.tipo}\nProblema: ${chamado.descricao}\nUrgência: ${chamado.urgencia}\nContato: ${chamado.contato}`;
+    const resumo = `Revise o chamado:\n\nMódulo: ${chamado.modulo}\nTipo: ${chamado.tipo}\nProblema: ${chamado.descricao}\nUrgência: ${chamado.urgencia}\nContato: ${chamado.contato}\nAnexo: ${chamado.anexoNome || "sem imagem"}`;
     msg(resumo);
-    botoes(["Enviar chamado", "Cancelar"], async opcao => {
+    if (chamado.anexoBase64) exibirImagemAnexo(chamado.anexoBase64, chamado.anexoNome);
+    const opcoes = chamado.anexoBase64
+      ? ["Enviar chamado", "Trocar imagem", "Remover imagem", "Cancelar"]
+      : ["Enviar chamado", "Adicionar imagem", "Cancelar"];
+    botoes(opcoes, async opcao => {
       msg(opcao, "user");
       if (opcao === "Cancelar") return menuInicial();
+      if (opcao === "Trocar imagem" || opcao === "Adicionar imagem") return solicitarAnexoChamado();
+      if (opcao === "Remover imagem") {
+        delete chamado.anexoNome;
+        delete chamado.anexoTipo;
+        delete chamado.anexoBase64;
+        confirmarChamado();
+        return;
+      }
       await enviarChamado();
     }, true);
   }
