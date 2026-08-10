@@ -39,6 +39,12 @@
     return "status-ticket status-" + String(status || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, "-");
   }
 
+  function anexoImagemSeguro(chamado) {
+    const dados = String(chamado?.anexoBase64 || "");
+    if (dados.length > 60000) return "";
+    return /^data:image\/(?:jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(dados) ? dados : "";
+  }
+
   function renderizarIndicadores() {
     const box = document.getElementById("indicadoresChamados");
     const status = ["ABERTO", "EM ANÁLISE", "EM TRATAMENTO", "AGUARDANDO TESTE", "CONCLUÍDO", "CANCELADO"];
@@ -94,6 +100,8 @@
     document.getElementById("btnCancelarChamadoUsuario").hidden = !podeCancelar;
     document.getElementById("btnFinalizarChamadoUsuario").hidden = !podeFinalizar;
     document.getElementById("mensagemAtendimentoChamado").textContent = "";
+    const anexoSeguro = anexoImagemSeguro(chamadoSelecionado);
+    const nomeAnexo = escapar(chamadoSelecionado.anexoNome || "anexo-chamado.jpg");
     document.getElementById("chamadoDetalhesModal").innerHTML = `
       <div><span>Usuário</span><strong>${escapar(chamadoSelecionado.usuario)}</strong></div>
       <div><span>Urgência</span><strong>${escapar(chamadoSelecionado.urgencia)}</strong></div>
@@ -101,6 +109,7 @@
       <div class="full"><span>Passos realizados</span><strong>${escapar(chamadoSelecionado.passos)}</strong></div>
       <div><span>Esperado</span><strong>${escapar(chamadoSelecionado.esperado)}</strong></div>
       <div><span>Encontrado</span><strong>${escapar(chamadoSelecionado.encontrado)}</strong></div>
+      ${anexoSeguro ? `<div class="full chamado-anexo"><span>Foto/print anexado</span><a href="${anexoSeguro}" target="_blank" rel="noopener" title="Abrir imagem em tamanho completo"><img src="${anexoSeguro}" alt="Anexo do chamado"><strong>${nomeAnexo}</strong><small>Clique para ampliar</small></a><a class="btn-baixar-anexo" href="${anexoSeguro}" download="${nomeAnexo}">Baixar imagem</a></div>` : ""}
       ${chamadoSelecionado.mensagemCliente ? `<div class="full"><span>Retorno para teste</span><strong>${escapar(chamadoSelecionado.mensagemCliente)}</strong></div>` : ""}`;
     modal.hidden = false;
   }
