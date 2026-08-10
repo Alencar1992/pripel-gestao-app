@@ -1035,7 +1035,7 @@ document.getElementById("ppBtnSalvarModal").addEventListener("click", async func
 
   try {
     dadosAtualizados.dataPostagem = carregarEdicaoPedido(idPedidoEmEdicao).dataPostagem || "";
-    const resultado = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedidoEmEdicao, etapa: carregarStatusPedido(idPedidoEmEdicao), crianca: dadosAtualizados.nomeCrianca, idade: dadosAtualizados.idade, observacoes: dadosAtualizados.observacoes, dataPostagem: dadosAtualizados.dataPostagem, usuario: obterUserLogado() } });
+    const resultado = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedidoEmEdicao, etapa: carregarStatusPedido(idPedidoEmEdicao) || "AGUARDANDO", crianca: dadosAtualizados.nomeCrianca, idade: dadosAtualizados.idade, observacoes: dadosAtualizados.observacoes, dataPostagem: dadosAtualizados.dataPostagem, usuario: obterUserLogado() } });
     if (resultado.status !== "sucesso") throw new Error(resultado.mensagem || "Não foi possível salvar os detalhes.");
     if (dadosAtualizados.temaManual) await apiTemas({ acao: "atualizar_tema_pedido", idPedido: idPedidoEmEdicao, tema: dadosAtualizados.temaManual, usuario: obterUserLogado() });
     salvarEdicaoPedido(idPedidoEmEdicao, dadosAtualizados);
