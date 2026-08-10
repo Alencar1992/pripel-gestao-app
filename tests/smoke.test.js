@@ -110,6 +110,13 @@ assert.ok(stellinha.includes('1. Ajuda') && stellinha.includes('2. Suporte técn
 assert.ok(stellinha.includes('listar_base_conhecimento'), 'Consulta à base externa da Stellinha ausente.');
 assert.ok(stellinha.includes('abrir_chamado'), 'Fluxo de abertura de chamado ausente.');
 assert.ok(stellinha.includes('Protocolo:'), 'Confirmação do protocolo de suporte ausente.');
+assert.ok(stellinha.includes('Adicionar foto/print'), 'Abertura de chamado não oferece anexo de imagem.');
+assert.ok(stellinha.includes('prepararImagemAnexo'), 'Tratamento e compactação do anexo ausentes.');
+assert.ok(stellinha.includes('Trocar imagem') && stellinha.includes('Remover imagem'), 'Revisão do anexo antes do envio está incompleta.');
+assert.ok(chamados.includes('anexoImagemSeguro'), 'Visualização segura do anexo no atendimento ausente.');
+assert.ok(chamados.includes('Baixar imagem'), 'Download do anexo pelo suporte ausente.');
+assert.match(css, /\.stellinha-anexo-preview\s*\{/, 'Pré-visualização do anexo sem estilo.');
+assert.match(css, /\.chamado-anexo img\s*\{/, 'Imagem do chamado sem estilo.');
 assert.ok(stellinha.includes('Ainda estou aprendendo sobre esse assunto'), 'Mensagem de aprendizado da Stellinha ausente.');
 assert.ok(!stellinha.includes('consultar_web_stellinha'), 'Stellinha não deve depender de API externa.');
 assert.ok(stellinha.includes('Como localizar um backup criado?'), 'Orientação para localizar backups ausente.');
