@@ -42,6 +42,7 @@ let etapasProducao = [];
 let modoVisualizacaoPedidos = "cards";
 let filtroPrazoAtivo = "todos";
 let visaoProducao = "AGUARDANDO";
+let ordenacaoFinalizados = "antigos";
 
 function normalizarTexto(txt) {
   return String(txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim().toUpperCase();
@@ -152,6 +153,10 @@ function formatarData(data) {
   return `${dd}/${mm}/${yy}`;
 }
 
+function salvarLojaPedido(idPedido, loja) { try { localStorage.setItem("kitfesta_loja_" + idPedido, loja || "LOJA 1"); } catch (erro) {} }
+function carregarLojaPedido(idPedido, lojaBanco) { try { return lojaBanco || localStorage.getItem("kitfesta_loja_" + idPedido) || "LOJA 1"; } catch (erro) { return lojaBanco || "LOJA 1"; } }
+function obterLojaPedido(idPedido) { return pedidosProcessados.find(p => String(p.idPedido) === String(idPedido))?.loja || carregarLojaPedido(idPedido); }
+
 function diagnosticarColunas(indices) {
   const nomesAmigaveis = {
     idPedido: "ID DO PEDIDO",
@@ -212,7 +217,7 @@ function sincronizarComArquivo(idPedido, dadosDoArquivo) {
 /* ==============================================================
    PROCESSAMENTO DE ARQUIVO E RENDERIZAÇÃO
    ============================================================== */
-function processarPlanilha(linhas) {
+function processarPlanilha(linhas, loja = "LOJA 1") {
   const cabecalho = linhas[0];
   const indices = {};
   for (const chave in MAPA_COLUNAS) indices[chave] = encontrarIndiceColuna(cabecalho, MAPA_COLUNAS[chave]);
@@ -232,6 +237,7 @@ function processarPlanilha(linhas) {
     const { prazo, diasRestantes } = calcularProgramacaoEnvio(dtCompraValor);
 
     const idPedidoValor = pegar("idPedido");
+    salvarLojaPedido(idPedidoValor, loja);
 
     sincronizarComArquivo(idPedidoValor, {
       status: pegarOpcional("statusSalvo"),
@@ -252,6 +258,7 @@ function processarPlanilha(linhas) {
       nomeProduto: pegar("nomeProduto"), nomeVariacao: pegar("nomeVariacao"), quantidade: pegar("quantidade"),
       numProdutos: pegar("numProdutos"), comprador: pegar("comprador"), endereco: pegar("endereco"),
       prazoProducao: prazo, diasRestantes: diasRestantes,
+      loja,
     };
   });
 
@@ -289,15 +296,23 @@ function renderizarPedidos(pedidos) {
   empty.style.display = "none";
 
   const ordenados = [...pedidos].sort((a, b) => {
+    if (abaAtual === "FINALIZADO") {
+      const dataA = converterParaData(carregarEdicaoPedido(a.idPedido).dataPostagem) || a.dtCompra;
+      const dataB = converterParaData(carregarEdicaoPedido(b.idPedido).dataPostagem) || b.dtCompra;
+      const valorA = dataA ? dataA.getTime() : 0;
+      const valorB = dataB ? dataB.getTime() : 0;
+      return ordenacaoFinalizados === "novos" ? valorB - valorA : valorA - valorB;
+    }
     if (a.diasRestantes === null) return 1;
     if (b.diasRestantes === null) return -1;
     return a.diasRestantes - b.diasRestantes;
   });
 
   if (modoVisualizacaoPedidos === "lista") {
-    box.innerHTML = `<div class="table-responsive tabela-pedidos-lista"><table><thead><tr><th>Pedido</th><th>Tema</th><th>Comprador</th><th>Quantidade</th><th>DT Compra</th><th>Endereço</th><th>Prazo</th><th>Data limite</th><th>Status</th><th>Data postagem</th><th>Ações</th></tr></thead><tbody>${ordenados.map(p => {
+    box.innerHTML = `<div class="table-responsive tabela-pedidos-lista"><table><thead><tr><th>Loja</th><th>Pedido</th><th>Tema</th><th>Comprador</th><th>Quantidade</th><th>DT Compra</th><th>Endereço</th><th>Prazo</th><th>Data limite</th><th>Status</th><th>Data postagem</th><th>Ações</th></tr></thead><tbody>${ordenados.map(p => {
       const edicao = carregarEdicaoPedido(p.idPedido), status = carregarStatusPedido(p.idPedido), tema = edicao.temaManual || p.nomeVariacao || "";
       return `<tr>
+        <td><span class="loja-pedido-badge">${escapeHtml(p.loja || "LOJA 1")}</span></td>
         <td class="mono pedido-lista-id">#${escapeHtml(p.idPedido)}</td>
         <td><input class="tema-topo-input" data-id="${escapeHtml(p.idPedido)}" list="ppTemasFiltroList" value="${escapeHtml(tema)}" aria-label="Tema do pedido ${escapeHtml(p.idPedido)}"></td>
         <td>${escapeHtml(p.comprador) || "—"}</td>
@@ -339,7 +354,7 @@ function renderizarPedidos(pedidos) {
     return `
       <div class="tag" style="border-top: 4px solid ${statusPrazo.cor}; background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
         <div class="tag-top" style="display:flex; justify-content:space-between; margin-bottom:10px;">
-          <span class="tag-id mono" style="font-weight:bold;">#${escapeHtml(p.idPedido) || "—"}</span>
+          <span><span class="tag-id mono" style="font-weight:bold;">#${escapeHtml(p.idPedido) || "—"}</span> <span class="loja-pedido-badge">${escapeHtml(p.loja || "LOJA 1")}</span></span>
           <span class="badge" style="background:${statusPrazo.cor}; color:white; padding:4px 8px; border-radius:4px; font-size:0.8rem;">${statusPrazo.texto}</span>
         </div>
         
@@ -539,6 +554,7 @@ function definirEstadoAbas() {
   btnFinalizados.style.background = finalizadosAtiva ? "var(--teal)" : "var(--card-bg)";
   btnFinalizados.style.color = finalizadosAtiva ? "white" : "var(--ink-soft)";
   btnFinalizados.style.border = finalizadosAtiva ? "none" : "1px solid var(--border)";
+  document.getElementById("ppOrdenacaoFinalizadosBox").hidden = !finalizadosAtiva;
 }
 
 function statusEhAguardandoInicio(status) {
@@ -677,6 +693,7 @@ async function carregarDadosDoBanco(statusDesejado = abaAtual) {
         dataPrevista: dataLimite,
         prazoProducao: prazos.prazo,
         diasRestantes: prazos.diasRestantes,
+        loja: carregarLojaPedido(String(row[0] ?? ""), row[18] ?? ""),
       };
     });
 
@@ -710,6 +727,24 @@ async function selecionarVisaoProducao(novaVisao) {
 document.getElementById("btnTabAguardando").addEventListener("click", () => selecionarVisaoProducao("AGUARDANDO"));
 document.getElementById("btnTabProducao").addEventListener("click", () => selecionarVisaoProducao("ANDAMENTO"));
 document.getElementById("btnTabFinalizados").addEventListener("click", () => selecionarAba("FINALIZADO"));
+document.getElementById("ppOrdenacaoFinalizados").addEventListener("change", evento => { ordenacaoFinalizados = evento.target.value; atualizarTela(); });
+document.getElementById("ppSalvarPrazo").addEventListener("click", async evento => {
+  const botao = evento.currentTarget;
+  const campo = document.getElementById("ppPrazoProducao");
+  botao.disabled = true;
+  botao.textContent = "Salvando...";
+  try {
+    const prazo = await window.salvarPrazoProducaoRapido(campo.value);
+    campo.value = prazo;
+    botao.textContent = "Aplicado ✓";
+  } catch (erro) {
+    alert(erro.message);
+    botao.textContent = "Aplicar";
+  } finally {
+    botao.disabled = false;
+    setTimeout(() => { botao.textContent = "Aplicar"; }, 1600);
+  }
+});
 document.getElementById("ppSearchInput").addEventListener("input", atualizarTela);
 document.getElementById("ppFilterTipo").addEventListener("change", () => {
   const inputFiltro = document.getElementById("ppFilterValor");
@@ -775,9 +810,10 @@ document.getElementById("ppBtnCancelarTema").addEventListener("click", fecharMod
 document.getElementById("ppTemaModalOverlay").addEventListener("click", e => { if (e.target.id === "ppTemaModalOverlay") fecharModalTema(); });
 document.getElementById("ppNovoTema").addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); cadastrarTema(); } });
 
-document.getElementById("ppFileInput").addEventListener("change", async function(evento) {
+async function importarPlanilhaLoja(evento) {
   const arquivo = evento.target.files[0];
   if (!arquivo) return;
+  const loja = evento.target.dataset.loja || "LOJA 1";
 
   const statusBox = document.getElementById("ppFileStatus");
   statusBox.textContent = "Lendo arquivo...";
@@ -787,14 +823,14 @@ document.getElementById("ppFileInput").addEventListener("change", async function
     const planilha = XLSX.read(dadosBrutos, { type: "array", cellDates: true });
     const primeiraAba = planilha.Sheets[planilha.SheetNames[0]];
     const linhas = XLSX.utils.sheet_to_json(primeiraAba, { header: 1, defval: "" });
-    const resultado = processarPlanilha(linhas);
+    const resultado = processarPlanilha(linhas, loja);
 
     pedidosProcessados = resultado.pedidos;
     linhasOriginais = linhas;
     indicesColunasAtuais = resultado.indices;
     nomeArquivoAtual = arquivo.name.replace(/\.[^.]+$/, "");
 
-    statusBox.textContent = `Arquivo: ${arquivo.name} — enviando pedidos...`;
+    statusBox.textContent = `${loja}: ${arquivo.name} — enviando pedidos...`;
     document.getElementById("ppDiagnostico").innerHTML = diagnosticarColunas(resultado.indices);
     document.getElementById("ppSearchBox").style.display = "block";
     document.getElementById("ppBtnSalvarPlanilha").style.display = "inline-block";
@@ -815,7 +851,7 @@ document.getElementById("ppFileInput").addEventListener("change", async function
     });
     const producoesImportadas = pedidosProcessados.map(pedido => {
       const edicao = carregarEdicaoPedido(pedido.idPedido);
-      return { pedido: pedido.idPedido, etapa: carregarStatusPedido(pedido.idPedido) || "AGUARDANDO", crianca: edicao.nomeCrianca || "", idade: edicao.idade || "0", observacoes: edicao.observacoes || "", dataPostagem: edicao.dataPostagem || "" };
+      return { pedido: pedido.idPedido, loja: pedido.loja, etapa: carregarStatusPedido(pedido.idPedido) || "AGUARDANDO", crianca: edicao.nomeCrianca || "", idade: edicao.idade || "0", observacoes: edicao.observacoes || "", dataPostagem: edicao.dataPostagem || "" };
     });
     const datasLimite = pedidosProcessados.map(pedido => ({
       pedido: pedido.idPedido,
@@ -827,7 +863,7 @@ document.getElementById("ppFileInput").addEventListener("change", async function
 
     const response = await fetch(URL_API, {
       method: "POST",
-      body: JSON.stringify({ acao: "salvar_historico_lote", dados, producoes: producoesImportadas, datasLimite, usuario: obterUserLogado() }),
+      body: JSON.stringify({ acao: "salvar_historico_lote", dados, producoes: producoesImportadas, datasLimite, lojas: pedidosProcessados.map(p => ({ pedido: p.idPedido, loja: p.loja })), loja, usuario: obterUserLogado() }),
     });
     const resposta = await response.json();
 
@@ -838,7 +874,7 @@ document.getElementById("ppFileInput").addEventListener("change", async function
     const inseridos = Number(resposta.inseridos || 0);
     const atualizados = Number(resposta.atualizados || 0);
     const backendAtualizado = resposta.backendVersao && Object.prototype.hasOwnProperty.call(resposta, "datasLimiteGravadas");
-    let mensagemImportacao = `Sucesso! ${inseridos} novo(s) e ${atualizados} pedido(s) existente(s) atualizado(s).`;
+    let mensagemImportacao = `${loja}: sucesso! ${inseridos} novo(s) e ${atualizados} pedido(s) existente(s) atualizado(s).`;
     if (!backendAtualizado && datasLimiteReconhecidas > 0) {
       mensagemImportacao += " ATENÇÃO: o backend publicado está desatualizado e não confirmou a gravação da DATA LIMITE.";
     } else if (datasLimiteReconhecidas > 0 && Number(resposta.datasLimiteGravadas || 0) === 0) {
@@ -854,7 +890,9 @@ document.getElementById("ppFileInput").addEventListener("change", async function
   } finally {
     evento.target.value = "";
   }
-});
+}
+document.getElementById("ppFileInputLoja1").addEventListener("change", importarPlanilhaLoja);
+document.getElementById("ppFileInputLoja2").addEventListener("change", importarPlanilhaLoja);
 
 const ppOrdersBox = document.getElementById("ppOrdersBox");
 
@@ -901,7 +939,7 @@ ppOrdersBox.addEventListener("change", async function(evento) {
 
     if (statusNormalizado === "POSTADO" && !edicaoAtual.dataPostagem) {
       salvarStatusPedido(idPedido, novoStatus);
-      const cardPostado = evento.target.closest(".tag");
+      const cardPostado = evento.target.closest(".tag, tr");
       const campoPostagem = cardPostado ? cardPostado.querySelector(".campo-data-postagem") : null;
       if (campoPostagem) campoPostagem.style.display = "block";
       const inputPostagem = campoPostagem ? campoPostagem.querySelector(".data-postagem-input") : null;
@@ -910,7 +948,7 @@ ppOrdersBox.addEventListener("change", async function(evento) {
     }
 
     try {
-      const resultadoProducao = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedido, etapa: novoStatus, crianca: edicaoAtual.nomeCrianca, idade: edicaoAtual.idade || "0", observacoes: edicaoAtual.observacoes, dataPostagem: edicaoAtual.dataPostagem || "", usuario: obterUserLogado() } });
+      const resultadoProducao = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedido, loja: obterLojaPedido(idPedido), etapa: novoStatus, crianca: edicaoAtual.nomeCrianca, idade: edicaoAtual.idade || "0", observacoes: edicaoAtual.observacoes, dataPostagem: edicaoAtual.dataPostagem || "", usuario: obterUserLogado() } });
       if (resultadoProducao.status !== "sucesso") throw new Error(resultadoProducao.mensagem || "Não foi possível salvar o status.");
       salvarStatusPedido(idPedido, novoStatus);
     } catch (erro) {
@@ -932,6 +970,7 @@ ppOrdersBox.addEventListener("change", async function(evento) {
           body: JSON.stringify({
             acao: "atualizar_status_banco",
             idPedido,
+            loja: obterLojaPedido(idPedido),
             novoStatusSistema: "FINALIZADO",
           }),
         });
@@ -956,21 +995,25 @@ ppOrdersBox.addEventListener("change", async function(evento) {
   }
 
   if (evento.target.classList.contains("data-postagem-input")) {
+    if (evento.target.dataset.salvando === "true") return;
     const idPedido = evento.target.dataset.id;
     const dataPostagem = evento.target.value;
     if (!dataPostagem) return;
     const edicao = carregarEdicaoPedido(idPedido);
     const etapa = carregarStatusPedido(idPedido) || "POSTADO";
+    evento.target.dataset.salvando = "true";
+    evento.target.disabled = true;
     try {
-      const resultado = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedido, etapa: "POSTADO", crianca: edicao.nomeCrianca, idade: edicao.idade || "0", observacoes: edicao.observacoes, dataPostagem, usuario: obterUserLogado() } });
+      const resultado = await chamarApi({ acao: "salvar_producao", producao: { pedido: idPedido, loja: obterLojaPedido(idPedido), etapa: "POSTADO", crianca: edicao.nomeCrianca, idade: edicao.idade || "0", observacoes: edicao.observacoes, dataPostagem, usuario: obterUserLogado() } });
       if (resultado.status !== "sucesso") throw new Error(resultado.mensagem || "Não foi possível salvar a postagem.");
       edicao.dataPostagem = dataPostagem;
       salvarEdicaoPedido(idPedido, edicao);
       salvarStatusPedido(idPedido, etapa);
-      const finalizacao = await chamarApi({ acao: "atualizar_status_banco", idPedido, novoStatusSistema: "FINALIZADO" });
+      const finalizacao = await chamarApi({ acao: "atualizar_status_banco", idPedido, loja: obterLojaPedido(idPedido), novoStatusSistema: "FINALIZADO" });
       if (finalizacao.status !== "sucesso") throw new Error(finalizacao.mensagem || "Não foi possível finalizar o pedido.");
       await selecionarAba("FINALIZADO");
     } catch (erro) { alert(erro.message); }
+    finally { evento.target.dataset.salvando = "false"; evento.target.disabled = false; }
   }
 
   if (evento.target.classList.contains("tema-topo-input")) {
@@ -978,7 +1021,7 @@ ppOrdersBox.addEventListener("change", async function(evento) {
     input.disabled = true;
     try {
       await garantirValorCadastrado("tema", tema);
-      await apiTemas({acao:"atualizar_tema_pedido",idPedido,tema,usuario:obterUserLogado()});
+      await apiTemas({acao:"atualizar_tema_pedido",idPedido,loja:obterLojaPedido(idPedido),tema,usuario:obterUserLogado()});
       const dados=carregarEdicaoPedido(idPedido); dados.temaManual=tema; salvarEdicaoPedido(idPedido,dados);
     } catch(e) { alert(e.message); }
     finally { input.disabled=false; }
