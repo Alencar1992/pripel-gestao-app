@@ -799,6 +799,19 @@ document.getElementById('arquivoRelatorioShopee').addEventListener('change', eve
 // =======================================================
 let parametrosSistema = { prazoProducao: 5, taxaLink: 4.99, taxaShopee: 14, taxaShopeeBaixa: 20, taxaFixaCpf: 3, categoriasDespesa: [] };
 
+async function salvarPrazoProducaoRapido(dias) {
+    const prazo = Math.max(1, Math.min(365, Number(dias) || 5));
+    const parametros = { ...parametrosSistema, prazoProducao: prazo, usuario: obterUserLogado() };
+    const resultado = await chamarApi({ acao: 'salvar_parametros', parametros });
+    if (resultado.status !== 'sucesso') throw new Error(resultado.mensagem || 'Não foi possível salvar o prazo de produção.');
+    parametrosSistema = { ...parametrosSistema, ...(resultado.parametros || parametros), prazoProducao: prazo };
+    const campoParametros = document.getElementById('paramPrazoProducao');
+    if (campoParametros) campoParametros.value = prazo;
+    if (typeof atualizarPrazoProducao === 'function') atualizarPrazoProducao(prazo);
+    return prazo;
+}
+window.salvarPrazoProducaoRapido = salvarPrazoProducaoRapido;
+
 async function carregarParametros(preencherFormulario = true) {
     try {
         const resultado = await chamarApi({ acao: 'carregar_parametros' });
@@ -814,6 +827,8 @@ async function carregarParametros(preencherFormulario = true) {
         }
         if (!document.getElementById('calcTaxaLink').value || document.getElementById('calcTaxaLink').value === '4.99') document.getElementById('calcTaxaLink').value = parametrosSistema.taxaLink;
         if (typeof atualizarPrazoProducao === 'function') atualizarPrazoProducao(parametrosSistema.prazoProducao);
+        const prazoPainel = document.getElementById('ppPrazoProducao');
+        if (prazoPainel) prazoPainel.value = parametrosSistema.prazoProducao;
         return parametrosSistema;
     } catch (erro) {
         if (preencherFormulario) { const mensagem = document.getElementById('mensagemParametros'); mensagem.style.color = 'var(--cor-alerta)'; mensagem.textContent = `❌ ${erro.message}`; }

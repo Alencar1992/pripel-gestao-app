@@ -923,6 +923,18 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .shopee-eyebrow { color: var(--cor-destaque); font-size: .76rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .btn-arquivo-shopee { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 0 0 auto; min-height: 44px; padding: 11px 16px; border-radius: 10px; background: var(--cor-destaque); color: #fff; font-weight: 800; cursor: pointer; }
 .btn-arquivo-shopee:hover { filter: brightness(1.12); }
+.pp-scope .upload-card-lojas { flex-wrap:wrap; }
+.pp-scope .btn-loja-planilha { background:var(--teal); }
+.pp-scope .btn-loja-planilha.btn-loja-2 { background:#6d4bd1; }
+.pp-scope .loja-pedido-badge { display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;background:rgba(109,75,209,.14);color:#7457d7;font-size:.72rem;font-weight:900;letter-spacing:.04em;white-space:nowrap; }
+.pp-scope .prazo-producao-rapido { margin-left:auto;display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--border);border-radius:9px;background:var(--card-bg); }
+.pp-scope .prazo-producao-rapido label { font-size:.78rem;font-weight:800;color:var(--ink-soft); }
+.pp-scope .prazo-producao-rapido input { width:66px;padding:6px 8px; }
+.pp-scope .prazo-producao-rapido button { width:auto;margin:0;padding:7px 10px;border-radius:7px; }
+.pp-scope .ordenacao-finalizados { display:flex;align-items:center;gap:6px;font-size:.75rem;font-weight:800;color:var(--ink-soft); }
+.pp-scope .ordenacao-finalizados[hidden] { display:none; }
+.pp-scope .ordenacao-finalizados select { min-width:185px;padding:9px; }
+@media (max-width:720px) { .pp-scope .prazo-producao-rapido { margin-left:0;width:100%;flex-wrap:wrap; } .pp-scope .upload-card-lojas .btn { width:100%; } }
 .mensagem-importacao-shopee { min-height: 22px; margin: 15px 0 0; font-weight: 650; }
 .shopee-periodo { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--borda); }
 .shopee-periodo div { display: grid; gap: 4px; }
