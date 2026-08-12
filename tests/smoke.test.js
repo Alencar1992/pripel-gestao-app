@@ -101,6 +101,13 @@ assert.ok(pedidos.includes('backend publicado está desatualizado'), 'Importaç�
 assert.ok(pedidos.includes('datasLimiteGravadas'), 'Importação não confirma quantas datas limite foram persistidas.');
 assert.ok(!pedidos.includes('DATA LIMITE: ${Number(resposta.datasLimiteGravadas'), 'A interface não deve exibir quantidade de datas gravadas.');
 assert.match(pedidos, /const dataCompra = converterParaData\(row\[6\]\)/, 'Data devolvida pelo banco não usa o conversor normalizado.');
+assert.match(html, /id="ppFileInputLoja1"[^>]*data-loja="LOJA 1"/, 'Upload da Loja 1 ausente.');
+assert.match(html, /id="ppFileInputLoja2"[^>]*data-loja="LOJA 2"/, 'Upload da Loja 2 ausente.');
+assert.ok(pedidos.includes('loja-pedido-badge'), 'Identificação da loja não aparece nos pedidos.');
+assert.ok(pedidos.includes('ordenacaoFinalizados === "novos"'), 'Ordenação cronológica dos finalizados ausente.');
+assert.ok(script.includes('salvarPrazoProducaoRapido'), 'Prazo rápido e persistente não foi implementado.');
+assert.ok(pedidos.includes('closest(".tag, tr")'), 'Data de postagem não é revelada no modo lista.');
+assert.ok(pedidos.includes('dataset.salvando'), 'Proteção contra salvamento duplicado da postagem ausente.');
 
 assert.match(css, /@media\s*\(max-width:\s*768px\)/, 'Regra responsiva para tablet/celular ausente.');
 assert.match(css, /\.table-responsive\s*\{[^}]*overflow-x:\s*auto/s, 'Rolagem responsiva de tabelas ausente.');
