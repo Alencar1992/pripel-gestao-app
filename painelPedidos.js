@@ -322,7 +322,7 @@ function renderizarPedidos(pedidos) {
         <td>${formatarData(p.prazoProducao)}</td>
         <td>${formatarData(p.dataPrevista)}</td>
         <td><input class="status-input" data-id="${escapeHtml(p.idPedido)}" list="ppEtapasList" value="${escapeHtml(status)}" placeholder="Digite o status..." aria-label="Status do pedido ${escapeHtml(p.idPedido)}"></td>
-        <td><div class="campo-data-postagem" style="display:${normalizarTexto(status) === "POSTADO" ? "block" : "none"};"><input type="date" class="data-postagem-input" data-id="${escapeHtml(p.idPedido)}" value="${escapeHtml(edicao.dataPostagem || "")}" aria-label="Data de postagem do pedido ${escapeHtml(p.idPedido)}"></div>${normalizarTexto(status) === "POSTADO" ? "" : "—"}</td>
+        <td><div class="campo-data-postagem" style="display:${normalizarTexto(status) === "POSTADO" ? "block" : "none"};"><input type="date" min="2000-01-01" max="2100-12-31" class="data-postagem-input" data-id="${escapeHtml(p.idPedido)}" value="${escapeHtml(edicao.dataPostagem || "")}" aria-label="Data de postagem do pedido ${escapeHtml(p.idPedido)}"></div>${normalizarTexto(status) === "POSTADO" ? "" : "—"}</td>
         <td><button class="btn-editar" data-id="${escapeHtml(p.idPedido)}" type="button">Informações</button></td>
       </tr>`;
     }).join("")}</tbody></table></div>`;
@@ -348,7 +348,7 @@ function renderizarPedidos(pedidos) {
     const campoDataPostagem = `
       <div class="campo-data-postagem" style="display:${normalizarTexto(statusPedidoAtual) === "POSTADO" ? "block" : "none"};margin:10px 0;">
         <label style="font-size:.75rem;font-weight:bold;color:var(--ink-soft);">DATA DA POSTAGEM</label>
-        <input type="date" class="data-postagem-input" data-id="${escapeHtml(p.idPedido)}" value="${escapeHtml(edicao.dataPostagem || "")}" style="width:100%;margin-top:4px;">
+        <input type="date" min="2000-01-01" max="2100-12-31" class="data-postagem-input" data-id="${escapeHtml(p.idPedido)}" value="${escapeHtml(edicao.dataPostagem || "")}" style="width:100%;margin-top:4px;">
       </div>`;
 
     return `
@@ -998,7 +998,8 @@ ppOrdersBox.addEventListener("change", async function(evento) {
     if (evento.target.dataset.salvando === "true") return;
     const idPedido = evento.target.dataset.id;
     const dataPostagem = evento.target.value;
-    if (!dataPostagem) return;
+    const dataCompleta = /^(20\d{2}|2100)-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(dataPostagem);
+    if (!dataCompleta || !evento.target.validity.valid) return;
     const edicao = carregarEdicaoPedido(idPedido);
     const etapa = carregarStatusPedido(idPedido) || "POSTADO";
     evento.target.dataset.salvando = "true";
