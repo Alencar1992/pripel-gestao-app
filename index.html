@@ -550,11 +550,9 @@
                     </header>
 
                     <div class="upload-box">
-                        <div class="upload-card">
-                            <label class="btn">
-                                Selecionar planilha (.csv / .xlsx)
-                                <input type="file" id="ppFileInput" accept=".csv,.xlsx,.xls">
-                            </label>
+                        <div class="upload-card upload-card-lojas">
+                            <label class="btn btn-loja-planilha">Loja 1 — selecionar planilha<input type="file" id="ppFileInputLoja1" data-loja="LOJA 1" accept=".csv,.xlsx,.xls"></label>
+                            <label class="btn btn-loja-planilha btn-loja-2">Loja 2 — selecionar planilha<input type="file" id="ppFileInputLoja2" data-loja="LOJA 2" accept=".csv,.xlsx,.xls"></label>
                             <span class="file-status" id="ppFileStatus">Nenhum arquivo carregado ainda.</span>
                             <button type="button" id="ppBtnSalvarPlanilha" class="btn btn-ok" style="display:none;">💾 Salvar planilha atualizada</button>
                         </div>
@@ -566,6 +564,7 @@
                         <button id="btnTabAguardando" type="button" style="padding:10px 20px;border:none;border-radius:8px;background:var(--teal);color:white;font-weight:bold;cursor:pointer;">Aguardando início</button>
                         <button id="btnTabProducao" type="button" style="padding:10px 20px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--ink-soft);font-weight:bold;cursor:pointer;">Pedidos em produção</button>
                         <button id="btnTabFinalizados" type="button" style="padding: 10px 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--ink-soft); font-weight: bold; cursor: pointer; transition: all 0.2s;">Finalizados</button>
+                        <div class="prazo-producao-rapido"><label for="ppPrazoProducao">Prazo de produção</label><input type="number" id="ppPrazoProducao" min="1" max="365" step="1" value="5" aria-label="Prazo de produção em dias"><span>dias</span><button type="button" id="ppSalvarPrazo">Aplicar</button></div>
                     </div>
 
                     <div id="ppStatsBox" class="stats" style="display:none;"></div>
@@ -588,6 +587,7 @@
                         <datalist id="ppTemasFiltroList"></datalist>
                       </div>
                       <div style="display:flex;gap:6px;">
+                        <label id="ppOrdenacaoFinalizadosBox" class="ordenacao-finalizados" hidden>Ordenar<select id="ppOrdenacaoFinalizados"><option value="antigos">Mais antigos primeiro</option><option value="novos">Mais novos primeiro</option></select></label>
                         <button type="button" id="ppBtnVistaCards" class="btn" style="width:auto;margin:0;padding:9px 12px;">▦ Cards</button>
                         <button type="button" id="ppBtnVistaLista" class="btn" style="width:auto;margin:0;padding:9px 12px;background:var(--card-bg);color:var(--ink-soft);border:1px solid var(--border);">☷ Lista</button>
                       </div>
