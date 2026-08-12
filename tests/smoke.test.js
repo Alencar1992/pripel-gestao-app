@@ -108,6 +108,8 @@ assert.ok(pedidos.includes('ordenacaoFinalizados === "novos"'), 'Ordenação cro
 assert.ok(script.includes('salvarPrazoProducaoRapido'), 'Prazo rápido e persistente não foi implementado.');
 assert.ok(pedidos.includes('closest(".tag, tr")'), 'Data de postagem não é revelada no modo lista.');
 assert.ok(pedidos.includes('dataset.salvando'), 'Proteção contra salvamento duplicado da postagem ausente.');
+assert.ok(pedidos.includes('const dataCompleta ='), 'Data de postagem parcial não é ignorada durante a digitação.');
+assert.ok((pedidos.match(/min="2000-01-01" max="2100-12-31"/g) || []).length >= 2, 'Limites válidos do ano não foram aplicados aos campos de postagem.');
 
 assert.match(css, /@media\s*\(max-width:\s*768px\)/, 'Regra responsiva para tablet/celular ausente.');
 assert.match(css, /\.table-responsive\s*\{[^}]*overflow-x:\s*auto/s, 'Rolagem responsiva de tabelas ausente.');
